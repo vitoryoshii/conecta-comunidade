@@ -1,0 +1,44 @@
+# =============================================================================
+# Conecta Comunidade - dependências (stack 100% Python)
+# Versões fixadas e validadas em Python 3.14 / Windows 11.
+#   pip install -r requirements.txt
+# =============================================================================
+
+# --- Backend / API -----------------------------------------------------------
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32          # leitura de formulários multipart no FastAPI
+
+# --- ORM e banco de dados ----------------------------------------------------
+sqlmodel==0.0.42                  # SQLModel = SQLAlchemy + Pydantic
+SQLAlchemy==2.0.52
+alembic==1.19.2                   # migrations
+
+# --- Validação e configuração ------------------------------------------------
+pydantic==2.13.5
+pydantic-settings==2.15.0
+email-validator==2.3.0            # habilita o tipo EmailStr do Pydantic
+python-dotenv==1.2.3
+
+# --- Autenticação ------------------------------------------------------------
+python-jose[cryptography]==3.5.0  # geração e validação dos tokens JWT
+passlib==1.7.4                    # camada de hash de senha
+# ATENÇÃO: manter o bcrypt em 4.0.1. O passlib 1.7.4 é incompatível com o
+# bcrypt >= 5.0 (ValueError ao detectar o backend na inicialização).
+bcrypt==4.0.1
+
+# --- Geolocalização ----------------------------------------------------------
+geopy==2.5.0                      # distância haversine entre lat/long
+
+# --- Mobile / UI -------------------------------------------------------------
+flet==0.86.5                      # Flutter renderizado via Python
+# O pacote `flet` traz apenas a biblioteca. O comando `flet run` precisa destes
+# três — sem eles o app não abre (o CLI tenta baixá-los na primeira execução).
+flet-cli==0.86.5                  # comando `flet run`
+flet-desktop==0.86.5              # janela nativa (desktop)
+flet-web==0.86.5                  # modo navegador (`flet run --web`)
+httpx==0.28.1                     # cliente HTTP usado pelo app para chamar a API
+
+# --- Testes ------------------------------------------------------------------
+pytest==9.1.1
+pytest-cov==7.1.0

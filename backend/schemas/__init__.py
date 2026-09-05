@@ -1,0 +1,42 @@
+"""Schemas Pydantic v2 usados nas requisições e respostas da API."""
+
+from backend.schemas.categoria import CategoriaLer
+from backend.schemas.entrega import EntregaAtualizar, EntregaCriar, EntregaLer
+from backend.schemas.mapa import PontoMapa, RespostaMapa
+from backend.schemas.mensagem import ConversaLer, MensagemCriar, MensagemLer
+from backend.schemas.oferta import OfertaCriar, OfertaLer
+from backend.schemas.ong import AvaliacaoCriar, ONGLer
+from backend.schemas.solicitacao import SolicitacaoAtualizar, SolicitacaoCriar, SolicitacaoLer
+from backend.schemas.usuario import (
+    ImpactoLer,
+    Token,
+    UsuarioAtualizar,
+    UsuarioCriar,
+    UsuarioLer,
+    UsuarioLogin,
+)
+
+__all__ = [
+    "AvaliacaoCriar",
+    "CategoriaLer",
+    "ConversaLer",
+    "EntregaAtualizar",
+    "EntregaCriar",
+    "EntregaLer",
+    "ImpactoLer",
+    "MensagemCriar",
+    "MensagemLer",
+    "ONGLer",
+    "OfertaCriar",
+    "OfertaLer",
+    "PontoMapa",
+    "RespostaMapa",
+    "SolicitacaoAtualizar",
+    "SolicitacaoCriar",
+    "SolicitacaoLer",
+    "Token",
+    "UsuarioAtualizar",
+    "UsuarioCriar",
+    "UsuarioLer",
+    "UsuarioLogin",
+]

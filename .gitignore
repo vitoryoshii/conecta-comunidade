@@ -1,0 +1,50 @@
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Ambientes virtuais ------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# --- Variáveis de ambiente e segredos ---------------------------------------
+.env
+.env.local
+*.pem
+*.key
+
+# --- Banco de dados local ----------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Testes e cobertura ------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Flet --------------------------------------------------------------------
+storage/
+.flet/
+
+# --- Ferramentas e IDEs ------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+.mypy_cache/
+.ruff_cache/
+
+# --- Sistema operacional -----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

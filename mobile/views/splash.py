@@ -11,7 +11,7 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover - apenas para tipagem
     from mobile.main import App
 
-SPLASH_BG = "brand/img/splash-bg.svg"
+SPLASH_BG = "brand/img/splash-bg.png"
 LOGO_SPLASH = "brand/logo/logo-white-amber.svg"
 
 
@@ -97,7 +97,6 @@ def construir(app: App) -> ft.Control:
         ),
         padding=ft.Padding.symmetric(horizontal=28, vertical=20),
         expand=True,
-        bgcolor="#D91B6B3A",
     )
 
     return ft.Container(
@@ -117,12 +116,12 @@ def construir(app: App) -> ft.Control:
                 ft.Image(
                     src=SPLASH_BG,
                     fit=ft.BoxFit.COVER,
+                    expand=True,
                     left=0,
                     top=0,
                     right=0,
                     bottom=0,
                 ),
-                ft.Container(left=0, top=0, right=0, bottom=0, bgcolor="#990E6B42"),
                 conteudo,
             ],
             expand=True,

@@ -13,7 +13,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
 LOGO_SYMBOL = "brand/logo/logo-symbol.svg"
-HOME_BANNER_BG = "brand/img/home-banner-bg.svg"
+HOME_BANNER_BG = "brand/img/home-banner-bg.png"
 
 
 def _banner(app: App) -> ft.Container:
@@ -40,7 +40,6 @@ def _banner(app: App) -> ft.Container:
                     right=0,
                     bottom=0,
                 ),
-                ft.Container(left=0, top=0, right=0, bottom=0, bgcolor="#330E6B42"),
                 ft.Column(
                     [
                         ft.Text(
@@ -75,7 +74,7 @@ def _banner(app: App) -> ft.Container:
             height=150,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
         ),
-        border_radius=t.RAIO,
+        border_radius=24,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
 

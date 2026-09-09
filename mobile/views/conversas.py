@@ -33,7 +33,7 @@ def construir(app: App) -> ft.Control:
         )
     else:
         lista = t.area_vazia(
-            "Você ainda não tem conversas.\nEnvie uma proposta em algum pedido para começar.",
+            "Nenhuma conversa ainda.\nEnvie uma proposta em algum pedido para começar.",
             ft.Icons.FORUM_OUTLINED,
         )
 
@@ -63,7 +63,7 @@ def construir(app: App) -> ft.Control:
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=16),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )

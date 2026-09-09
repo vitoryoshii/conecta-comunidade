@@ -121,6 +121,7 @@ def construir(app: App) -> ft.Control:
                         )
                     ]
                 ),
+                ft.Container(height=6),
                 t.titulo("Criar sua conta", 24),
                 t.subtitulo("Leva menos de um minuto. Seus dados ficam protegidos."),
                 ft.Container(height=14),
@@ -159,8 +160,9 @@ def construir(app: App) -> ft.Control:
             spacing=12,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+            alignment=ft.MainAxisAlignment.CENTER,
         ),
-        padding=ft.Padding.symmetric(horizontal=24, vertical=12),
+        padding=ft.Padding.symmetric(horizontal=24, vertical=18),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )

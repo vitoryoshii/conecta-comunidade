@@ -41,7 +41,7 @@ def _numero_impacto(valor: int, rotulo: str, icone: ft.IconData, cor: str) -> ft
         bgcolor=t.BRANCO,
         border_radius=14,
         border=ft.Border.all(1, t.BORDA),
-        expand=True,
+        width=122,
     )
 
 
@@ -160,6 +160,8 @@ def construir(app: App) -> ft.Control:
                         ),
                     ],
                     spacing=10,
+                    wrap=True,
+                    alignment=ft.MainAxisAlignment.CENTER,
                 ),
                 ft.Row(
                     [
@@ -237,7 +239,7 @@ def construir(app: App) -> ft.Control:
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=16),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )

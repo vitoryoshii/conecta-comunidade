@@ -56,6 +56,10 @@ from mobile.views import (  # noqa: E402
 
 # URL da API. Pode ser sobrescrita pela variável de ambiente API_BASE_URL.
 API_BASE_URL = "http://127.0.0.1:8000"
+FAVICONS = (
+    RAIZ_DO_PROJETO / "mobile" / "assets" / "brand" / "favicon.svg",
+    RAIZ_DO_PROJETO / "mobile" / "assets" / "brand" / "logo" / "favicon.svg",
+)
 
 # Registro de rotas: nome -> (função construtora, exibe navegação inferior?).
 ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
@@ -80,6 +84,18 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
 
 # Rotas que correspondem a uma aba da navegação inferior.
 ABAS_PRINCIPAIS = {"home", "explorar", "publicar", "conversas", "perfil"}
+ROTAS_COM_DADOS = {
+    "home",
+    "explorar",
+    "conversas",
+    "perfil",
+    "detalhe_solicitacao",
+    "chat",
+    "mapa",
+    "ongs",
+    "perfil_ong",
+    "minhas_solicitacoes",
+}
 
 
 class App:
@@ -96,7 +112,11 @@ class App:
         self.api = ApiClient(API_BASE_URL)
 
         # Área onde a tela atual é desenhada.
-        self._area = ft.Container(expand=True, bgcolor=t.FUNDO_CLARO)
+        self._area = ft.Container(
+            expand=True,
+            bgcolor=t.FUNDO_CLARO,
+            animate=ft.Animation(180, ft.AnimationCurve.EASE),
+        )
         self._barra = ft.Container(visible=False)
         self._raiz = ft.Column([self._area, self._barra], spacing=0, expand=True)
 
@@ -106,6 +126,9 @@ class App:
     def iniciar(self) -> None:
         """Configura a página e desenha a primeira tela."""
         self.page.title = "Conecta Comunidade"
+        favicon = next((caminho for caminho in FAVICONS if caminho.exists()), None)
+        if favicon:
+            self.page.window.icon = str(favicon)
         self.page.bgcolor = t.FUNDO_CLARO
         self.page.padding = 0
         self.page.spacing = 0
@@ -158,6 +181,9 @@ class App:
         construtor, mostra_barra = ROTAS.get(rota.nome, ROTAS["home"])
 
         try:
+            if rota.nome in ROTAS_COM_DADOS:
+                self._area.content = t.carregando("Carregando dados...")
+                self.page.update()
             conteudo = construtor(self)
         except ErroApi as erro:
             conteudo = self._tela_de_erro(erro.mensagem)

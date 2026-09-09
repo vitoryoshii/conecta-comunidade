@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
@@ -10,6 +11,12 @@ from mobile import theme as t
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
+
+RAIZ_MOBILE = Path(__file__).resolve().parent.parent
+LOGO_SYMBOLS = (
+    RAIZ_MOBILE / "assets" / "brand" / "logo-symbol.svg",
+    RAIZ_MOBILE / "assets" / "brand" / "logo" / "logo-symbol.svg",
+)
 
 # Contas criadas pelo `seed.py`, mostradas como atalho na apresentação.
 CONTAS_DEMO = [
@@ -50,6 +57,13 @@ def construir(app: App) -> ft.Control:
         campo_senha.value = "senha123"
         app.page.update()
 
+    logo: ft.Control
+    logo_path = next((caminho for caminho in LOGO_SYMBOLS if caminho.exists()), None)
+    if logo_path:
+        logo = ft.Image(src=str(logo_path), width=54, height=54, fit=ft.BoxFit.CONTAIN)
+    else:
+        logo = ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO)
+
     return ft.Container(
         content=ft.Column(
             [
@@ -62,8 +76,8 @@ def construir(app: App) -> ft.Control:
                         )
                     ]
                 ),
-                ft.Container(height=10),
-                ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO),
+                ft.Container(height=18),
+                logo,
                 t.titulo("Que bom te ver de novo", 24),
                 t.subtitulo("Entre para acompanhar seus pedidos e doações."),
                 ft.Container(height=18),
@@ -120,8 +134,9 @@ def construir(app: App) -> ft.Control:
             spacing=12,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+            alignment=ft.MainAxisAlignment.CENTER,
         ),
-        padding=ft.Padding.symmetric(horizontal=24, vertical=12),
+        padding=ft.Padding.symmetric(horizontal=24, vertical=18),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )

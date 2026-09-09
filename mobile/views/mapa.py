@@ -23,9 +23,11 @@ if TYPE_CHECKING:  # pragma: no cover
 TIPOS = ["ajuda", "oferecendo", "ong", "ponto_retirada"]
 
 # Dimensões da área de desenho do mapa esquemático.
-LARGURA_MAPA = 330
-ALTURA_MAPA = 250
-MARGEM = 26
+LARGURA_MAPA = 340
+ALTURA_MAPA = 270
+MARGEM = 30
+TAMANHO_PIN = 30
+TAMANHO_PIN_EMERGENCIA = 38
 
 
 def construir(app: App) -> ft.Control:
@@ -57,7 +59,7 @@ def construir(app: App) -> ft.Control:
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                t.subtitulo("Toque em um pino para ver os detalhes."),
+                t.subtitulo("Toque em um pino para abrir os detalhes do ponto."),
                 _mapa_esquematico(app, pontos),
                 _painel_de_filtros(ativos, totais, alternar),
                 ft.Text(
@@ -73,7 +75,7 @@ def construir(app: App) -> ft.Control:
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=16),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )
@@ -117,8 +119,32 @@ def _mapa_esquematico(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
             )
         )
     else:
-        latitudes = [p["latitude"] for p in pontos]
-        longitudes = [p["longitude"] for p in pontos]
+        pontos_validos = [
+            ponto
+            for ponto in pontos
+            if isinstance(ponto.get("latitude"), int | float)
+            and isinstance(ponto.get("longitude"), int | float)
+        ]
+
+        if not pontos_validos:
+            grade.append(
+                ft.Container(
+                    content=ft.Text(
+                        "Os pontos retornados não têm coordenadas válidas.",
+                        size=12,
+                        color=t.TEXTO_SECUNDARIO,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    left=18,
+                    top=ALTURA_MAPA / 2 - 18,
+                    width=LARGURA_MAPA - 36,
+                    alignment=ft.Alignment.CENTER,
+                )
+            )
+            return _area_do_mapa(grade)
+
+        latitudes = [ponto["latitude"] for ponto in pontos_validos]
+        longitudes = [ponto["longitude"] for ponto in pontos_validos]
         lat_min, lat_max = min(latitudes), max(latitudes)
         lon_min, lon_max = min(longitudes), max(longitudes)
 
@@ -129,25 +155,46 @@ def _mapa_esquematico(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
             proporcao = (valor - minimo) / (maximo - minimo)
             return MARGEM + proporcao * (tamanho - 2 * MARGEM)
 
-        for ponto in pontos:
+        for ponto in pontos_validos:
             # Latitude cresce para o norte, mas o eixo Y da tela cresce para
             # baixo — por isso a inversão.
             x = escalar(ponto["longitude"], lon_min, lon_max, LARGURA_MAPA)
             y = ALTURA_MAPA - escalar(ponto["latitude"], lat_min, lat_max, ALTURA_MAPA)
             grade.append(_pino(app, ponto, x, y))
 
+    return _area_do_mapa(grade)
+
+
+def _area_do_mapa(grade: list[ft.Control]) -> ft.Control:
+    """Cria a superfície fixa do mapa, usada também nos estados vazios."""
     # A área tem tamanho fixo e recorte rígido: as posições dos pinos são
     # calculadas em pixels, então o container precisa medir exatamente o mesmo
     # que o Stack — do contrário um pino pode vazar pela borda.
     area = ft.Container(
-        content=ft.Stack(grade, width=LARGURA_MAPA, height=ALTURA_MAPA),
+        content=ft.Stack(
+            [
+                ft.Container(
+                    left=12,
+                    top=12,
+                    right=12,
+                    bottom=12,
+                    border_radius=t.RAIO,
+                    border=ft.Border.all(1, "#D7E5DD"),
+                ),
+                *grade,
+            ],
+            width=LARGURA_MAPA,
+            height=ALTURA_MAPA,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        ),
         width=LARGURA_MAPA,
         height=ALTURA_MAPA,
-        bgcolor="#E9F1EC",
+        bgcolor="#E8F2EC",
         border_radius=t.RAIO,
         border=ft.Border.all(1, t.BORDA),
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
         padding=0,
+        shadow=ft.BoxShadow(blur_radius=12, color="#180E2A47", offset=ft.Offset(0, 4)),
     )
     # Em telas estreitas a Row rola na horizontal; em telas largas, centraliza.
     return ft.Row([area], alignment=ft.MainAxisAlignment.CENTER, scroll=ft.ScrollMode.AUTO)
@@ -157,7 +204,7 @@ def _pino(app: App, ponto: dict[str, Any], x: float, y: float) -> ft.Container:
     """Um marcador clicável do mapa."""
     tipo = ponto.get("tipo", "ajuda")
     cor = t.URGENCIA if ponto.get("emergencia") else t.CORES_MAPA.get(tipo, t.VERDE_PRIMARIO)
-    tamanho = 34 if ponto.get("emergencia") else 28
+    tamanho = TAMANHO_PIN_EMERGENCIA if ponto.get("emergencia") else TAMANHO_PIN
 
     return ft.Container(
         content=ft.Icon(t.ICONES_MAPA.get(tipo, ft.Icons.PLACE), size=tamanho / 2, color=t.BRANCO),
@@ -170,8 +217,9 @@ def _pino(app: App, ponto: dict[str, Any], x: float, y: float) -> ft.Container:
         left=max(0, min(x - tamanho / 2, LARGURA_MAPA - tamanho)),
         top=max(0, min(y - tamanho / 2, ALTURA_MAPA - tamanho)),
         tooltip=f"{ponto.get('titulo', '')} · {ponto.get('distancia_formatada', '--')}",
-        on_click=lambda _: _abrir(app, ponto),
-        shadow=ft.BoxShadow(blur_radius=6, color="#33000000", offset=ft.Offset(0, 2)),
+        on_click=lambda _: _abrir_detalhe(app, ponto),
+        shadow=ft.BoxShadow(blur_radius=8, color="#33000000", offset=ft.Offset(0, 3)),
+        ink=True,
     )
 
 
@@ -293,19 +341,150 @@ def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
                     spacing=10,
                 ),
                 padding=12,
-                on_click=lambda _, p=ponto: _abrir(app, p),
+                on_click=lambda _, p=ponto: _abrir_detalhe(app, p),
             )
         )
 
     return ft.Column(linhas, spacing=8)
 
 
-def _abrir(app: App, ponto: dict[str, Any]) -> None:
-    """Leva o usuário à tela correspondente ao tipo do pin."""
+def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
+    """Abre um bottom sheet com os detalhes do pin tocado."""
     tipo = ponto.get("tipo")
+    cor = t.CORES_MAPA.get(tipo, t.VERDE_PRIMARIO)
+
+    acoes: list[ft.Control] = [
+        t.botao_secundario("Fechar", lambda _: app.page.pop_dialog(), largura=130)
+    ]
     if tipo == "ajuda":
-        app.navegar("detalhe_solicitacao", id=ponto["id"])
+        acoes.insert(
+            0,
+            t.botao_primario(
+                "Ver pedido",
+                lambda _: _fechar_e_navegar(app, "detalhe_solicitacao", id=ponto["id"]),
+                ft.Icons.ARROW_FORWARD,
+                150,
+            ),
+        )
     elif tipo == "ong":
-        app.navegar("perfil_ong", id=ponto["id"])
-    else:
-        app.aviso(f"{ponto.get('titulo', '')} · {ponto.get('distancia_formatada', '--')} de você")
+        acoes.insert(
+            0,
+            t.botao_primario(
+                "Ver ONG",
+                lambda _: _fechar_e_navegar(app, "perfil_ong", id=ponto["id"]),
+                ft.Icons.ARROW_FORWARD,
+                150,
+            ),
+        )
+
+    conteudo = ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Container(
+                            content=ft.Icon(t.ICONES_MAPA.get(tipo, ft.Icons.PLACE), color=t.BRANCO),
+                            width=44,
+                            height=44,
+                            bgcolor=t.URGENCIA if ponto.get("emergencia") else cor,
+                            border_radius=22,
+                            alignment=ft.Alignment.CENTER,
+                        ),
+                        ft.Column(
+                            [
+                                ft.Row(
+                                    [
+                                        t.etiqueta(
+                                            t.ROTULOS_MAPA.get(tipo, "Ponto"),
+                                            cor_texto=t.BRANCO,
+                                            cor_fundo=cor,
+                                        ),
+                                        *(
+                                            [t.badge_emergencia()]
+                                            if ponto.get("emergencia")
+                                            else []
+                                        ),
+                                    ],
+                                    spacing=6,
+                                    wrap=True,
+                                ),
+                                ft.Text(
+                                    ponto.get("titulo", ""),
+                                    size=18,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=t.AZUL_INSTITUCIONAL,
+                                ),
+                            ],
+                            spacing=6,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=12,
+                    vertical_alignment=ft.CrossAxisAlignment.START,
+                ),
+                ft.Text(ponto.get("subtitulo", ""), size=13, color=t.TEXTO_SECUNDARIO),
+                ft.Row(
+                    [
+                        _metrica_detalhe(
+                            ft.Icons.PLACE_OUTLINED,
+                            ponto.get("distancia_formatada", "--"),
+                            "distância",
+                        ),
+                        _metrica_detalhe(
+                            ft.Icons.MY_LOCATION,
+                            f"{ponto.get('latitude', 0):.4f}, {ponto.get('longitude', 0):.4f}",
+                            "coordenadas",
+                        ),
+                    ],
+                    spacing=10,
+                    wrap=True,
+                ),
+                ft.Row(acoes, spacing=10, alignment=ft.MainAxisAlignment.END, wrap=True),
+            ],
+            spacing=14,
+            tight=True,
+        ),
+        padding=20,
+        bgcolor=t.BRANCO,
+    )
+
+    app.page.show_dialog(
+        ft.BottomSheet(
+            conteudo,
+            bgcolor=t.BRANCO,
+            dismissible=True,
+            draggable=True,
+            show_drag_handle=True,
+            scrollable=True,
+            shape=ft.RoundedRectangleBorder(radius=22),
+        )
+    )
+
+
+def _metrica_detalhe(icone: ft.IconData, valor: str, rotulo: str) -> ft.Container:
+    """Métrica compacta usada no detalhe do pin."""
+    return ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(icone, size=16, color=t.VERDE_PRIMARIO),
+                ft.Column(
+                    [
+                        ft.Text(valor, size=13, color=t.AZUL_INSTITUCIONAL, weight=ft.FontWeight.W_600),
+                        ft.Text(rotulo, size=10, color=t.TEXTO_SECUNDARIO),
+                    ],
+                    spacing=0,
+                ),
+            ],
+            spacing=8,
+            tight=True,
+        ),
+        padding=ft.Padding.symmetric(horizontal=10, vertical=8),
+        bgcolor=t.FUNDO_CLARO,
+        border_radius=12,
+    )
+
+
+def _fechar_e_navegar(app: App, rota: str, **parametros: Any) -> None:
+    """Fecha o bottom sheet antes de abrir uma tela de detalhe."""
+    app.page.pop_dialog()
+    app.navegar(rota, **parametros)

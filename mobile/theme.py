@@ -23,7 +23,7 @@ TEXTO_SECUNDARIO = "#6B7B72"    # legendas, metadados, textos de apoio
 BRANCO = "#FFFFFF"
 VERDE_SUAVE = "#E7F4EC"         # fundo de chips e destaques discretos
 BORDA = "#E1E8E4"               # divisórias e contornos de cartões
-AMARELO_ATENCAO = "#E2A03B"     # urgência média
+AMARELO_ATENCAO = "#E8A93B"     # urgência média e pontos de retirada
 CINZA_CLARO = "#EEF2F0"         # fundo de campos e superfícies neutras
 
 # Cores por nível de urgência, usadas nos badges dos cartões.
@@ -64,6 +64,18 @@ ROTULOS_MAPA = {
 # Raio padrão de arredondamento e espaçamento base das telas.
 RAIO = 16
 ESPACO = 16
+
+# Cores auxiliares para categorias, usadas em ícones e fundos suaves.
+CORES_CATEGORIAS = [
+    ("#2E9E5B", "#E7F4EC"),
+    ("#0E2A47", "#E7EEF4"),
+    ("#E23B3B", "#FCEAEA"),
+    ("#E8A93B", "#FFF4DC"),
+    ("#7C3AED", "#F1EAFF"),
+    ("#0284C7", "#E4F4FF"),
+    ("#DB2777", "#FCE7F3"),
+    ("#4B5563", "#EEF2F0"),
+]
 
 
 # --------------------------------------------------------------------------- #
@@ -199,6 +211,8 @@ def cartao(
         border=ft.Border.all(1, borda or BORDA),
         on_click=on_click,
         ink=on_click is not None,
+        ink_color="#142E9E5B" if on_click is not None else None,
+        shadow=ft.BoxShadow(blur_radius=10, color="#120E2A47", offset=ft.Offset(0, 3)),
     )
 
 
@@ -277,7 +291,14 @@ def area_vazia(mensagem: str, icone: ft.IconData = ft.Icons.INBOX) -> ft.Contain
     return ft.Container(
         content=ft.Column(
             [
-                ft.Icon(icone, size=48, color=BORDA),
+                ft.Container(
+                    content=ft.Icon(icone, size=34, color=VERDE_PRIMARIO),
+                    width=78,
+                    height=78,
+                    bgcolor=VERDE_SUAVE,
+                    border_radius=39,
+                    alignment=ft.Alignment.CENTER,
+                ),
                 ft.Text(mensagem, size=13, color=TEXTO_SECUNDARIO, text_align=ft.TextAlign.CENTER),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,

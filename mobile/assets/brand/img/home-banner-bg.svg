@@ -1,0 +1,26 @@
+<svg width="700" height="320" viewBox="0 0 700 320" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="hbG" x1="0" y1="0" x2="700" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1CB489"/><stop offset="0.55" stop-color="#159463"/><stop offset="1" stop-color="#0E6B42"/>
+    </linearGradient>
+    <radialGradient id="hbT" cx="0.05" cy="0.1" r="0.7">
+      <stop offset="0" stop-color="#2FD3C0" stop-opacity="0.4"/><stop offset="1" stop-color="#2FD3C0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hbA" cx="0.9" cy="0.85" r="0.6">
+      <stop offset="0" stop-color="#F5A623" stop-opacity="0.28"/><stop offset="1" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="700" height="320" rx="24" fill="url(#hbG)"/>
+  <rect width="700" height="320" rx="24" fill="url(#hbT)"/>
+  <rect width="700" height="320" rx="24" fill="url(#hbA)"/>
+  <g stroke="#FFFFFF" stroke-width="2" opacity="0.16">
+    <line x1="470" y1="85" x2="580" y2="140"/><line x1="580" y1="140" x2="645" y2="65"/>
+    <line x1="580" y1="140" x2="620" y2="235"/><line x1="470" y1="85" x2="515" y2="225"/><line x1="515" y1="225" x2="620" y2="235"/>
+  </g>
+  <circle cx="470" cy="85" r="6" fill="#8FE3AE" opacity="0.6"/>
+  <circle cx="580" cy="140" r="9" fill="#FFD470" opacity="0.7"/>
+  <circle cx="645" cy="65" r="6" fill="#8FE3AE" opacity="0.6"/>
+  <circle cx="620" cy="235" r="6" fill="#8FE3AE" opacity="0.6"/>
+  <circle cx="515" cy="225" r="6" fill="#FFD470" opacity="0.7"/>
+  <path d="M560 148c-12-16-35-17-46-2.5-10.5 13.3-6.6 31 5.3 44L560 238l40.4-48.5c11.9-13 15.8-30.7 5.3-44-11-14.5-34-13.5-46 2.5z" fill="#FFFFFF" opacity="0.1"/>
+</svg>

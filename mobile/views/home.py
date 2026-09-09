@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
@@ -12,11 +13,17 @@ from mobile.components.comuns import cartao_solicitacao, secao
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
+RAIZ_MOBILE = Path(__file__).resolve().parent.parent
+LOGO_SYMBOLS = (
+    RAIZ_MOBILE / "assets" / "brand" / "logo-symbol.svg",
+    RAIZ_MOBILE / "assets" / "brand" / "logo" / "logo-symbol.svg",
+)
+
 
 def _banner(app: App) -> ft.Container:
     """Faixa de boas-vindas com a mensagem-síntese do produto."""
     return ft.Container(
-        content=ft.Row(
+        content=ft.Stack(
             [
                 ft.Column(
                     [
@@ -44,11 +51,17 @@ def _banner(app: App) -> ft.Container:
                         ),
                     ],
                     spacing=4,
-                    expand=True,
+                    width=235,
                 ),
-                ft.Icon(ft.Icons.HANDSHAKE_OUTLINED, size=54, color="#7FD0A2"),
+                ft.Icon(
+                    ft.Icons.HANDSHAKE_OUTLINED,
+                    size=118,
+                    color="#66FFFFFF",
+                    right=-10,
+                    bottom=-18,
+                ),
             ],
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            height=150,
         ),
         padding=18,
         border_radius=t.RAIO,
@@ -103,10 +116,14 @@ def _grade_categorias(app: App) -> ft.Control:
                 content=ft.Column(
                     [
                         ft.Container(
-                            content=t.icone_por_nome(categoria.get("icone", "category"), 22),
+                            content=t.icone_por_nome(
+                                categoria.get("icone", "category"),
+                                21,
+                                t.CORES_CATEGORIAS[indice % len(t.CORES_CATEGORIAS)][0],
+                            ),
                             width=52,
                             height=52,
-                            bgcolor=t.VERDE_SUAVE,
+                            bgcolor=t.CORES_CATEGORIAS[indice % len(t.CORES_CATEGORIAS)][1],
                             border_radius=16,
                             alignment=ft.Alignment.CENTER,
                         ),
@@ -115,7 +132,8 @@ def _grade_categorias(app: App) -> ft.Control:
                             size=10,
                             color=t.TEXTO_SECUNDARIO,
                             text_align=ft.TextAlign.CENTER,
-                            max_lines=2,
+                            max_lines=1,
+                            overflow=ft.TextOverflow.ELLIPSIS,
                             width=68,
                         ),
                     ],
@@ -125,7 +143,7 @@ def _grade_categorias(app: App) -> ft.Control:
                 on_click=lambda _, c=categoria: app.navegar("explorar", categoria_id=c["id"]),
                 padding=ft.Padding.symmetric(vertical=4),
             )
-            for categoria in categorias
+            for indice, categoria in enumerate(categorias)
         ],
         spacing=10,
         scroll=ft.ScrollMode.AUTO,
@@ -153,8 +171,23 @@ def construir(app: App) -> ft.Control:
             "Nenhuma solicitação ativa por perto no momento.", ft.Icons.EXPLORE_OFF
         )
 
+    marca_home: ft.Control
+    logo_path = next((caminho for caminho in LOGO_SYMBOLS if caminho.exists()), None)
+    if logo_path:
+        marca_home = ft.Image(src=str(logo_path), width=34, height=34, fit=ft.BoxFit.CONTAIN)
+    else:
+        marca_home = ft.Container(
+            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=18, color=t.BRANCO),
+            width=34,
+            height=34,
+            bgcolor=t.VERDE_PRIMARIO,
+            border_radius=17,
+            alignment=ft.Alignment.CENTER,
+        )
+
     saudacao = ft.Row(
         [
+            marca_home,
             ft.Column(
                 [
                     ft.Text(f"Olá, {app.state.nome}", size=20, weight=ft.FontWeight.BOLD,
@@ -232,7 +265,7 @@ def construir(app: App) -> ft.Control:
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=16),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
     )

@@ -3,7 +3,14 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from backend.models import ONG, Categoria, Solicitacao, StatusSolicitacao, Usuario
+from backend.models import ONG, Categoria, Oferta, Solicitacao, StatusSolicitacao, Usuario
+from backend.services.seed_service import (
+    _criar_categorias,
+    _criar_ofertas,
+    _criar_ongs,
+    _criar_solicitacoes,
+    _criar_usuarios,
+)
 from tests.conftest import cabecalho_autenticado
 
 
@@ -284,3 +291,29 @@ def test_mapa_filtra_por_tipo(
 
     assert corpo["total_por_tipo"]["ajuda"] == 0
     assert corpo["total_por_tipo"]["ong"] == 1
+
+
+def test_mapa_retorna_os_16_pontos_do_seed(client: TestClient, session: Session) -> None:
+    """O cenário de demonstração precisa alimentar todos os pins do mapa."""
+    categorias = _criar_categorias(session)
+    usuarios = _criar_usuarios(session)
+    _criar_ongs(session)
+    solicitacoes = _criar_solicitacoes(session, usuarios, categorias)
+    _criar_ofertas(session, usuarios, categorias, solicitacoes)
+
+    corpo = client.get("/mapa").json()
+
+    assert len(corpo["pontos"]) == 16
+    assert corpo["total_por_tipo"] == {
+        "ajuda": 7,
+        "oferecendo": 2,
+        "ong": 5,
+        "ponto_retirada": 2,
+    }
+    assert {
+        "id",
+        "tipo",
+        "latitude",
+        "longitude",
+        "titulo",
+    }.issubset(corpo["pontos"][0])

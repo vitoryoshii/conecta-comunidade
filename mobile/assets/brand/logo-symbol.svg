@@ -1,0 +1,47 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Conecta Comunidade">
+  <defs>
+    <linearGradient id="ccBg" x1="12" y1="6" x2="110" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FD3C0"/>
+      <stop offset="0.5" stop-color="#1FA96C"/>
+      <stop offset="1" stop-color="#0E6B42"/>
+    </linearGradient>
+    <linearGradient id="ccHeart" x1="42" y1="24" x2="80" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE7A3"/>
+      <stop offset="0.55" stop-color="#FFC94D"/>
+      <stop offset="1" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="ccHand" x1="28" y1="72" x2="92" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9FBF4"/>
+    </linearGradient>
+    <radialGradient id="ccShine" cx="0.35" cy="0.28" r="0.6">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ccHeartShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="3.5" stdDeviation="4.5" flood-color="#0A3D24" flood-opacity="0.38"/>
+    </filter>
+    <filter id="ccHandShadow" x="-30%" y="-40%" width="160%" height="200%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#0A3D24" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- fundo com gradiente teal->verde -->
+  <rect x="6" y="6" width="108" height="108" rx="32" fill="url(#ccBg)"/>
+  <!-- brilho radial de vidro -->
+  <rect x="6" y="6" width="108" height="108" rx="32" fill="url(#ccShine)"/>
+  <!-- reflexo curvo superior -->
+  <path d="M6 60 Q6 6 38 6 L82 6 Q60 30 60 60 Z" fill="#FFFFFF" opacity="0.07"/>
+
+  <!-- coração âmbar com profundidade -->
+  <g filter="url(#ccHeartShadow)">
+    <path d="M60 32.5c-5.4-7.8-16.6-8.3-22-1.2-5 6.4-3.1 15 2.6 21L60 75.5l19.4-23.2c5.7-6 7.6-14.6 2.6-21-5.4-7.1-16.6-6.6-22 1.2z" fill="url(#ccHeart)"/>
+  </g>
+  <!-- brilho no coração -->
+  <ellipse cx="48.5" cy="41" rx="5" ry="3.6" fill="#FFFFFF" opacity="0.6" transform="rotate(-20 48.5 41)"/>
+
+  <!-- mão em concha, branca com leve gradiente e sombra -->
+  <g filter="url(#ccHandShadow)">
+    <path d="M26.5 71.5c-2.1-0.2-3.9 1.5-3.7 3.6 0.8 10.8 9.6 19.2 20.6 19.2h33.2c11 0 19.8-8.4 20.6-19.2 0.2-2.1-1.6-3.8-3.7-3.6-1.8 0.2-3.2 1.7-3.4 3.5-1 7.4-7.3 13-14.6 13H45.9c-7.3 0-13.6-5.6-14.6-13-0.2-1.8-1.6-3.3-3.4-3.5z" fill="url(#ccHand)"/>
+  </g>
+</svg>

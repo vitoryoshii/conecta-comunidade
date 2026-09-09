@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
@@ -12,38 +11,23 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover - apenas para tipagem
     from mobile.main import App
 
-RAIZ_MOBILE = Path(__file__).resolve().parent.parent
-SPLASH_BACKGROUNDS = (
-    RAIZ_MOBILE / "assets" / "img" / "splash-bg.jpg",
-    RAIZ_MOBILE / "assets" / "brand" / "img" / "splash-bg.svg",
-)
-LOGO_SYMBOLS = (
-    RAIZ_MOBILE / "assets" / "brand" / "logo-symbol.svg",
-    RAIZ_MOBILE / "assets" / "brand" / "logo" / "logo-symbol.svg",
-)
+SPLASH_BG = "brand/img/splash-bg.svg"
+LOGO_SPLASH = "brand/logo/logo-white-amber.svg"
 
 
 def _logo() -> ft.Container:
-    """Marca do produto: usa o SVG novo quando estiver disponível."""
-    conteudo: ft.Control
-    logo = next((caminho for caminho in LOGO_SYMBOLS if caminho.exists()), None)
-    if logo:
-        conteudo = ft.Image(src=str(logo), width=70, height=70, fit=ft.BoxFit.CONTAIN)
-    else:
-        conteudo = ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=56, color=t.BRANCO)
-
-    return ft.Container(
-        content=conteudo,
-        width=112,
-        height=112,
-        border_radius=56,
-        alignment=ft.Alignment.CENTER,
-        gradient=ft.LinearGradient(
-            begin=ft.Alignment.TOP_LEFT,
-            end=ft.Alignment.BOTTOM_RIGHT,
-            colors=[t.VERDE_PRIMARIO, t.VERDE_ESCURO],
+    """Marca principal da abertura, carregada pelo assets_dir do Flet."""
+    return ft.Image(
+        src=LOGO_SPLASH,
+        width=150,
+        height=150,
+        fit=ft.BoxFit.CONTAIN,
+        error_content=ft.Container(
+            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=70, color=t.BRANCO),
+            width=150,
+            height=150,
+            alignment=ft.Alignment.CENTER,
         ),
-        shadow=ft.BoxShadow(blur_radius=24, color="#402E9E5B", offset=ft.Offset(0, 10)),
     )
 
 
@@ -61,7 +45,7 @@ def construir(app: App) -> ft.Control:
             [
                 ft.Container(expand=True),
                 _logo(),
-                ft.Container(height=22),
+                ft.Container(height=10),
                 ft.Text(
                     "Conecta Comunidade",
                     size=28,
@@ -116,35 +100,29 @@ def construir(app: App) -> ft.Control:
         bgcolor="#D91B6B3A",
     )
 
-    fundo: ft.Control
-    splash_bg = next((caminho for caminho in SPLASH_BACKGROUNDS if caminho.exists()), None)
-    if splash_bg:
-        fundo = ft.Image(
-            src=str(splash_bg),
-            fit=ft.BoxFit.COVER,
-            left=0,
-            top=0,
-            right=0,
-            bottom=0,
-        )
-    else:
-        fundo = ft.Container(
-            left=0,
-            top=0,
-            right=0,
-            bottom=0,
-            gradient=ft.LinearGradient(
-                begin=ft.Alignment.TOP_LEFT,
-                end=ft.Alignment.BOTTOM_RIGHT,
-                colors=[t.VERDE_PRIMARIO, t.VERDE_ESCURO],
-            ),
-        )
-
     return ft.Container(
         content=ft.Stack(
             [
-                fundo,
-                ft.Container(left=0, top=0, right=0, bottom=0, bgcolor="#D91B6B3A"),
+                ft.Container(
+                    left=0,
+                    top=0,
+                    right=0,
+                    bottom=0,
+                    gradient=ft.LinearGradient(
+                        begin=ft.Alignment.TOP_LEFT,
+                        end=ft.Alignment.BOTTOM_RIGHT,
+                        colors=[t.TEAL, "#0E6B42"],
+                    ),
+                ),
+                ft.Image(
+                    src=SPLASH_BG,
+                    fit=ft.BoxFit.COVER,
+                    left=0,
+                    top=0,
+                    right=0,
+                    bottom=0,
+                ),
+                ft.Container(left=0, top=0, right=0, bottom=0, bgcolor="#990E6B42"),
                 conteudo,
             ],
             expand=True,

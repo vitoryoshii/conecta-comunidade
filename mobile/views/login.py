@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
@@ -12,11 +11,7 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
-RAIZ_MOBILE = Path(__file__).resolve().parent.parent
-LOGO_SYMBOLS = (
-    RAIZ_MOBILE / "assets" / "brand" / "logo-symbol.svg",
-    RAIZ_MOBILE / "assets" / "brand" / "logo" / "logo-symbol.svg",
-)
+LOGO_MONO = "brand/logo/logo-mono.svg"
 
 # Contas criadas pelo `seed.py`, mostradas como atalho na apresentação.
 CONTAS_DEMO = [
@@ -57,12 +52,13 @@ def construir(app: App) -> ft.Control:
         campo_senha.value = "senha123"
         app.page.update()
 
-    logo: ft.Control
-    logo_path = next((caminho for caminho in LOGO_SYMBOLS if caminho.exists()), None)
-    if logo_path:
-        logo = ft.Image(src=str(logo_path), width=54, height=54, fit=ft.BoxFit.CONTAIN)
-    else:
-        logo = ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO)
+    logo = ft.Image(
+        src=LOGO_MONO,
+        width=48,
+        height=48,
+        fit=ft.BoxFit.CONTAIN,
+        error_content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO),
+    )
 
     return ft.Container(
         content=ft.Column(

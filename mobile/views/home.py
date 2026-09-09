@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
@@ -13,11 +12,8 @@ from mobile.components.comuns import cartao_solicitacao, secao
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
-RAIZ_MOBILE = Path(__file__).resolve().parent.parent
-LOGO_SYMBOLS = (
-    RAIZ_MOBILE / "assets" / "brand" / "logo-symbol.svg",
-    RAIZ_MOBILE / "assets" / "brand" / "logo" / "logo-symbol.svg",
-)
+LOGO_SYMBOL = "brand/logo/logo-symbol.svg"
+HOME_BANNER_BG = "brand/img/home-banner-bg.svg"
 
 
 def _banner(app: App) -> ft.Container:
@@ -25,6 +21,26 @@ def _banner(app: App) -> ft.Container:
     return ft.Container(
         content=ft.Stack(
             [
+                ft.Container(
+                    left=0,
+                    top=0,
+                    right=0,
+                    bottom=0,
+                    gradient=ft.LinearGradient(
+                        begin=ft.Alignment.TOP_LEFT,
+                        end=ft.Alignment.BOTTOM_RIGHT,
+                        colors=[t.VERDE_PRIMARIO, t.VERDE_ESCURO],
+                    ),
+                ),
+                ft.Image(
+                    src=HOME_BANNER_BG,
+                    fit=ft.BoxFit.COVER,
+                    left=0,
+                    top=0,
+                    right=0,
+                    bottom=0,
+                ),
+                ft.Container(left=0, top=0, right=0, bottom=0, bgcolor="#330E6B42"),
                 ft.Column(
                     [
                         ft.Text(
@@ -51,25 +67,16 @@ def _banner(app: App) -> ft.Container:
                         ),
                     ],
                     spacing=4,
-                    width=235,
-                ),
-                ft.Icon(
-                    ft.Icons.HANDSHAKE_OUTLINED,
-                    size=118,
-                    color="#66FFFFFF",
-                    right=-10,
-                    bottom=-18,
+                    left=18,
+                    top=18,
+                    width=250,
                 ),
             ],
             height=150,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
         ),
-        padding=18,
         border_radius=t.RAIO,
-        gradient=ft.LinearGradient(
-            begin=ft.Alignment.TOP_LEFT,
-            end=ft.Alignment.BOTTOM_RIGHT,
-            colors=[t.VERDE_PRIMARIO, t.VERDE_ESCURO],
-        ),
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
 
 
@@ -172,18 +179,20 @@ def construir(app: App) -> ft.Control:
         )
 
     marca_home: ft.Control
-    logo_path = next((caminho for caminho in LOGO_SYMBOLS if caminho.exists()), None)
-    if logo_path:
-        marca_home = ft.Image(src=str(logo_path), width=34, height=34, fit=ft.BoxFit.CONTAIN)
-    else:
-        marca_home = ft.Container(
+    marca_home = ft.Image(
+        src=LOGO_SYMBOL,
+        width=36,
+        height=36,
+        fit=ft.BoxFit.CONTAIN,
+        error_content=ft.Container(
             content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=18, color=t.BRANCO),
-            width=34,
-            height=34,
+            width=36,
+            height=36,
             bgcolor=t.VERDE_PRIMARIO,
-            border_radius=17,
+            border_radius=18,
             alignment=ft.Alignment.CENTER,
-        )
+        ),
+    )
 
     saudacao = ft.Row(
         [

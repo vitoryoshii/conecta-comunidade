@@ -11,6 +11,8 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
+LOGO_MONO = "brand/logo/logo-mono.svg"
+
 # Tipos de usuário aceitos pela API, com um rótulo amigável e um ícone.
 TIPOS = [
     ("solicitante", "Preciso de ajuda", ft.Icons.PAN_TOOL_ALT_OUTLINED),
@@ -109,6 +111,14 @@ def construir(app: App) -> ft.Control:
         app.aviso("Conta criada! Bem-vindo(a) ao Conecta Comunidade.")
         app.reiniciar("home")
 
+    logo = ft.Image(
+        src=LOGO_MONO,
+        width=48,
+        height=48,
+        fit=ft.BoxFit.CONTAIN,
+        error_content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO),
+    )
+
     return ft.Container(
         content=ft.Column(
             [
@@ -122,6 +132,7 @@ def construir(app: App) -> ft.Control:
                     ]
                 ),
                 ft.Container(height=6),
+                logo,
                 t.titulo("Criar sua conta", 24),
                 t.subtitulo("Leva menos de um minuto. Seus dados ficam protegidos."),
                 ft.Container(height=14),

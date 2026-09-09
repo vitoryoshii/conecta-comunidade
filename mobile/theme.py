@@ -12,8 +12,9 @@ import flet as ft
 # --------------------------------------------------------------------------- #
 # Paleta oficial do produto
 # --------------------------------------------------------------------------- #
-VERDE_PRIMARIO = "#2E9E5B"      # ações principais, identidade da marca
-VERDE_ESCURO = "#1B6B3A"        # estados pressionados, gradientes
+TEAL = "#2FD3C0"                # acento tecnológico da identidade v2
+VERDE_PRIMARIO = "#1FA96C"      # ações principais, identidade da marca
+VERDE_ESCURO = "#0E6B42"        # estados pressionados, gradientes
 AZUL_INSTITUCIONAL = "#0E2A47"  # títulos e textos de destaque
 FUNDO_CLARO = "#F5F7F6"         # fundo das telas
 URGENCIA = "#E23B3B"            # alertas, urgência alta, modo emergência
@@ -21,9 +22,10 @@ TEXTO_SECUNDARIO = "#6B7B72"    # legendas, metadados, textos de apoio
 
 # Tons derivados, criados a partir da paleta para dar profundidade à interface.
 BRANCO = "#FFFFFF"
-VERDE_SUAVE = "#E7F4EC"         # fundo de chips e destaques discretos
+MENTA = "#8FE3AE"
+VERDE_SUAVE = "#E8F8F0"         # fundo de chips e destaques discretos
 BORDA = "#E1E8E4"               # divisórias e contornos de cartões
-AMARELO_ATENCAO = "#E8A93B"     # urgência média e pontos de retirada
+AMARELO_ATENCAO = "#F5A623"     # urgência média e pontos de retirada
 CINZA_CLARO = "#EEF2F0"         # fundo de campos e superfícies neutras
 
 # Cores por nível de urgência, usadas nos badges dos cartões.
@@ -67,14 +69,13 @@ ESPACO = 16
 
 # Cores auxiliares para categorias, usadas em ícones e fundos suaves.
 CORES_CATEGORIAS = [
-    ("#2E9E5B", "#E7F4EC"),
+    (VERDE_PRIMARIO, VERDE_SUAVE),
     ("#0E2A47", "#E7EEF4"),
     ("#E23B3B", "#FCEAEA"),
-    ("#E8A93B", "#FFF4DC"),
+    (AMARELO_ATENCAO, "#FFF4DC"),
+    (TEAL, "#E4FBF8"),
+    (MENTA, "#EDFBF2"),
     ("#7C3AED", "#F1EAFF"),
-    ("#0284C7", "#E4F4FF"),
-    ("#DB2777", "#FCE7F3"),
-    ("#4B5563", "#EEF2F0"),
 ]
 
 

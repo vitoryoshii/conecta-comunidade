@@ -56,10 +56,8 @@ from mobile.views import (  # noqa: E402
 
 # URL da API. Pode ser sobrescrita pela variável de ambiente API_BASE_URL.
 API_BASE_URL = "http://127.0.0.1:8000"
-FAVICONS = (
-    RAIZ_DO_PROJETO / "mobile" / "assets" / "brand" / "favicon.svg",
-    RAIZ_DO_PROJETO / "mobile" / "assets" / "brand" / "logo" / "favicon.svg",
-)
+ASSETS_DIR = RAIZ_DO_PROJETO / "mobile" / "assets"
+APP_ICON = "brand/logo/app-icon-256.png"
 
 # Registro de rotas: nome -> (função construtora, exibe navegação inferior?).
 ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
@@ -126,9 +124,7 @@ class App:
     def iniciar(self) -> None:
         """Configura a página e desenha a primeira tela."""
         self.page.title = "Conecta Comunidade"
-        favicon = next((caminho for caminho in FAVICONS if caminho.exists()), None)
-        if favicon:
-            self.page.window.icon = str(favicon)
+        self.page.window.icon = APP_ICON
         self.page.bgcolor = t.FUNDO_CLARO
         self.page.padding = 0
         self.page.spacing = 0
@@ -295,4 +291,4 @@ def main(page: ft.Page) -> None:
 
 
 if __name__ == "__main__":
-    ft.run(main)
+    ft.run(main, assets_dir=str(ASSETS_DIR))

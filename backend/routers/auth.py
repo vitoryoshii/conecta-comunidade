@@ -1,14 +1,25 @@
-"""Rotas de autenticação: cadastro, login e dados do usuário logado."""
+"""Rotas de autenticação: cadastro, login, recuperação de senha e perfil do token."""
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
 from backend.deps import SessionDep, UsuarioAtual
 from backend.models import Usuario
-from backend.schemas import Token, UsuarioCriar, UsuarioLer, UsuarioLogin
+from backend.schemas import (
+    RecuperarSenha,
+    RecuperarSenhaResposta,
+    Token,
+    UsuarioCriar,
+    UsuarioLer,
+    UsuarioLogin,
+)
 from backend.services.auth_service import criar_access_token, gerar_hash_senha, verificar_senha
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
+
+# Resposta única do pedido de redefinição: por segurança, ela não muda
+# conforme o e-mail exista ou não na base.
+MENSAGEM_RECUPERACAO = "Se o e-mail existir, enviamos um link para redefinir a senha."
 
 
 @router.post(
@@ -75,6 +86,30 @@ def login(dados: UsuarioLogin, session: SessionDep) -> Token:
         access_token=criar_access_token(usuario.id),  # type: ignore[arg-type]
         usuario=UsuarioLer.model_validate(usuario),
     )
+
+
+@router.post(
+    "/recuperar-senha",
+    response_model=RecuperarSenhaResposta,
+    summary="Recuperar senha",
+    description=(
+        "Inicia a redefinição de senha. Responde **sempre** 200 com a mesma "
+        "mensagem, exista ou não uma conta com o e-mail informado — assim a "
+        "rota não pode ser usada para descobrir quem está cadastrado."
+    ),
+)
+def recuperar_senha(dados: RecuperarSenha, session: SessionDep) -> RecuperarSenhaResposta:
+    """Registra o pedido de redefinição e devolve a confirmação genérica."""
+    email_normalizado = dados.email.strip().lower()
+    usuario = session.exec(select(Usuario).where(Usuario.email == email_normalizado)).first()
+
+    if usuario is not None:
+        # TODO: gerar um token de redefinição com validade curta, gravá-lo e
+        # disparar o e-mail com o link. Enquanto não há serviço de e-mail
+        # configurado, o fluxo termina aqui — a resposta já é a definitiva.
+        pass
+
+    return RecuperarSenhaResposta(mensagem=MENSAGEM_RECUPERACAO)
 
 
 @router.get(

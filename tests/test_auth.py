@@ -62,6 +62,26 @@ def test_login_com_senha_errada(client: TestClient, usuario_ana: Usuario) -> Non
     assert resposta.status_code == 401
 
 
+def test_recuperar_senha_responde_igual_para_email_conhecido_e_desconhecido(
+    client: TestClient, usuario_ana: Usuario
+) -> None:
+    """A rota nunca revela se o e-mail está cadastrado: mesmo status, mesmo texto."""
+    cadastrado = client.post("/auth/recuperar-senha", json={"email": usuario_ana.email})
+    desconhecido = client.post("/auth/recuperar-senha", json={"email": "ninguem@teste.com"})
+
+    assert cadastrado.status_code == 200, cadastrado.text
+    assert desconhecido.status_code == 200, desconhecido.text
+    assert cadastrado.json() == desconhecido.json()
+    assert cadastrado.json()["mensagem"]
+
+
+def test_recuperar_senha_rejeita_email_invalido(client: TestClient) -> None:
+    """Um e-mail malformado continua sendo barrado pela validação do Pydantic."""
+    resposta = client.post("/auth/recuperar-senha", json={"email": "nao-e-email"})
+
+    assert resposta.status_code == 422
+
+
 def test_rota_me_exige_token(client: TestClient, usuario_ana: Usuario) -> None:
     """`/auth/me` responde 401 sem token e 200 com token válido."""
     assert client.get("/auth/me").status_code == 401

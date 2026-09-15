@@ -46,6 +46,26 @@ class UsuarioLogin(BaseModel):
     )
 
 
+class RecuperarSenha(BaseModel):
+    """Payload de `POST /auth/recuperar-senha`."""
+
+    email: EmailStr
+
+    model_config = ConfigDict(json_schema_extra={"example": {"email": "ana@exemplo.com"}})
+
+
+class RecuperarSenhaResposta(BaseModel):
+    """Confirmação genérica do pedido de redefinição de senha."""
+
+    mensagem: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"mensagem": "Se o e-mail existir, enviamos um link de redefinição."}
+        }
+    )
+
+
 class UsuarioLer(BaseModel):
     """Representação pública de um usuário (nunca expõe o hash da senha)."""
 

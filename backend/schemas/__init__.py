@@ -9,6 +9,8 @@ from backend.schemas.ong import AvaliacaoCriar, ONGLer
 from backend.schemas.solicitacao import SolicitacaoAtualizar, SolicitacaoCriar, SolicitacaoLer
 from backend.schemas.usuario import (
     ImpactoLer,
+    RecuperarSenha,
+    RecuperarSenhaResposta,
     Token,
     UsuarioAtualizar,
     UsuarioCriar,
@@ -30,6 +32,8 @@ __all__ = [
     "OfertaCriar",
     "OfertaLer",
     "PontoMapa",
+    "RecuperarSenha",
+    "RecuperarSenhaResposta",
     "RespostaMapa",
     "SolicitacaoAtualizar",
     "SolicitacaoCriar",

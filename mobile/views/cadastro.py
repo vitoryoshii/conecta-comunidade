@@ -1,4 +1,8 @@
-"""Tela 2 — Cadastro."""
+"""Tela 2 — Cadastro.
+
+Uma das três telas de autenticação; todas compartilham o andaime visual
+`theme.tela_de_autenticacao` (foto de fundo, disco do logo, campos brancos).
+"""
 
 from __future__ import annotations
 
@@ -10,8 +14,6 @@ from mobile import theme as t
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
-
-LOGO_MONO = "brand/logo/logo-mono.svg"
 
 # Tipos de usuário aceitos pela API, com um rótulo amigável e um ícone.
 TIPOS = [
@@ -36,35 +38,21 @@ LOCALIDADES = [
 
 def construir(app: App) -> ft.Control:
     """Formulário de criação de conta."""
-    campo_nome = t.campo("Nome completo", icone=ft.Icons.PERSON_OUTLINE)
-    campo_email = t.campo(
-        "E-mail", icone=ft.Icons.MAIL_OUTLINE, tipo_teclado=ft.KeyboardType.EMAIL
-    )
-    campo_senha = t.campo("Senha (mínimo 6 caracteres)", senha=True, icone=ft.Icons.LOCK_OUTLINE)
+    campo_nome = t.campo_claro("Seu nome completo")
+    campo_email = t.campo_claro("seu@email.com", tipo_teclado=ft.KeyboardType.EMAIL)
+    campo_senha = t.campo_claro("Mínimo 6 caracteres", senha=True)
 
-    seletor_tipo = ft.Dropdown(
-        label="Como você quer participar?",
-        value="solicitante",
-        options=[
+    seletor_tipo = t.dropdown_claro(
+        [
             ft.DropdownOption(key=chave, text=rotulo, leading_icon=icone)
             for chave, rotulo, icone in TIPOS
         ],
-        filled=True,
-        fill_color=t.BRANCO,
-        border_radius=12,
-        border_color=t.BORDA,
-        color=t.AZUL_INSTITUCIONAL,
+        valor="solicitante",
     )
 
-    seletor_local = ft.Dropdown(
-        label="Onde você está?",
-        value=LOCALIDADES[0][0],
-        options=[ft.DropdownOption(key=nome, text=nome) for nome, _, _ in LOCALIDADES],
-        filled=True,
-        fill_color=t.BRANCO,
-        border_radius=12,
-        border_color=t.BORDA,
-        color=t.AZUL_INSTITUCIONAL,
+    seletor_local = t.dropdown_claro(
+        [ft.DropdownOption(key=nome, text=nome) for nome, _, _ in LOCALIDADES],
+        valor=LOCALIDADES[0][0],
     )
 
     def cadastrar(_: ft.ControlEvent) -> None:
@@ -111,69 +99,34 @@ def construir(app: App) -> ft.Control:
         app.aviso("Conta criada! Bem-vindo(a) ao Conecta Comunidade.")
         app.reiniciar("home")
 
-    logo = ft.Image(
-        src=LOGO_MONO,
-        width=48,
-        height=48,
-        fit=ft.BoxFit.CONTAIN,
-        error_content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=44, color=t.VERDE_PRIMARIO),
-    )
-
-    return ft.Container(
-        content=ft.Column(
-            [
-                ft.Row(
-                    [
-                        ft.IconButton(
-                            ft.Icons.ARROW_BACK,
-                            icon_color=t.AZUL_INSTITUCIONAL,
-                            on_click=app.voltar,
-                        )
-                    ]
-                ),
-                ft.Container(height=6),
-                logo,
-                t.titulo("Criar sua conta", 24),
-                t.subtitulo("Leva menos de um minuto. Seus dados ficam protegidos."),
-                ft.Container(height=14),
-                campo_nome,
-                campo_email,
-                campo_senha,
-                seletor_tipo,
-                seletor_local,
-                ft.Row(
-                    [
-                        ft.Icon(ft.Icons.INFO_OUTLINE, size=14, color=t.TEXTO_SECUNDARIO),
-                        ft.Text(
-                            "Usamos sua região apenas para mostrar pedidos próximos.",
-                            size=11,
-                            color=t.TEXTO_SECUNDARIO,
-                            expand=True,
-                        ),
-                    ],
-                    spacing=6,
-                ),
-                ft.Container(height=6),
-                t.botao_primario("Criar conta", cadastrar, ft.Icons.CHECK, largura=400),
-                ft.Row(
-                    [
-                        t.subtitulo("Já tem conta?"),
-                        ft.TextButton(
-                            content="Entrar",
-                            on_click=lambda _: app.substituir("login"),
-                            style=ft.ButtonStyle(color=t.VERDE_PRIMARIO),
-                        ),
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=0,
-                ),
-            ],
-            spacing=12,
-            scroll=ft.ScrollMode.AUTO,
-            expand=True,
-            alignment=ft.MainAxisAlignment.CENTER,
+    return t.tela_de_autenticacao(
+        [
+            t.campo_rotulado("Nome completo", campo_nome),
+            t.campo_rotulado("E-mail", campo_email),
+            t.campo_rotulado("Senha", campo_senha),
+            t.campo_rotulado("Como você quer participar?", seletor_tipo),
+            t.campo_rotulado("Onde você está?", seletor_local),
+            t.ajuda_clara("Usamos sua região apenas para mostrar pedidos próximos."),
+            ft.Container(height=6),
+            t.botao_primario(
+                "Criar conta",
+                cadastrar,
+                largura=t.LARGURA_FORMULARIO,
+                cor=t.BRANCO,
+                cor_texto=t.VERDE_ESCURO,
+            ),
+            ft.Row(
+                [
+                    ft.Text("Já tem conta?", size=12, color=t.MENTA_CLARA),
+                    t.link_claro("Entrar", lambda _: app.substituir("login")),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=0,
+            ),
+        ],
+        on_voltar=app.voltar,
+        cabecalho=(
+            "Criar sua conta",
+            "Leva menos de um minuto. Seus dados ficam protegidos.",
         ),
-        padding=ft.Padding.symmetric(horizontal=24, vertical=18),
-        expand=True,
-        bgcolor=t.FUNDO_CLARO,
     )

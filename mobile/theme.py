@@ -68,6 +68,10 @@ ROTULOS_MAPA = {
 
 # Arquivos da marca servidos pelo `assets_dir` do Flet.
 LOGO_SIMBOLO = "brand/logo/logo-symbol.svg"
+# Fundo compartilhado por login, cadastro e recuperação de senha. A imagem já
+# vem da identidade visual com o overlay verde embutido: nenhuma tela deve
+# empilhar outra camada de cor por cima dela.
+FUNDO_AUTH = "brand/img/login-bg.jpg"
 
 # Raio padrão de arredondamento e espaçamento base das telas.
 RAIO = 16
@@ -264,6 +268,61 @@ def formulario_centralizado(controles: list[ft.Control]) -> ft.Column:
     )
 
 
+def tela_de_autenticacao(
+    controles: list[ft.Control],
+    on_voltar=None,
+    cabecalho: tuple[str, str] | None = None,
+) -> ft.Container:
+    """Tela completa de autenticação: foto de fundo, voltar, logo e formulário.
+
+    É o andaime único de login, cadastro e recuperação de senha — as três telas
+    passam só o próprio miolo, e por isso não têm como divergir de fundo, de
+    disco do logo nem de espaçamento.
+
+    `cabecalho` é o par (título, subtítulo) desenhado acima dos controles.
+    """
+    miolo: list[ft.Control] = [logo_circular(60), ft.Container(height=14)]
+
+    if cabecalho is not None:
+        titulo_texto, subtitulo_texto = cabecalho
+        miolo += [
+            ft.Text(
+                titulo_texto,
+                size=20,
+                weight=ft.FontWeight.BOLD,
+                color=BRANCO,
+                text_align=ft.TextAlign.CENTER,
+            ),
+            ft.Text(
+                subtitulo_texto,
+                size=12,
+                color=MENTA_CLARA,
+                text_align=ft.TextAlign.CENTER,
+            ),
+            ft.Container(height=20),
+        ]
+
+    miolo += controles
+
+    camadas: list[ft.Control] = [formulario_centralizado(miolo)]
+    if on_voltar is not None:
+        # Solto no canto, fora do fluxo: não empurra o formulário do centro.
+        camadas.append(
+            ft.Container(
+                content=ft.IconButton(ft.Icons.ARROW_BACK, icon_color=BRANCO, on_click=on_voltar),
+                left=-12,
+                top=0,
+            )
+        )
+
+    conteudo = ft.Container(
+        content=ft.Stack(camadas, expand=True),
+        padding=ft.Padding.symmetric(horizontal=36, vertical=16),
+        expand=True,
+    )
+    return fundo_foto(conteudo, FUNDO_AUTH)
+
+
 def logo_circular(tamanho: int = 60) -> ft.Container:
     """Símbolo da marca dentro de um disco branco, usado no topo das telas."""
     interno = int(tamanho * 0.62)
@@ -314,6 +373,53 @@ def campo_claro(
         cursor_color=VERDE_PRIMARIO,
         hint_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
         content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+    )
+
+
+def campo_rotulado(rotulo: str, campo: ft.Control) -> ft.Column:
+    """Rótulo branco acima do campo branco — o par usado em todos os formulários
+    sobre foto."""
+    return ft.Column(
+        [rotulo_claro(rotulo), campo],
+        spacing=6,
+        horizontal_alignment=ft.CrossAxisAlignment.START,
+    )
+
+
+def dropdown_claro(
+    opcoes: list[ft.DropdownOption],
+    valor: str | None = None,
+) -> ft.Dropdown:
+    """Seletor branco arredondado, no mesmo desenho de `campo_claro`.
+
+    Sem rótulo interno: quem chama coloca o rótulo branco acima, via
+    `campo_rotulado`.
+    """
+    return ft.Dropdown(
+        value=valor,
+        options=opcoes,
+        # Ao contrário do TextField, o Dropdown não estica sozinho na coluna:
+        # sem a largura explícita ele fica mais estreito que os campos vizinhos.
+        width=LARGURA_FORMULARIO,
+        filled=True,
+        fill_color=BRANCO,
+        border_radius=12,
+        border_color=TRANSPARENTE,
+        focused_border_color=VERDE_PRIMARIO,
+        color=AZUL_INSTITUCIONAL,
+        text_style=ft.TextStyle(size=13, color=AZUL_INSTITUCIONAL),
+        content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+    )
+
+
+def ajuda_clara(texto: str, icone: ft.IconData = ft.Icons.INFO_OUTLINE) -> ft.Row:
+    """Linha discreta de ajuda sob um campo, legível sobre a foto."""
+    return ft.Row(
+        [
+            ft.Icon(icone, size=13, color=MENTA_CLARA),
+            ft.Text(texto, size=11, color=MENTA_CLARA, expand=True),
+        ],
+        spacing=6,
     )
 
 

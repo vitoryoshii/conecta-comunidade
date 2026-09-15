@@ -1,7 +1,7 @@
 """Tela 3b — Recuperar senha.
 
-Mesma linguagem visual do login: a foto de fundo da marca, o disco branco com o
-símbolo e campos brancos sobre o overlay que já vem na imagem.
+Terceira das telas de autenticação; usa o mesmo andaime visual das outras duas
+(`theme.tela_de_autenticacao`).
 
 O `POST /auth/recuperar-senha` responde sempre 200 com a mesma mensagem, exista
 ou não uma conta com o e-mail informado — a tela apenas repete essa resposta, de
@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
-from mobile.views.login import LOGIN_BG
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -43,29 +42,9 @@ def construir(app: App) -> ft.Control:
         app.aviso(resposta.get("mensagem") or CONFIRMACAO_PADRAO)
         app.voltar()
 
-    formulario = t.formulario_centralizado(
+    return t.tela_de_autenticacao(
         [
-            t.logo_circular(60),
-            ft.Container(height=14),
-            ft.Text(
-                "Recuperar senha",
-                size=20,
-                weight=ft.FontWeight.BOLD,
-                color=t.BRANCO,
-                text_align=ft.TextAlign.CENTER,
-            ),
-            ft.Text(
-                "Informe seu e-mail e enviaremos um link para redefinir a senha",
-                size=12,
-                color=t.MENTA_CLARA,
-                text_align=ft.TextAlign.CENTER,
-            ),
-            ft.Container(height=20),
-            ft.Column(
-                [t.rotulo_claro("E-mail"), campo_email],
-                spacing=6,
-                horizontal_alignment=ft.CrossAxisAlignment.START,
-            ),
+            t.campo_rotulado("E-mail", campo_email),
             ft.Container(height=6),
             t.botao_primario(
                 "Enviar link",
@@ -75,25 +54,10 @@ def construir(app: App) -> ft.Control:
                 cor_texto=t.VERDE_ESCURO,
             ),
             t.link_claro("Lembrou a senha? Entrar", lambda _: app.voltar()),
-        ]
-    )
-
-    conteudo = ft.Container(
-        content=ft.Stack(
-            [
-                formulario,
-                ft.Container(
-                    content=ft.IconButton(
-                        ft.Icons.ARROW_BACK, icon_color=t.BRANCO, on_click=app.voltar
-                    ),
-                    left=-12,
-                    top=0,
-                ),
-            ],
-            expand=True,
+        ],
+        on_voltar=app.voltar,
+        cabecalho=(
+            "Recuperar senha",
+            "Informe seu e-mail e enviaremos um link para redefinir a senha",
         ),
-        padding=ft.Padding.symmetric(horizontal=36, vertical=16),
-        expand=True,
     )
-
-    return t.fundo_foto(conteudo, LOGIN_BG)

@@ -1,4 +1,8 @@
-"""Tela 3 — Login (foto de fundo da identidade visual)."""
+"""Tela 3 — Login.
+
+Uma das três telas de autenticação; todas compartilham o andaime visual
+`theme.tela_de_autenticacao` (foto de fundo, disco do logo, campos brancos).
+"""
 
 from __future__ import annotations
 
@@ -11,10 +15,6 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
-# Foto de mãos que já vem com o overlay verde da marca aplicado — por isso a
-# tela não empilha nenhuma camada de cor adicional sobre ela.
-LOGIN_BG = "brand/img/login-bg.jpg"
-
 # Contas criadas pelo `seed.py`, mostradas como atalho na apresentação.
 CONTAS_DEMO = [
     ("ana@conecta.com", "Ana · solicitante"),
@@ -24,7 +24,7 @@ CONTAS_DEMO = [
 
 
 def construir(app: App) -> ft.Control:
-    """Formulário de acesso sobre a foto de fundo, com atalhos de demonstração."""
+    """Formulário de acesso, com atalhos para as contas de demonstração."""
     campo_email = t.campo_claro("seu@email.com", tipo_teclado=ft.KeyboardType.EMAIL)
     campo_senha = t.campo_claro("Sua senha", senha=True)
 
@@ -58,33 +58,13 @@ def construir(app: App) -> ft.Control:
         campo_senha.value = "senha123"
         app.page.update()
 
-    formulario = t.formulario_centralizado(
+    return t.tela_de_autenticacao(
         [
-            t.logo_circular(60),
-            ft.Container(height=14),
-            ft.Text(
-                "Que bom te ver de novo",
-                size=20,
-                weight=ft.FontWeight.BOLD,
-                color=t.BRANCO,
-                text_align=ft.TextAlign.CENTER,
-            ),
-            ft.Text(
-                "Entre para acompanhar seus pedidos",
-                size=12,
-                color=t.MENTA_CLARA,
-                text_align=ft.TextAlign.CENTER,
-            ),
-            ft.Container(height=20),
-            _campo_rotulado("E-mail", campo_email),
-            _campo_rotulado("Senha", campo_senha),
+            t.campo_rotulado("E-mail", campo_email),
+            t.campo_rotulado("Senha", campo_senha),
             # Alinhado à direita, logo abaixo do campo de senha.
             ft.Row(
-                [
-                    t.link_claro(
-                        "Esqueceu a senha?", lambda _: app.navegar("recuperar_senha")
-                    )
-                ],
+                [t.link_claro("Esqueceu a senha?", lambda _: app.navegar("recuperar_senha"))],
                 alignment=ft.MainAxisAlignment.END,
             ),
             ft.Container(height=2),
@@ -108,37 +88,9 @@ def construir(app: App) -> ft.Control:
                 style=ft.ButtonStyle(color=t.MENTA_CLARA),
             ),
             _contas_demo(app, usar_conta_demo),
-        ]
-    )
-
-    conteudo = ft.Container(
-        content=ft.Stack(
-            [
-                formulario,
-                # Botão voltar solto no canto: não empurra o formulário do centro.
-                ft.Container(
-                    content=ft.IconButton(
-                        ft.Icons.ARROW_BACK, icon_color=t.BRANCO, on_click=app.voltar
-                    ),
-                    left=-12,
-                    top=0,
-                ),
-            ],
-            expand=True,
-        ),
-        padding=ft.Padding.symmetric(horizontal=36, vertical=16),
-        expand=True,
-    )
-
-    return t.fundo_foto(conteudo, LOGIN_BG)
-
-
-def _campo_rotulado(rotulo: str, campo: ft.TextField) -> ft.Column:
-    """Rótulo branco acima do campo branco, como pede a identidade da tela."""
-    return ft.Column(
-        [t.rotulo_claro(rotulo), campo],
-        spacing=6,
-        horizontal_alignment=ft.CrossAxisAlignment.START,
+        ],
+        on_voltar=app.voltar,
+        cabecalho=("Que bom te ver de novo", "Entre para acompanhar seus pedidos"),
     )
 
 

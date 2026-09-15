@@ -51,6 +51,7 @@ from mobile.views import (  # noqa: E402
     perfil_ong,
     publicar,
     quero_ajudar,
+    recuperar_senha,
     splash,
 )
 
@@ -64,6 +65,7 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
     "splash": (splash.construir, False),
     "login": (login.construir, False),
     "cadastro": (cadastro.construir, False),
+    "recuperar_senha": (recuperar_senha.construir, False),
     "home": (home.construir, True),
     "explorar": (explorar.construir, True),
     "publicar": (publicar.construir, True),

@@ -22,11 +22,14 @@ TEXTO_SECUNDARIO = "#6B7B72"    # legendas, metadados, textos de apoio
 
 # Tons derivados, criados a partir da paleta para dar profundidade à interface.
 BRANCO = "#FFFFFF"
+TRANSPARENTE = "#00000000"      # bordas apagadas, sem recorrer a ft.Colors
 MENTA = "#8FE3AE"
 VERDE_SUAVE = "#E8F8F0"         # fundo de chips e destaques discretos
 BORDA = "#E1E8E4"               # divisórias e contornos de cartões
 AMARELO_ATENCAO = "#F5A623"     # urgência média e pontos de retirada
 CINZA_CLARO = "#EEF2F0"         # fundo de campos e superfícies neutras
+MENTA_CLARA = "#D9F2E4"         # textos de apoio sobre fundo escuro/foto
+AMBAR_CLARO = "#FFDC8C"         # links de destaque sobre fundo escuro/foto
 
 # Cores por nível de urgência, usadas nos badges dos cartões.
 CORES_URGENCIA = {
@@ -63,9 +66,16 @@ ROTULOS_MAPA = {
     "ponto_retirada": "Pontos de retirada",
 }
 
+# Arquivos da marca servidos pelo `assets_dir` do Flet.
+LOGO_SIMBOLO = "brand/logo/logo-symbol.svg"
+
 # Raio padrão de arredondamento e espaçamento base das telas.
 RAIO = 16
 ESPACO = 16
+
+# Largura útil do formulário nas telas sobre foto: a janela de demonstração
+# tem 430px e a tela reserva 36px de padding de cada lado.
+LARGURA_FORMULARIO = 358
 
 # Cores auxiliares para categorias, usadas em ícones e fundos suaves.
 CORES_CATEGORIAS = [
@@ -123,14 +133,19 @@ def botao_primario(
     icone: ft.IconData | None = None,
     largura: int | None = None,
     cor: str = VERDE_PRIMARIO,
+    cor_texto: str = BRANCO,
 ) -> ft.FilledButton:
-    """Botão de ação principal (verde, cantos arredondados)."""
+    """Botão de ação principal (verde, cantos arredondados).
+
+    Sobre foto as telas invertem as cores (`cor=BRANCO`, `cor_texto=VERDE_ESCURO`)
+    em vez de montar outro botão.
+    """
     return ft.FilledButton(
         content=texto,
         icon=icone,
         on_click=on_click,
         bgcolor=cor,
-        color=BRANCO,
+        color=cor_texto,
         width=largura,
         height=50,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=14)),
@@ -190,6 +205,124 @@ def campo(
         focused_border_color=VERDE_PRIMARIO,
         color=AZUL_INSTITUCIONAL,
         label_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Telas sobre foto (login e recuperação de senha)
+# --------------------------------------------------------------------------- #
+# As imagens de fundo já vêm da identidade visual com o overlay verde aplicado:
+# nenhuma camada extra de cor deve ser empilhada por cima, sob pena de escurecer
+# demais a foto e comprometer a leitura dos campos.
+def fundo_foto(conteudo: ft.Control, imagem: str) -> ft.Container:
+    """Foto em tela cheia (`COVER`) com o conteúdo da tela por cima."""
+    return ft.Container(
+        content=ft.Stack(
+            [
+                ft.Image(
+                    src=imagem,
+                    fit=ft.BoxFit.COVER,
+                    expand=True,
+                    left=0,
+                    top=0,
+                    right=0,
+                    bottom=0,
+                ),
+                conteudo,
+            ],
+            expand=True,
+        ),
+        expand=True,
+        # Cor sólida por baixo da imagem: se ela não carregar, a tela continua
+        # legível em vez de ficar branca.
+        bgcolor=VERDE_ESCURO,
+    )
+
+
+def formulario_centralizado(controles: list[ft.Control]) -> ft.Column:
+    """Corpo das telas sobre foto: coluna de largura fixa, centralizada e rolável.
+
+    A largura fixa importa: sem ela, os itens alinhados à borda (o link
+    "Esqueceu a senha?") acompanhariam a largura da janela em vez da do
+    formulário, e se descolariam dos campos em telas largas.
+    """
+    return ft.Column(
+        [
+            ft.Container(
+                content=ft.Column(
+                    controles,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=8,
+                ),
+                width=LARGURA_FORMULARIO,
+            )
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+
+def logo_circular(tamanho: int = 60) -> ft.Container:
+    """Símbolo da marca dentro de um disco branco, usado no topo das telas."""
+    interno = int(tamanho * 0.62)
+    return ft.Container(
+        content=ft.Image(
+            src=LOGO_SIMBOLO,
+            width=interno,
+            height=interno,
+            fit=ft.BoxFit.CONTAIN,
+            error_content=ft.Icon(ft.Icons.FAVORITE, size=interno, color=VERDE_PRIMARIO),
+        ),
+        width=tamanho,
+        height=tamanho,
+        bgcolor=BRANCO,
+        border_radius=tamanho / 2,
+        alignment=ft.Alignment.CENTER,
+    )
+
+
+def rotulo_claro(texto: str) -> ft.Text:
+    """Rótulo branco exibido acima de um campo, sobre a foto."""
+    return ft.Text(texto, size=12, weight=ft.FontWeight.W_600, color=BRANCO)
+
+
+def campo_claro(
+    dica: str = "",
+    senha: bool = False,
+    icone: ft.IconData | None = None,
+    tipo_teclado: ft.KeyboardType = ft.KeyboardType.TEXT,
+) -> ft.TextField:
+    """Campo branco arredondado, sem rótulo interno (ele fica acima, em branco).
+
+    Quando `senha=True`, o Flet já desenha o ícone de olho que mostra e oculta
+    o texto digitado.
+    """
+    return ft.TextField(
+        hint_text=dica,
+        password=senha,
+        can_reveal_password=senha,
+        prefix_icon=icone,
+        keyboard_type=tipo_teclado,
+        filled=True,
+        fill_color=BRANCO,
+        border_radius=12,
+        border_color=TRANSPARENTE,
+        focused_border_color=VERDE_PRIMARIO,
+        color=AZUL_INSTITUCIONAL,
+        cursor_color=VERDE_PRIMARIO,
+        hint_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
+        content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+    )
+
+
+def link_claro(texto: str, on_click, cor: str = AMBAR_CLARO) -> ft.TextButton:
+    """Link de texto legível sobre a foto (âmbar por padrão)."""
+    return ft.TextButton(
+        content=texto,
+        on_click=on_click,
+        style=ft.ButtonStyle(color=cor, padding=ft.Padding.symmetric(horizontal=8, vertical=4)),
     )
 
 

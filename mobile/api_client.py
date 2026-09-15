@@ -124,6 +124,10 @@ class ApiClient:
         """`POST /auth/login` — autentica e devolve token + usuário."""
         return self._requisitar("POST", "/auth/login", json={"email": email, "senha": senha})
 
+    def recuperar_senha(self, email: str) -> dict[str, Any]:
+        """`POST /auth/recuperar-senha` — pede o link de redefinição."""
+        return self._requisitar("POST", "/auth/recuperar-senha", json={"email": email})
+
     def eu(self) -> dict[str, Any]:
         """`GET /auth/me` — perfil do usuário do token atual."""
         return self._requisitar("GET", "/auth/me")

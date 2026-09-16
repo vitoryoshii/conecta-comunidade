@@ -67,7 +67,9 @@ ROTULOS_MAPA = {
 }
 
 # Arquivos da marca servidos pelo `assets_dir` do Flet.
-LOGO_SIMBOLO = "brand/logo/logo-symbol.svg"
+# Logo único do app (coração âmbar + mão verde, sem o quadrado de fundo),
+# exibido dentro do disco branco em splash, login, cadastro e recuperação.
+LOGO_APP = "brand/logo/logo-icon.svg"
 # Foto de fundo compartilhada pela abertura e pelas telas de autenticação. A
 # imagem já vem da identidade visual com o overlay verde embutido: nenhuma tela
 # deve empilhar outra camada de cor por cima dela.
@@ -80,6 +82,10 @@ ESPACO = 16
 # Largura útil do formulário nas telas sobre foto: a janela de demonstração
 # tem 430px e a tela reserva 36px de padding de cada lado.
 LARGURA_FORMULARIO = 358
+
+# Disco branco do topo das telas: 140px, com o logo ocupando ~104px dele.
+LADO_DO_DISCO = 140
+PROPORCAO_DO_LOGO = 0.74
 
 # Cores auxiliares para categorias, usadas em ícones e fundos suaves.
 CORES_CATEGORIAS = [
@@ -281,7 +287,7 @@ def tela_de_autenticacao(
 
     `cabecalho` é o par (título, subtítulo) desenhado acima dos controles.
     """
-    miolo: list[ft.Control] = [logo_circular(60), ft.Container(height=14)]
+    miolo: list[ft.Control] = [logo_circular(), ft.Container(height=14)]
 
     if cabecalho is not None:
         titulo_texto, subtitulo_texto = cabecalho
@@ -323,12 +329,12 @@ def tela_de_autenticacao(
     return fundo_foto(conteudo, FOTO_DE_FUNDO)
 
 
-def logo_circular(tamanho: int = 60) -> ft.Container:
-    """Símbolo da marca dentro de um disco branco, usado no topo das telas."""
-    interno = int(tamanho * 0.62)
+def logo_circular(tamanho: int = LADO_DO_DISCO) -> ft.Container:
+    """Logo do app dentro de um disco branco, usado no topo das quatro telas."""
+    interno = int(tamanho * PROPORCAO_DO_LOGO)
     return ft.Container(
         content=ft.Image(
-            src=LOGO_SIMBOLO,
+            src=LOGO_APP,
             width=interno,
             height=interno,
             fit=ft.BoxFit.CONTAIN,
@@ -389,15 +395,31 @@ def campo_rotulado(rotulo: str, campo: ft.Control) -> ft.Column:
 def dropdown_claro(
     opcoes: list[ft.DropdownOption],
     valor: str | None = None,
+    dica: str | None = None,
+    desabilitado: bool = False,
+    filtravel: bool = False,
+    ao_selecionar=None,
 ) -> ft.Dropdown:
     """Seletor branco arredondado, no mesmo desenho de `campo_claro`.
 
     Sem rótulo interno: quem chama coloca o rótulo branco acima, via
     `campo_rotulado`.
+
+    Com `filtravel=True` o campo vira editável e filtra a lista conforme se
+    digita — é o que torna utilizável um seletor com centenas de municípios.
     """
     return ft.Dropdown(
         value=valor,
         options=opcoes,
+        hint_text=dica,
+        disabled=desabilitado,
+        editable=filtravel,
+        enable_filter=filtravel,
+        # No Flet 0.86 o evento de escolha do Dropdown é `on_select`.
+        on_select=ao_selecionar,
+        # Sem teto o menu de 645 cidades cobriria a tela inteira.
+        menu_height=280,
+        hint_style=ft.TextStyle(size=13, color=TEXTO_SECUNDARIO),
         # Ao contrário do TextField, o Dropdown não estica sozinho na coluna:
         # sem a largura explícita ele fica mais estreito que os campos vizinhos.
         width=LARGURA_FORMULARIO,

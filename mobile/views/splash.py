@@ -11,11 +11,6 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover - apenas para tipagem
     from mobile.main import App
 
-LOGO_SPLASH = "brand/logo/logo-white-amber.svg"
-
-# Lado do símbolo da abertura.
-LADO_DO_LOGO = 116
-
 # Os dois espaçadores flexíveis dividem a sobra vertical nesta proporção: o de
 # baixo fica com a fatia maior, o que empurra o miolo para cima e deixa a
 # margem superior generosa sem depender da altura exata do aparelho.
@@ -25,22 +20,6 @@ FLEX_ANTES_DOS_BOTOES = 3
 # Largura fixa de cada pilar: sem ela, as legendas ("Doações" e "Voluntariado"
 # têm larguras bem diferentes) deixariam os círculos desalinhados entre si.
 LARGURA_DO_PILAR = 92
-
-
-def _logo() -> ft.Image:
-    """Marca principal da abertura, carregada pelo assets_dir do Flet."""
-    return ft.Image(
-        src=LOGO_SPLASH,
-        width=LADO_DO_LOGO,
-        height=LADO_DO_LOGO,
-        fit=ft.BoxFit.CONTAIN,
-        error_content=ft.Container(
-            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=54, color=t.BRANCO),
-            width=LADO_DO_LOGO,
-            height=LADO_DO_LOGO,
-            alignment=ft.Alignment.CENTER,
-        ),
-    )
 
 
 def construir(app: App) -> ft.Control:
@@ -56,7 +35,7 @@ def construir(app: App) -> ft.Control:
         content=ft.Column(
             [
                 ft.Container(expand=FLEX_ACIMA_DO_LOGO),
-                _logo(),
+                t.logo_circular(),
                 ft.Container(height=10),
                 ft.Text(
                     "Conecta Comunidade",

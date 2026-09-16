@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Conecta Comunidade">
+  <!-- Mesma geometria do logo-white-amber, com a mão em verde da marca: esta é
+       a versão para fundo claro (o disco branco das telas). No white-amber a
+       mão é #FFFFFF e desapareceria sobre o branco. -->
+  <defs>
+    <linearGradient id="ic" x1="42" y1="24" x2="80" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE7A3"/><stop offset="1" stop-color="#F5A623"/>
+    </linearGradient>
+  </defs>
+  <path d="M60 32.5c-5.4-7.8-16.6-8.3-22-1.2-5 6.4-3.1 15 2.6 21L60 75.5l19.4-23.2c5.7-6 7.6-14.6 2.6-21-5.4-7.1-16.6-6.6-22 1.2z" fill="url(#ic)"/>
+  <path d="M26.5 71.5c-2.1-0.2-3.9 1.5-3.7 3.6 0.8 10.8 9.6 19.2 20.6 19.2h33.2c11 0 19.8-8.4 20.6-19.2 0.2-2.1-1.6-3.8-3.7-3.6-1.8 0.2-3.2 1.7-3.4 3.5-1 7.4-7.3 13-14.6 13H45.9c-7.3 0-13.6-5.6-14.6-13-0.2-1.8-1.6-3.3-3.4-3.5z" fill="#0E6B42"/>
+</svg>

@@ -20,18 +20,20 @@ if TYPE_CHECKING:  # pragma: no cover
 
 # Tipos de usuário aceitos pela API, com um rótulo amigável e um ícone.
 TIPOS = [
-    ("solicitante", "Preciso de ajuda", ft.Icons.PAN_TOOL_ALT_OUTLINED),
-    ("doador", "Quero doar", ft.Icons.CARD_GIFTCARD),
-    ("voluntario", "Sou voluntário(a)", ft.Icons.GROUPS_OUTLINED),
-    ("ong", "Represento uma ONG", ft.Icons.APARTMENT),
+    ("solicitante", "Preciso de ajuda", t.ICONES["preciso_de_ajuda"]),
+    ("doador", "Quero doar", t.ICONES["doar"]),
+    ("voluntario", "Sou voluntário(a)", t.ICONES["voluntariado"]),
+    ("ong", "Represento uma ONG", t.ICONES["ong"]),
 ]
 
 
 def construir(app: App) -> ft.Control:
     """Formulário de criação de conta."""
-    campo_nome = t.campo_claro("Seu nome completo")
-    campo_email = t.campo_claro("seu@email.com", tipo_teclado=ft.KeyboardType.EMAIL)
-    campo_senha = t.campo_claro("Mínimo 6 caracteres", senha=True)
+    campo_nome = t.campo_claro("Seu nome completo", icone=t.ICONES["nome"])
+    campo_email = t.campo_claro(
+        "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
+    )
+    campo_senha = t.campo_claro("Mínimo 6 caracteres", senha=True, icone=t.ICONES["senha"])
 
     seletor_tipo = t.dropdown_claro(
         [
@@ -39,12 +41,17 @@ def construir(app: App) -> ft.Control:
             for chave, rotulo, icone in TIPOS
         ],
         valor="solicitante",
+        icone=t.ICONES["participacao"],
     )
 
     # A cidade só abre depois do estado: são 5.571 municípios no país, e a lista
     # de um estado só faz sentido depois de saber qual é.
     seletor_cidade = t.dropdown_claro(
-        [], dica="Escolha o estado primeiro", desabilitado=True, filtravel=True
+        [],
+        dica="Escolha o estado primeiro",
+        icone=t.ICONES["cidade"],
+        desabilitado=True,
+        filtravel=True,
     )
 
     # Coordenadas da cidade escolhida, guardadas ao carregar a lista: o seletor
@@ -80,6 +87,7 @@ def construir(app: App) -> ft.Control:
     seletor_estado = t.dropdown_claro(
         [ft.DropdownOption(key=e["sigla"], text=e["nome"]) for e in estados],
         dica="Selecione seu estado",
+        icone=t.ICONES["estado"],
         filtravel=True,
         ao_selecionar=carregar_cidades,
     )

@@ -56,7 +56,7 @@ def _banner(app: App) -> ft.Container:
                         ft.Container(height=6),
                         ft.OutlinedButton(
                             content="Abrir o mapa",
-                            icon=ft.Icons.MAP_OUTLINED,
+                            icon=t.ICONES["estado"],
                             on_click=lambda _: app.navegar("mapa"),
                             style=ft.ButtonStyle(
                                 color=t.BRANCO,
@@ -174,7 +174,7 @@ def construir(app: App) -> ft.Control:
         )
     else:
         lista_proximas = t.area_vazia(
-            "Nenhuma solicitação ativa por perto no momento.", ft.Icons.EXPLORE_OFF
+            "Nenhuma solicitação ativa por perto no momento.", ft.Icons.EXPLORE_OFF_OUTLINED
         )
 
     marca_home: ft.Control
@@ -184,7 +184,7 @@ def construir(app: App) -> ft.Control:
         height=36,
         fit=ft.BoxFit.CONTAIN,
         error_content=ft.Container(
-            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=18, color=t.BRANCO),
+            content=ft.Icon(t.ICONES["doacoes"], size=18, color=t.BRANCO),
             width=36,
             height=36,
             bgcolor=t.VERDE_PRIMARIO,
@@ -202,7 +202,7 @@ def construir(app: App) -> ft.Control:
                             color=t.AZUL_INSTITUCIONAL),
                     ft.Row(
                         [
-                            ft.Icon(ft.Icons.PLACE_OUTLINED, size=13, color=t.TEXTO_SECUNDARIO),
+                            ft.Icon(t.ICONES["local"], size=13, color=t.TEXTO_SECUNDARIO),
                             ft.Text(
                                 (app.state.usuario or {}).get("cidade") or "Localização não definida",
                                 size=12,
@@ -216,7 +216,7 @@ def construir(app: App) -> ft.Control:
                 expand=True,
             ),
             ft.IconButton(
-                ft.Icons.APARTMENT,
+                t.ICONES["ong"],
                 icon_color=t.AZUL_INSTITUCIONAL,
                 tooltip="ONGs e instituições",
                 on_click=lambda _: app.navegar("ongs"),
@@ -242,14 +242,14 @@ def construir(app: App) -> ft.Control:
                         _cartao_acao(
                             "Preciso de ajuda",
                             "Publique o que está faltando",
-                            ft.Icons.PAN_TOOL_ALT_OUTLINED,
+                            t.ICONES["preciso_de_ajuda"],
                             t.URGENCIA,
                             lambda _: app.navegar("nova_solicitacao"),
                         ),
                         _cartao_acao(
                             "Quero ajudar / Doar",
                             "Ofereça itens, entrega ou retirada",
-                            ft.Icons.VOLUNTEER_ACTIVISM,
+                            t.ICONES["doacoes"],
                             t.VERDE_PRIMARIO,
                             lambda _: app.navegar("nova_oferta"),
                         ),

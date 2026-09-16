@@ -38,7 +38,7 @@ def construir(app: App) -> ft.Control:
     campo_busca = ft.TextField(
         value=busca,
         hint_text="Buscar por item, categoria ou bairro...",
-        prefix_icon=ft.Icons.SEARCH,
+        prefix_icon=t.ICONES["buscar"],
         filled=True,
         fill_color=t.BRANCO,
         border_radius=14,
@@ -63,7 +63,7 @@ def construir(app: App) -> ft.Control:
                         t.subtitulo(f"{len(resultados)} resultado(s)"),
                         ft.TextButton(
                             content="Ver no mapa",
-                            icon=ft.Icons.MAP_OUTLINED,
+                            icon=t.ICONES["estado"],
                             on_click=lambda _: app.navegar("mapa"),
                             style=ft.ButtonStyle(color=t.VERDE_PRIMARIO),
                         ),
@@ -153,7 +153,7 @@ def _linha_de_filtros(
                 content=ft.Row(
                     [
                         ft.Text(nome, size=11, color=t.BRANCO, weight=ft.FontWeight.W_600),
-                        ft.Icon(ft.Icons.CLOSE, size=13, color=t.BRANCO),
+                        ft.Icon(t.ICONES["fechar"], size=13, color=t.BRANCO),
                     ],
                     spacing=4,
                     tight=True,
@@ -220,7 +220,7 @@ def _lista(app: App, aba: str, itens: list[dict[str, Any]]) -> ft.Control:
     if not itens:
         return t.area_vazia(
             "Nada encontrado com esses filtros.\nTente outra busca ou limpe os filtros.",
-            ft.Icons.SEARCH_OFF,
+            t.ICONES["sem_resultado"],
         )
 
     cartoes: list[ft.Control] = []

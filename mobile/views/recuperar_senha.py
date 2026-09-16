@@ -26,7 +26,9 @@ CONFIRMACAO_PADRAO = "Se o e-mail existir, enviamos um link para redefinir a sen
 
 def construir(app: App) -> ft.Control:
     """Formulário de um campo só: e-mail para receber o link de redefinição."""
-    campo_email = t.campo_claro("seu@email.com", tipo_teclado=ft.KeyboardType.EMAIL)
+    campo_email = t.campo_claro(
+        "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
+    )
 
     def enviar(_: ft.ControlEvent) -> None:
         """Pede o link à API e confirma sem revelar se o e-mail existe."""

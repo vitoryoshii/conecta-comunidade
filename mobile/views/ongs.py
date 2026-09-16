@@ -22,7 +22,7 @@ def construir(app: App) -> ft.Control:
     campo_busca = ft.TextField(
         value=busca,
         hint_text="Buscar instituição...",
-        prefix_icon=ft.Icons.SEARCH,
+        prefix_icon=t.ICONES["buscar"],
         filled=True,
         fill_color=t.BRANCO,
         border_radius=14,
@@ -48,13 +48,13 @@ def construir(app: App) -> ft.Control:
             spacing=10,
         )
     else:
-        conteudo = t.area_vazia("Nenhuma instituição encontrada.", ft.Icons.APARTMENT)
+        conteudo = t.area_vazia("Nenhuma instituição encontrada.", t.ICONES["ong"])
 
     filtro_verificadas = ft.Container(
         content=ft.Row(
             [
                 ft.Icon(
-                    ft.Icons.VERIFIED,
+                    t.ICONES["verificada"],
                     size=15,
                     color=t.BRANCO if somente_verificadas else t.VERDE_PRIMARIO,
                 ),
@@ -84,7 +84,7 @@ def construir(app: App) -> ft.Control:
                     [
                         t.titulo("ONGs e Instituições", 21),
                         ft.IconButton(
-                            ft.Icons.MAP_OUTLINED,
+                            t.ICONES["estado"],
                             icon_color=t.AZUL_INSTITUCIONAL,
                             tooltip="Ver no mapa",
                             on_click=lambda _: app.navegar("mapa", tipos=["ong"]),

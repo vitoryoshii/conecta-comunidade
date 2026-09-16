@@ -95,7 +95,7 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
         acoes = [
             ft.TextButton(
                 content="Marcar como realizada",
-                icon=ft.Icons.CHECK_CIRCLE_OUTLINE,
+                icon=t.ICONES["sucesso"],
                 on_click=concluir,
                 style=ft.ButtonStyle(color=t.VERDE_ESCURO),
             ),
@@ -111,7 +111,7 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.EVENT_AVAILABLE, size=18, color=cor),
+                        ft.Icon(t.ICONES["agenda"], size=18, color=cor),
                         ft.Text(
                             "Entrega agendada",
                             size=13,
@@ -125,7 +125,7 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
                 ),
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.CALENDAR_TODAY, size=13, color=t.TEXTO_SECUNDARIO),
+                        ft.Icon(t.ICONES["data"], size=13, color=t.TEXTO_SECUNDARIO),
                         ft.Text(
                             f"{entrega.get('data', '')} às {entrega.get('hora', '')}",
                             size=12,
@@ -136,7 +136,7 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
                 ),
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.PLACE_OUTLINED, size=13, color=t.TEXTO_SECUNDARIO),
+                        ft.Icon(t.ICONES["local"], size=13, color=t.TEXTO_SECUNDARIO),
                         ft.Text(
                             entrega.get("local") or "Local a combinar",
                             size=12,
@@ -160,9 +160,9 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
 def _dialogo_agendamento(app: App, solicitacao_id: int) -> None:
     """Abre o formulário de agendamento de entrega."""
     amanha = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
-    campo_data = t.campo("Data", valor=amanha, icone=ft.Icons.CALENDAR_TODAY)
-    campo_hora = t.campo("Hora", valor="14:00", icone=ft.Icons.SCHEDULE)
-    campo_local = t.campo("Local do encontro", icone=ft.Icons.PLACE_OUTLINED)
+    campo_data = t.campo("Data", valor=amanha, icone=t.ICONES["data"])
+    campo_hora = t.campo("Hora", valor="14:00", icone=t.ICONES["horario"])
+    campo_local = t.campo("Local do encontro", icone=t.ICONES["local"])
 
     dialogo = ft.AlertDialog(
         modal=True,
@@ -252,7 +252,7 @@ def construir(app: App) -> ft.Control:
             t.cartao(
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=16, color=t.VERDE_PRIMARIO),
+                        ft.Icon(t.ICONES["doacoes"], size=16, color=t.VERDE_PRIMARIO),
                         ft.Text(
                             f"Conversa sobre: {solicitacao_titulo}",
                             size=12,
@@ -272,13 +272,13 @@ def construir(app: App) -> ft.Control:
             for mensagem in mensagens
         ]
     else:
-        itens.append(t.area_vazia("Nenhuma mensagem ainda.\nDiga um oi!", ft.Icons.CHAT_OUTLINED))
+        itens.append(t.area_vazia("Nenhuma mensagem ainda.\nDiga um oi!", t.ICONES["conversa"]))
 
     acoes_cabecalho: list[ft.Control] = []
     if solicitacao_id is not None and entrega is None:
         acoes_cabecalho.append(
             ft.IconButton(
-                ft.Icons.EVENT_AVAILABLE,
+                t.ICONES["agenda"],
                 icon_color=t.VERDE_PRIMARIO,
                 tooltip="Agendar entrega",
                 on_click=lambda _: _dialogo_agendamento(app, solicitacao_id),
@@ -305,7 +305,7 @@ def construir(app: App) -> ft.Control:
                     [
                         campo_texto,
                         ft.Container(
-                            content=ft.Icon(ft.Icons.SEND, color=t.BRANCO, size=20),
+                            content=ft.Icon(t.ICONES["enviar"], color=t.BRANCO, size=20),
                             width=46,
                             height=46,
                             bgcolor=t.VERDE_PRIMARIO,

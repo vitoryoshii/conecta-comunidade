@@ -54,9 +54,9 @@ def construir(app: App) -> ft.Control:
                 # Três pilares do produto, resumidos em uma linha de ícones.
                 ft.Row(
                     [
-                        _pilar(ft.Icons.FAVORITE_BORDER, "Doações"),
-                        _pilar(ft.Icons.GROUPS_OUTLINED, "Voluntariado"),
-                        _pilar(ft.Icons.CRISIS_ALERT, "Emergências"),
+                        _pilar(t.ICONES["doacoes"], "Doações"),
+                        _pilar(t.ICONES["voluntariado"], "Voluntariado"),
+                        _pilar(t.ICONES["emergencias"], "Emergências", cor=t.URGENCIA),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=12,
@@ -65,13 +65,13 @@ def construir(app: App) -> ft.Control:
                 t.botao_primario(
                     "Criar conta",
                     lambda _: app.navegar("cadastro"),
-                    ft.Icons.PERSON_ADD_ALT,
+                    t.ICONES["criar_conta"],
                     largura=320,
                 ),
                 t.botao_secundario(
                     "Entrar",
                     lambda _: app.navegar("login"),
-                    ft.Icons.LOGIN,
+                    t.ICONES["entrar"],
                     largura=320,
                     cor=t.BRANCO,
                 ),
@@ -95,12 +95,12 @@ def construir(app: App) -> ft.Control:
     return t.fundo_foto(conteudo, t.FOTO_DE_FUNDO)
 
 
-def _pilar(icone: ft.IconData, rotulo: str) -> ft.Column:
+def _pilar(icone: ft.IconData, rotulo: str, cor: str = t.BRANCO) -> ft.Column:
     """Ícone + legenda usados na linha de destaques da abertura."""
     return ft.Column(
         [
             ft.Container(
-                content=ft.Icon(icone, size=22, color=t.BRANCO),
+                content=ft.Icon(icone, size=t.ICONE_DESTAQUE, color=cor),
                 width=52,
                 height=52,
                 bgcolor="#332E9E5B",

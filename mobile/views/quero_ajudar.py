@@ -18,19 +18,19 @@ OPCOES = [
         "tenho_item",
         "Tenho o item",
         "Já tenho o que está sendo pedido e posso separar.",
-        ft.Icons.INVENTORY_2_OUTLINED,
+        t.ICONES["oferta"],
     ),
     (
         "posso_entregar",
         "Posso entregar",
         "Tenho transporte e levo a doação até o local.",
-        ft.Icons.LOCAL_SHIPPING_OUTLINED,
+        t.ICONES["entrega"],
     ),
     (
         "ponto_retirada",
         "Ofereço ponto de retirada",
         "Deixo em um endereço fixo para quem quiser buscar.",
-        ft.Icons.STOREFRONT_OUTLINED,
+        t.ICONES["ponto_retirada"],
     ),
 ]
 
@@ -139,11 +139,11 @@ def construir(app: App) -> ft.Control:
                         ft.Container(height=4),
                         campo_mensagem,
                         ft.Container(height=6),
-                        t.botao_primario("Enviar proposta", enviar, ft.Icons.SEND_OUTLINED, 400),
+                        t.botao_primario("Enviar proposta", enviar, t.ICONES["enviar"], 400),
                         ft.Row(
                             [
                                 ft.Icon(
-                                    ft.Icons.LOCK_OUTLINE, size=13, color=t.TEXTO_SECUNDARIO
+                                    t.ICONES["senha"], size=13, color=t.TEXTO_SECUNDARIO
                                 ),
                                 ft.Text(
                                     "Seus dados de contato só aparecem no chat.",
@@ -205,7 +205,7 @@ def _cartao_opcao(
                     expand=True,
                 ),
                 ft.Icon(
-                    ft.Icons.CHECK_CIRCLE if selecionado else ft.Icons.RADIO_BUTTON_UNCHECKED,
+                    t.ICONES["sucesso"] if selecionado else ft.Icons.RADIO_BUTTON_UNCHECKED_ROUNDED,
                     color=t.VERDE_PRIMARIO if selecionado else t.BORDA,
                 ),
             ],

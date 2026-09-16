@@ -29,7 +29,7 @@ def _galeria(fotos: list[str]) -> ft.Control:
         return ft.Container(
             content=ft.Column(
                 [
-                    ft.Icon(ft.Icons.IMAGE_OUTLINED, size=34, color=t.BORDA),
+                    ft.Icon(t.ICONES["imagem"], size=34, color=t.BORDA),
                     ft.Text("Sem fotos anexadas", size=12, color=t.TEXTO_SECUNDARIO),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -94,7 +94,7 @@ def construir(app: App) -> ft.Control:
         lambda: app.api.obter_solicitacao(solicitacao_id, **app.coordenadas())
     )
     if dados is None:
-        return t.area_vazia("Não foi possível carregar esta solicitação.", ft.Icons.ERROR_OUTLINE)
+        return t.area_vazia("Não foi possível carregar esta solicitação.", t.ICONES["erro"])
 
     eh_meu_pedido = app.state.usuario_id == dados["usuario_id"]
 
@@ -123,25 +123,25 @@ def construir(app: App) -> ft.Control:
         t.etiqueta(ROTULOS_STATUS.get(dados.get("status", ""), dados.get("status", "")))
     )
     marcadores.append(
-        t.etiqueta(dados.get("categoria_nome", ""), icone=ft.Icons.LABEL_OUTLINE)
+        t.etiqueta(dados.get("categoria_nome", ""), icone=t.ICONES["categoria"])
     )
 
     acoes: list[ft.Control] = []
     if not eh_meu_pedido:
         acoes.append(
-            t.botao_primario("Quero ajudar", querer_ajudar, ft.Icons.VOLUNTEER_ACTIVISM, 400)
+            t.botao_primario("Quero ajudar", querer_ajudar, t.ICONES["doacoes"], 400)
         )
     else:
         acoes.append(
             t.botao_secundario(
                 "Gerenciar meus pedidos",
                 lambda _: app.navegar("minhas_solicitacoes"),
-                ft.Icons.TUNE,
+                t.ICONES["filtrar"],
                 400,
             )
         )
     acoes.append(
-        t.botao_secundario("Compartilhar", compartilhar, ft.Icons.SHARE_OUTLINED, 400,
+        t.botao_secundario("Compartilhar", compartilhar, t.ICONES["compartilhar"], 400,
                            cor=t.AZUL_INSTITUCIONAL)
     )
 
@@ -176,17 +176,17 @@ def construir(app: App) -> ft.Control:
             ft.Row(
                 [
                     _informacao(
-                        ft.Icons.PLACE_OUTLINED,
+                        t.ICONES["local"],
                         "distância",
                         dados.get("distancia_formatada", "--"),
                     ),
                     _informacao(
-                        ft.Icons.GROUP_OUTLINED,
+                        t.ICONES["pessoas"],
                         "beneficiadas",
                         str(dados.get("pessoas_beneficiadas", 1)),
                     ),
                     _informacao(
-                        ft.Icons.INVENTORY_2_OUTLINED,
+                        t.ICONES["oferta"],
                         "quantidade",
                         dados.get("quantidade") or "—",
                     ),
@@ -215,7 +215,7 @@ def construir(app: App) -> ft.Control:
             t.cartao(
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, color=t.VERDE_PRIMARIO),
+                        ft.Icon(t.ICONES["local"], color=t.VERDE_PRIMARIO),
                         ft.Column(
                             [
                                 ft.Text(
@@ -235,7 +235,7 @@ def construir(app: App) -> ft.Control:
                             expand=True,
                         ),
                         ft.IconButton(
-                            ft.Icons.MAP_OUTLINED,
+                            t.ICONES["estado"],
                             icon_color=t.VERDE_PRIMARIO,
                             tooltip="Ver no mapa",
                             on_click=lambda _: app.navegar("mapa"),
@@ -260,7 +260,7 @@ def construir(app: App) -> ft.Control:
                 app.voltar,
                 [
                     ft.IconButton(
-                        ft.Icons.SHARE_OUTLINED,
+                        t.ICONES["compartilhar"],
                         icon_color=t.AZUL_INSTITUCIONAL,
                         on_click=compartilhar,
                         tooltip="Compartilhar",

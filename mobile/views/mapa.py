@@ -55,7 +55,7 @@ def construir(app: App) -> ft.Control:
                 ft.Row(
                     [
                         t.titulo("Mapa", 22),
-                        t.etiqueta(f"{len(pontos)} ponto(s)", icone=ft.Icons.PLACE_OUTLINED),
+                        t.etiqueta(f"{len(pontos)} ponto(s)", icone=t.ICONES["local"]),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
@@ -207,7 +207,7 @@ def _pino(app: App, ponto: dict[str, Any], x: float, y: float) -> ft.Container:
     tamanho = TAMANHO_PIN_EMERGENCIA if ponto.get("emergencia") else TAMANHO_PIN
 
     return ft.Container(
-        content=ft.Icon(t.ICONES_MAPA.get(tipo, ft.Icons.PLACE), size=tamanho / 2, color=t.BRANCO),
+        content=ft.Icon(t.ICONES_MAPA.get(tipo, t.ICONES["local"]), size=tamanho / 2, color=t.BRANCO),
         width=tamanho,
         height=tamanho,
         bgcolor=cor,
@@ -252,7 +252,7 @@ def _painel_de_filtros(
                         ),
                         ft.Text(str(totais.get(tipo, 0)), size=12, color=t.TEXTO_SECUNDARIO),
                         ft.Icon(
-                            ft.Icons.TOGGLE_ON if ligado else ft.Icons.TOGGLE_OFF,
+                            ft.Icons.TOGGLE_ON_OUTLINED if ligado else ft.Icons.TOGGLE_OFF_OUTLINED,
                             size=26,
                             color=cor if ligado else t.BORDA,
                         ),
@@ -284,7 +284,7 @@ def _painel_de_filtros(
 def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
     """Lista textual dos pins, com coordenadas e distância."""
     if not pontos:
-        return t.area_vazia("Nenhum ponto para exibir.", ft.Icons.LOCATION_OFF)
+        return t.area_vazia("Nenhum ponto para exibir.", ft.Icons.LOCATION_OFF_OUTLINED)
 
     linhas: list[ft.Control] = []
     for ponto in pontos:
@@ -336,7 +336,7 @@ def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
                             spacing=2,
                             expand=True,
                         ),
-                        ft.Icon(ft.Icons.CHEVRON_RIGHT, color=t.BORDA),
+                        ft.Icon(t.ICONES["detalhe"], color=t.BORDA),
                     ],
                     spacing=10,
                 ),
@@ -362,7 +362,7 @@ def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
             t.botao_primario(
                 "Ver pedido",
                 lambda _: _fechar_e_navegar(app, "detalhe_solicitacao", id=ponto["id"]),
-                ft.Icons.ARROW_FORWARD,
+                t.ICONES["avancar"],
                 150,
             ),
         )
@@ -372,7 +372,7 @@ def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
             t.botao_primario(
                 "Ver ONG",
                 lambda _: _fechar_e_navegar(app, "perfil_ong", id=ponto["id"]),
-                ft.Icons.ARROW_FORWARD,
+                t.ICONES["avancar"],
                 150,
             ),
         )
@@ -383,7 +383,7 @@ def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
                 ft.Row(
                     [
                         ft.Container(
-                            content=ft.Icon(t.ICONES_MAPA.get(tipo, ft.Icons.PLACE), color=t.BRANCO),
+                            content=ft.Icon(t.ICONES_MAPA.get(tipo, t.ICONES["local"]), color=t.BRANCO),
                             width=44,
                             height=44,
                             bgcolor=t.URGENCIA if ponto.get("emergencia") else cor,
@@ -426,12 +426,12 @@ def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
                 ft.Row(
                     [
                         _metrica_detalhe(
-                            ft.Icons.PLACE_OUTLINED,
+                            t.ICONES["local"],
                             ponto.get("distancia_formatada", "--"),
                             "distância",
                         ),
                         _metrica_detalhe(
-                            ft.Icons.MY_LOCATION,
+                            t.ICONES["localizar"],
                             f"{ponto.get('latitude', 0):.4f}, {ponto.get('longitude', 0):.4f}",
                             "coordenadas",
                         ),

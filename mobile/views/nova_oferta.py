@@ -18,13 +18,13 @@ def construir(app: App) -> ft.Control:
     """Monta o formulário de publicação de uma oferta avulsa."""
     categorias = app.categorias()
 
-    campo_titulo = t.campo("O que você está oferecendo?", icone=ft.Icons.TITLE)
+    campo_titulo = t.campo("O que você está oferecendo?", icone=t.ICONES["titulo"])
     campo_descricao = t.campo(
         "Detalhes",
         multilinha=True,
         dica="Ex.: 30 litros de água mineral, retirada das 8h às 20h.",
     )
-    campo_endereco = t.campo("Endereço ou região", icone=ft.Icons.PLACE_OUTLINED)
+    campo_endereco = t.campo("Endereço ou região", icone=t.ICONES["local"])
 
     seletor_categoria = ft.Dropdown(
         label="Categoria",
@@ -101,7 +101,7 @@ def construir(app: App) -> ft.Control:
                         ),
                         opcoes_coluna,
                         ft.Container(height=4),
-                        t.botao_primario("Publicar oferta", publicar, ft.Icons.SEND, 400),
+                        t.botao_primario("Publicar oferta", publicar, t.ICONES["enviar"], 400),
                         ft.Container(height=16),
                     ],
                     spacing=12,

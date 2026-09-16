@@ -27,7 +27,7 @@ def cabecalho(
     if ao_voltar is not None:
         esquerda.append(
             ft.IconButton(
-                ft.Icons.ARROW_BACK,
+                t.ICONES["voltar"],
                 icon_color=t.AZUL_INSTITUCIONAL,
                 on_click=ao_voltar,
                 tooltip="Voltar",
@@ -60,12 +60,15 @@ def cabecalho(
 # Navegação inferior
 # --------------------------------------------------------------------------- #
 # Ordem das abas: Início · Explorar · Publicar (+) · Mensagens · Perfil.
+# (rota, ícone inativo, ícone ativo, rótulo). O par sai sempre da MESMA família:
+# contornado quando inativo, cheio/rounded quando ativo — é o que dá a leitura
+# imediata de qual aba está selecionada sem depender só da cor.
 ABAS = [
-    ("home", ft.Icons.HOME_OUTLINED, ft.Icons.HOME, "Início"),
-    ("explorar", ft.Icons.SEARCH, ft.Icons.SEARCH, "Explorar"),
-    ("publicar", ft.Icons.ADD_CIRCLE, ft.Icons.ADD_CIRCLE, "Publicar"),
-    ("conversas", ft.Icons.CHAT_BUBBLE_OUTLINE, ft.Icons.CHAT_BUBBLE, "Mensagens"),
-    ("perfil", ft.Icons.PERSON_OUTLINE, ft.Icons.PERSON, "Perfil"),
+    ("home", ft.Icons.HOME_OUTLINED, ft.Icons.HOME_ROUNDED, "Início"),
+    ("explorar", ft.Icons.SEARCH_OUTLINED, ft.Icons.SEARCH_ROUNDED, "Explorar"),
+    ("publicar", ft.Icons.ADD_CIRCLE_OUTLINE, ft.Icons.ADD_CIRCLE_ROUNDED, "Publicar"),
+    ("conversas", ft.Icons.CHAT_BUBBLE_OUTLINE, ft.Icons.CHAT_BUBBLE_ROUNDED, "Mensagens"),
+    ("perfil", ft.Icons.PERSON_OUTLINE, ft.Icons.PERSON_ROUNDED, "Perfil"),
 ]
 
 
@@ -87,7 +90,7 @@ def navegacao_inferior(
             itens.append(
                 ft.Container(
                     content=ft.Container(
-                        content=ft.Icon(ft.Icons.ADD, color=t.BRANCO, size=28),
+                        content=ft.Icon(t.ICONES["adicionar"], color=t.BRANCO, size=t.ICONE_DESTAQUE),
                         width=54,
                         height=54,
                         bgcolor=t.VERDE_PRIMARIO,
@@ -106,7 +109,9 @@ def navegacao_inferior(
             continue
 
         cor = t.VERDE_PRIMARIO if ativo else t.TEXTO_SECUNDARIO
-        icone_control: ft.Control = ft.Icon(icone_ativo if ativo else icone, size=22, color=cor)
+        icone_control: ft.Control = ft.Icon(
+            icone_ativo if ativo else icone, size=t.ICONE_ACAO, color=cor
+        )
 
         # Badge de mensagens não lidas sobre o ícone de conversas.
         if rota == "conversas" and nao_lidas > 0:
@@ -183,10 +188,10 @@ def cartao_solicitacao(
     # ícone nunca fica órfão do seu valor.
     metadados = ft.Row(
         [
-            metadado(ft.Icons.PLACE_OUTLINED, solicitacao.get("distancia_formatada", "--")),
-            metadado(ft.Icons.SCHEDULE, solicitacao.get("tempo_publicacao", "")),
+            metadado(t.ICONES["local"], solicitacao.get("distancia_formatada", "--")),
+            metadado(t.ICONES["horario"], solicitacao.get("tempo_publicacao", "")),
             metadado(
-                ft.Icons.GROUP_OUTLINED,
+                t.ICONES["pessoas"],
                 f"{solicitacao.get('pessoas_beneficiadas', 1)} pessoa(s)",
             ),
         ],
@@ -221,7 +226,7 @@ def cartao_solicitacao(
                 spacing=6,
                 expand=True,
             ),
-            ft.Icon(ft.Icons.CHEVRON_RIGHT, color=t.BORDA),
+            ft.Icon(t.ICONES["detalhe"], color=t.BORDA),
         ],
         spacing=12,
         vertical_alignment=ft.CrossAxisAlignment.START,
@@ -241,9 +246,9 @@ ROTULOS_TIPO_AJUDA = {
 }
 
 ICONES_TIPO_AJUDA = {
-    "tenho_item": ft.Icons.INVENTORY_2_OUTLINED,
-    "posso_entregar": ft.Icons.LOCAL_SHIPPING_OUTLINED,
-    "ponto_retirada": ft.Icons.STOREFRONT_OUTLINED,
+    "tenho_item": t.ICONES["oferta"],
+    "posso_entregar": t.ICONES["entrega"],
+    "ponto_retirada": t.ICONES["ponto_retirada"],
 }
 
 
@@ -255,7 +260,7 @@ def cartao_oferta(oferta: dict[str, Any], ao_clicar: Callable[[dict], None] | No
         [
             ft.Container(
                 content=ft.Icon(
-                    ICONES_TIPO_AJUDA.get(tipo, ft.Icons.CARD_GIFTCARD),
+                    ICONES_TIPO_AJUDA.get(tipo, t.ICONES["doar"]),
                     size=22,
                     color=t.VERDE_ESCURO,
                 ),
@@ -278,12 +283,12 @@ def cartao_oferta(oferta: dict[str, Any], ao_clicar: Callable[[dict], None] | No
                     ),
                     ft.Row(
                         [
-                            metadado(ft.Icons.PERSON_OUTLINE, oferta.get("autor_nome", "")),
+                            metadado(t.ICONES["nome"], oferta.get("autor_nome", "")),
                             metadado(
-                                ft.Icons.PLACE_OUTLINED,
+                                t.ICONES["local"],
                                 oferta.get("distancia_formatada", "--"),
                             ),
-                            metadado(ft.Icons.SCHEDULE, oferta.get("tempo_publicacao", "")),
+                            metadado(t.ICONES["horario"], oferta.get("tempo_publicacao", "")),
                         ],
                         spacing=12,
                         run_spacing=4,
@@ -337,7 +342,7 @@ def cartao_ong(ong: dict[str, Any], ao_clicar: Callable[[int], None]) -> ft.Cont
                     t.estrelas(ong.get("avaliacao", 0.0), ong.get("total_avaliacoes")),
                     ft.Row(
                         [
-                            ft.Icon(ft.Icons.PLACE_OUTLINED, size=13, color=t.TEXTO_SECUNDARIO),
+                            ft.Icon(t.ICONES["local"], size=13, color=t.TEXTO_SECUNDARIO),
                             ft.Text(
                                 ong.get("distancia_formatada", "--"),
                                 size=12,
@@ -359,7 +364,7 @@ def cartao_ong(ong: dict[str, Any], ao_clicar: Callable[[int], None]) -> ft.Cont
                 spacing=5,
                 expand=True,
             ),
-            ft.Icon(ft.Icons.CHEVRON_RIGHT, color=t.BORDA),
+            ft.Icon(t.ICONES["detalhe"], color=t.BORDA),
         ],
         spacing=12,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -416,7 +421,7 @@ def cartao_conversa(
                     *(
                         [
                             t.etiqueta(
-                                conversa["solicitacao_titulo"], icone=ft.Icons.VOLUNTEER_ACTIVISM
+                                conversa["solicitacao_titulo"], icone=t.ICONES["doacoes"]
                             )
                         ]
                         if conversa.get("solicitacao_titulo")

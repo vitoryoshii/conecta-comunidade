@@ -261,7 +261,7 @@ class App:
         return ft.Container(
             content=ft.Column(
                 [
-                    ft.Icon(ft.Icons.CLOUD_OFF, size=56, color=t.TEXTO_SECUNDARIO),
+                    ft.Icon(t.ICONES["sem_conexao"], size=56, color=t.TEXTO_SECUNDARIO),
                     t.titulo("Sem conexão com a API", 18),
                     ft.Text(
                         mensagem,
@@ -271,7 +271,7 @@ class App:
                     ),
                     ft.Container(height=8),
                     t.botao_primario(
-                        "Tentar novamente", lambda _: self.renderizar(), ft.Icons.REFRESH, 220
+                        "Tentar novamente", lambda _: self.renderizar(), t.ICONES["recarregar"], 220
                     ),
                     t.botao_secundario(
                         "Voltar ao início", lambda _: self.reiniciar("splash"), largura=220

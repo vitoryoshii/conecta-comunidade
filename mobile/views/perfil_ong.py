@@ -60,7 +60,7 @@ def _dialogo_avaliacao(app: App, ong_id: int) -> None:
             content=ft.Row(
                 [
                     ft.IconButton(
-                        ft.Icons.STAR,
+                        ft.Icons.STAR_ROUNDED,
                         icon_color=t.AMARELO_ATENCAO,
                         icon_size=34,
                         tooltip=f"{nota} estrela(s)",
@@ -85,7 +85,7 @@ def construir(app: App) -> ft.Control:
         lambda: app.api.obter_ong(ong_id, **app.coordenadas())
     )
     if ong is None:
-        return t.area_vazia("Não foi possível carregar esta instituição.", ft.Icons.ERROR_OUTLINE)
+        return t.area_vazia("Não foi possível carregar esta instituição.", t.ICONES["erro"])
 
     def acao_indisponivel(mensagem: str):
         """Ações que dependem de integrações fora do escopo desta versão."""
@@ -136,7 +136,7 @@ def construir(app: App) -> ft.Control:
                                 ft.Row(
                                     [
                                         ft.Icon(
-                                            ft.Icons.PLACE_OUTLINED,
+                                            t.ICONES["local"],
                                             size=13,
                                             color=t.TEXTO_SECUNDARIO,
                                         ),
@@ -170,7 +170,7 @@ def construir(app: App) -> ft.Control:
                 app.voltar,
                 [
                     ft.IconButton(
-                        ft.Icons.STAR_OUTLINE,
+                        ft.Icons.STAR_OUTLINE_ROUNDED,
                         icon_color=t.AMARELO_ATENCAO,
                         tooltip="Avaliar",
                         on_click=lambda _: _dialogo_avaliacao(app, ong_id),
@@ -218,13 +218,13 @@ def construir(app: App) -> ft.Control:
                         t.botao_primario(
                             "Solicitar ajuda",
                             lambda _: app.navegar("nova_solicitacao"),
-                            ft.Icons.PAN_TOOL_ALT_OUTLINED,
+                            t.ICONES["preciso_de_ajuda"],
                             400,
                         ),
                         t.botao_secundario(
                             "Doar recursos",
                             lambda _: app.navegar("nova_oferta"),
-                            ft.Icons.CARD_GIFTCARD,
+                            t.ICONES["doar"],
                             400,
                         ),
                         t.botao_secundario(
@@ -232,14 +232,14 @@ def construir(app: App) -> ft.Control:
                             acao_indisponivel(
                                 "Inscrição de voluntariado: procure a instituição pelo endereço acima."
                             ),
-                            ft.Icons.GROUPS_OUTLINED,
+                            t.ICONES["voluntariado"],
                             400,
                             cor=t.AZUL_INSTITUCIONAL,
                         ),
                         t.botao_secundario(
                             "Falar com a ONG",
                             falar_com_a_ong,
-                            ft.Icons.CHAT_BUBBLE_OUTLINE,
+                            t.ICONES["conversa"],
                             400,
                             cor=t.AZUL_INSTITUCIONAL,
                         ),

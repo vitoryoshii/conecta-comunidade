@@ -34,7 +34,7 @@ def construir(app: App) -> ft.Control:
     else:
         lista = t.area_vazia(
             "Nenhuma conversa ainda.\nEnvie uma proposta em algum pedido para começar.",
-            ft.Icons.FORUM_OUTLINED,
+            t.ICONES["conversas"],
         )
 
     total_nao_lidas = sum(conversa.get("nao_lidas", 0) for conversa in conversas)

@@ -44,6 +44,89 @@ ROTULOS_URGENCIA = {
     "baixa": "Baixa",
 }
 
+# --------------------------------------------------------------------------- #
+# Ícones
+# --------------------------------------------------------------------------- #
+# Regra da casa: todo ícone é **outlined**; quando a família não tem outlined,
+# usamos a variante rounded. Nunca misturar preenchido e contornado na mesma
+# tela — a única exceção é a navegação inferior, onde o item ativo usa a versão
+# cheia da MESMA família justamente para sinalizar seleção.
+#
+# As telas referenciam por nome semântico (`t.ICONES["doacoes"]`) em vez de
+# espalhar `ft.Icons.X`: trocar um ícone do produto passa a ser uma edição só.
+ICONES = {
+    # Pilares e ações do produto
+    "doacoes": ft.Icons.VOLUNTEER_ACTIVISM_OUTLINED,
+    "voluntariado": ft.Icons.DIVERSITY_3_OUTLINED,
+    # EMERGENCY, e não CRISIS_ALERT: o desenho do crisis_alert é um círculo
+    # com traço vertical e arcos, que se lê como botão de "power".
+    "emergencias": ft.Icons.EMERGENCY_OUTLINED,
+    "preciso_de_ajuda": ft.Icons.PAN_TOOL_OUTLINED,
+    "quero_ajudar": ft.Icons.VOLUNTEER_ACTIVISM_OUTLINED,
+    "doar": ft.Icons.CARD_GIFTCARD_OUTLINED,
+    "ong": ft.Icons.APARTMENT_OUTLINED,
+    "ponto_retirada": ft.Icons.STOREFRONT_OUTLINED,
+    "entrega": ft.Icons.LOCAL_SHIPPING_OUTLINED,
+    "pedido": ft.Icons.ASSIGNMENT_OUTLINED,
+    "oferta": ft.Icons.INVENTORY_2_OUTLINED,
+
+    # Campos de formulário
+    "nome": ft.Icons.PERSON_OUTLINE_ROUNDED,
+    "email": ft.Icons.MAIL_OUTLINE_ROUNDED,
+    "senha": ft.Icons.LOCK_OUTLINE_ROUNDED,
+    "participacao": ft.Icons.HANDSHAKE_OUTLINED,
+    "estado": ft.Icons.MAP_OUTLINED,
+    "cidade": ft.Icons.LOCATION_CITY_OUTLINED,
+    "titulo": ft.Icons.TITLE_ROUNDED,
+    "descricao": ft.Icons.NOTES_ROUNDED,
+    "quantidade": ft.Icons.NUMBERS_ROUNDED,
+    "categoria": ft.Icons.LABEL_OUTLINE_ROUNDED,
+    "categoria_generica": ft.Icons.CATEGORY_OUTLINED,
+    "imagem": ft.Icons.IMAGE_OUTLINED,
+
+    # Navegação e ações
+    "voltar": ft.Icons.ARROW_BACK_ROUNDED,
+    "avancar": ft.Icons.ARROW_FORWARD_ROUNDED,
+    "detalhe": ft.Icons.CHEVRON_RIGHT_ROUNDED,
+    "buscar": ft.Icons.SEARCH_ROUNDED,
+    "filtrar": ft.Icons.TUNE_ROUNDED,
+    "enviar": ft.Icons.SEND_OUTLINED,
+    "adicionar": ft.Icons.ADD_ROUNDED,
+    "fechar": ft.Icons.CLOSE_ROUNDED,
+    "recarregar": ft.Icons.REFRESH_ROUNDED,
+    "compartilhar": ft.Icons.SHARE_OUTLINED,
+    "configuracoes": ft.Icons.SETTINGS_OUTLINED,
+    "sair": ft.Icons.LOGOUT_ROUNDED,
+    "entrar": ft.Icons.LOGIN_ROUNDED,
+    "criar_conta": ft.Icons.PERSON_ADD_ALT_1_OUTLINED,
+    "localizar": ft.Icons.MY_LOCATION_OUTLINED,
+
+    # Estado e feedback
+    "info": ft.Icons.INFO_OUTLINE_ROUNDED,
+    "ajuda": ft.Icons.HELP_OUTLINE_ROUNDED,
+    "sucesso": ft.Icons.CHECK_CIRCLE_OUTLINE,
+    "concluido": ft.Icons.TASK_ALT_ROUNDED,
+    "erro": ft.Icons.ERROR_OUTLINE_ROUNDED,
+    "urgente": ft.Icons.PRIORITY_HIGH_ROUNDED,
+    "sem_conexao": ft.Icons.CLOUD_OFF_ROUNDED,
+    "vazio": ft.Icons.INBOX_OUTLINED,
+    "sem_resultado": ft.Icons.SEARCH_OFF_ROUNDED,
+    "verificada": ft.Icons.VERIFIED_OUTLINED,
+    "agenda": ft.Icons.EVENT_AVAILABLE_OUTLINED,
+    "horario": ft.Icons.SCHEDULE_OUTLINED,
+    "data": ft.Icons.CALENDAR_TODAY_OUTLINED,
+    "local": ft.Icons.PLACE_OUTLINED,
+    "pessoas": ft.Icons.GROUP_OUTLINED,
+    "conversa": ft.Icons.CHAT_BUBBLE_OUTLINE,
+    "conversas": ft.Icons.FORUM_OUTLINED,
+    "demonstracao": ft.Icons.SCIENCE_OUTLINED,
+}
+
+# Tamanhos por contexto — nada de valor solto no meio da tela.
+ICONE_CAMPO = 20      # prefixo de campo, rótulo, linha de apoio
+ICONE_ACAO = 24       # botões, navegação, barras
+ICONE_DESTAQUE = 28   # cartões, categorias, cabeçalhos
+
 # Cores dos pins do mapa, por tipo de ponto.
 CORES_MAPA = {
     "ajuda": URGENCIA,
@@ -53,10 +136,10 @@ CORES_MAPA = {
 }
 
 ICONES_MAPA = {
-    "ajuda": ft.Icons.VOLUNTEER_ACTIVISM,
-    "oferecendo": ft.Icons.CARD_GIFTCARD,
-    "ong": ft.Icons.APARTMENT,
-    "ponto_retirada": ft.Icons.STOREFRONT,
+    "ajuda": ICONES["preciso_de_ajuda"],
+    "oferecendo": ICONES["doacoes"],
+    "ong": ICONES["ong"],
+    "ponto_retirada": ICONES["ponto_retirada"],
 }
 
 ROTULOS_MAPA = {
@@ -207,6 +290,10 @@ def campo(
         min_lines=3 if multilinha else None,
         max_lines=5 if multilinha else 1,
         prefix_icon=icone,
+        # Todo ícone de campo no mesmo tamanho, em qualquer tela.
+        prefix_icon_size_constraints=ft.BoxConstraints(
+            min_width=ICONE_CAMPO, min_height=ICONE_CAMPO
+        ),
         keyboard_type=tipo_teclado,
         filled=True,
         fill_color=BRANCO,
@@ -315,7 +402,9 @@ def tela_de_autenticacao(
         # Solto no canto, fora do fluxo: não empurra o formulário do centro.
         camadas.append(
             ft.Container(
-                content=ft.IconButton(ft.Icons.ARROW_BACK, icon_color=BRANCO, on_click=on_voltar),
+                content=ft.IconButton(
+                    ICONES["voltar"], icon_color=BRANCO, icon_size=ICONE_ACAO, on_click=on_voltar
+                ),
                 left=-12,
                 top=0,
             )
@@ -338,7 +427,7 @@ def logo_circular(tamanho: int = LADO_DO_DISCO) -> ft.Container:
             width=interno,
             height=interno,
             fit=ft.BoxFit.CONTAIN,
-            error_content=ft.Icon(ft.Icons.FAVORITE, size=interno, color=VERDE_PRIMARIO),
+            error_content=ft.Icon(ICONES["doacoes"], size=interno, color=VERDE_PRIMARIO),
         ),
         width=tamanho,
         height=tamanho,
@@ -369,6 +458,10 @@ def campo_claro(
         password=senha,
         can_reveal_password=senha,
         prefix_icon=icone,
+        # Todo ícone de campo no mesmo tamanho, em qualquer tela.
+        prefix_icon_size_constraints=ft.BoxConstraints(
+            min_width=ICONE_CAMPO, min_height=ICONE_CAMPO
+        ),
         keyboard_type=tipo_teclado,
         filled=True,
         fill_color=BRANCO,
@@ -397,6 +490,7 @@ def dropdown_claro(
     valor: str | None = None,
     dica: str | None = None,
     desabilitado: bool = False,
+    icone: ft.IconData | None = None,
     filtravel: bool = False,
     ao_selecionar=None,
 ) -> ft.Dropdown:
@@ -412,6 +506,7 @@ def dropdown_claro(
         value=valor,
         options=opcoes,
         hint_text=dica,
+        leading_icon=icone,
         disabled=desabilitado,
         editable=filtravel,
         enable_filter=filtravel,
@@ -434,11 +529,11 @@ def dropdown_claro(
     )
 
 
-def ajuda_clara(texto: str, icone: ft.IconData = ft.Icons.INFO_OUTLINE) -> ft.Row:
+def ajuda_clara(texto: str, icone: ft.IconData | None = None) -> ft.Row:
     """Linha discreta de ajuda sob um campo, legível sobre a foto."""
     return ft.Row(
         [
-            ft.Icon(icone, size=13, color=MENTA_CLARA),
+            ft.Icon(icone or ICONES["info"], size=ICONE_CAMPO, color=MENTA_CLARA),
             ft.Text(texto, size=11, color=MENTA_CLARA, expand=True),
         ],
         spacing=6,
@@ -505,20 +600,20 @@ def badge_urgencia(nivel: str) -> ft.Container:
         ROTULOS_URGENCIA.get(nivel, nivel).upper(),
         cor_texto=BRANCO,
         cor_fundo=cor,
-        icone=ft.Icons.PRIORITY_HIGH if nivel == "alta" else None,
+        icone=ICONES["urgente"] if nivel == "alta" else None,
     )
 
 
 def badge_emergencia() -> ft.Container:
     """Selo do modo emergência, exibido acima do título do pedido."""
     return etiqueta(
-        "EMERGÊNCIA", cor_texto=BRANCO, cor_fundo=URGENCIA, icone=ft.Icons.CRISIS_ALERT
+        "EMERGÊNCIA", cor_texto=BRANCO, cor_fundo=URGENCIA, icone=ICONES["emergencias"]
     )
 
 
 def selo_verificada() -> ft.Icon:
     """Ícone de instituição verificada."""
-    return ft.Icon(ft.Icons.VERIFIED, size=16, color=VERDE_PRIMARIO, tooltip="ONG verificada")
+    return ft.Icon(ICONES["verificada"], size=16, color=VERDE_PRIMARIO, tooltip="ONG verificada")
 
 
 def estrelas(nota: float, total: int | None = None, tamanho: int = 14) -> ft.Row:
@@ -526,11 +621,11 @@ def estrelas(nota: float, total: int | None = None, tamanho: int = 14) -> ft.Row
     icones: list[ft.Control] = []
     for posicao in range(1, 6):
         if nota >= posicao:
-            icone = ft.Icons.STAR
+            icone = ft.Icons.STAR_ROUNDED
         elif nota >= posicao - 0.5:
-            icone = ft.Icons.STAR_HALF
+            icone = ft.Icons.STAR_HALF_ROUNDED
         else:
-            icone = ft.Icons.STAR_BORDER
+            icone = ft.Icons.STAR_OUTLINE_ROUNDED
         icones.append(ft.Icon(icone, size=tamanho, color=AMARELO_ATENCAO))
 
     rotulo = f"{nota:.1f}" + (f" ({total})" if total is not None else "")
@@ -538,23 +633,31 @@ def estrelas(nota: float, total: int | None = None, tamanho: int = 14) -> ft.Row
     return ft.Row(icones, spacing=2, tight=True)
 
 
-def icone_por_nome(nome: str, tamanho: int = 22, cor: str = VERDE_PRIMARIO) -> ft.Icon:
+def icone_por_nome(nome: str, tamanho: int = ICONE_DESTAQUE, cor: str = VERDE_PRIMARIO) -> ft.Icon:
     """Converte o nome vindo da API (ex.: "water_drop") em um ícone do Flet.
 
-    Se o nome não existir na enumeração, cai para um ícone genérico em vez de
-    quebrar a tela.
+    Tenta primeiro a variante contornada (`WATER_DROP_OUTLINED`) e só então a
+    cheia: assim as categorias e os recursos das ONGs entram no mesmo estilo do
+    resto do app sem precisar de um mapa manual — e categorias novas criadas no
+    backend já nascem padronizadas. Nome desconhecido cai no ícone genérico em
+    vez de quebrar a tela.
     """
-    icone = getattr(ft.Icons, nome.upper(), ft.Icons.CATEGORY)
+    maiusculo = nome.upper()
+    icone = (
+        getattr(ft.Icons, f"{maiusculo}_OUTLINED", None)
+        or getattr(ft.Icons, maiusculo, None)
+        or ICONES["categoria_generica"]
+    )
     return ft.Icon(icone, size=tamanho, color=cor)
 
 
-def area_vazia(mensagem: str, icone: ft.IconData = ft.Icons.INBOX) -> ft.Container:
+def area_vazia(mensagem: str, icone: ft.IconData | None = None) -> ft.Container:
     """Estado vazio padronizado, exibido quando uma listagem não retorna nada."""
     return ft.Container(
         content=ft.Column(
             [
                 ft.Container(
-                    content=ft.Icon(icone, size=34, color=VERDE_PRIMARIO),
+                    content=ft.Icon(icone or ICONES["vazio"], size=34, color=VERDE_PRIMARIO),
                     width=78,
                     height=78,
                     bgcolor=VERDE_SUAVE,

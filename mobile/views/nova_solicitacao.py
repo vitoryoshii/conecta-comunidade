@@ -19,20 +19,20 @@ def construir(app: App) -> ft.Control:
     """Monta o formulário de publicação de um pedido de ajuda."""
     categorias = app.categorias()
 
-    campo_titulo = t.campo("O que você precisa?", icone=ft.Icons.TITLE)
+    campo_titulo = t.campo("O que você precisa?", icone=t.ICONES["titulo"])
     campo_descricao = t.campo(
         "Conte um pouco mais",
         multilinha=True,
         dica="Explique a situação para quem for ajudar.",
     )
-    campo_quantidade = t.campo("Quantidade", dica="Ex.: 50 litros, 7 cestas", icone=ft.Icons.NUMBERS)
+    campo_quantidade = t.campo("Quantidade", dica="Ex.: 50 litros, 7 cestas", icone=t.ICONES["quantidade"])
     campo_pessoas = t.campo(
         "Quantas pessoas serão beneficiadas?",
         valor="1",
-        icone=ft.Icons.GROUP_OUTLINED,
+        icone=t.ICONES["pessoas"],
         tipo_teclado=ft.KeyboardType.NUMBER,
     )
-    campo_endereco = t.campo("Endereço ou ponto de referência", icone=ft.Icons.PLACE_OUTLINED)
+    campo_endereco = t.campo("Endereço ou ponto de referência", icone=t.ICONES["local"])
 
     seletor_categoria = ft.Dropdown(
         label="Categoria",
@@ -147,7 +147,7 @@ def construir(app: App) -> ft.Control:
                         t.cartao(
                             ft.Row(
                                 [
-                                    ft.Icon(ft.Icons.CRISIS_ALERT, color=t.URGENCIA, size=20),
+                                    ft.Icon(t.ICONES["emergencias"], color=t.URGENCIA, size=20),
                                     ft.Column(
                                         [
                                             switch_emergencia,
@@ -167,7 +167,7 @@ def construir(app: App) -> ft.Control:
                             borda="#F5C9C9",
                         ),
                         ft.Container(height=4),
-                        t.botao_primario("Publicar solicitação", publicar, ft.Icons.SEND, 400),
+                        t.botao_primario("Publicar solicitação", publicar, t.ICONES["enviar"], 400),
                         ft.Container(height=16),
                     ],
                     spacing=12,

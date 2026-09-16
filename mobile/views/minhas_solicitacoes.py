@@ -20,8 +20,8 @@ ABAS = [
 
 # Próximo status sugerido para cada estado atual do pedido.
 PROXIMO_STATUS = {
-    "ativa": ("em_andamento", "Marcar em andamento", ft.Icons.PLAY_ARROW),
-    "em_andamento": ("concluida", "Marcar como concluída", ft.Icons.CHECK_CIRCLE_OUTLINE),
+    "ativa": ("em_andamento", "Marcar em andamento", ft.Icons.PLAY_ARROW_ROUNDED),
+    "em_andamento": ("concluida", "Marcar como concluída", t.ICONES["sucesso"]),
 }
 
 
@@ -81,7 +81,7 @@ def construir(app: App) -> ft.Control:
         lista: ft.Control = ft.Column(cartoes, spacing=8)
     else:
         lista = t.area_vazia(
-            "Nenhuma solicitação nesta aba.", ft.Icons.ASSIGNMENT_OUTLINED
+            "Nenhuma solicitação nesta aba.", t.ICONES["pedido"]
         )
 
     return ft.Column(
@@ -116,7 +116,7 @@ def construir(app: App) -> ft.Control:
                         t.botao_primario(
                             "Nova solicitação",
                             lambda _: app.navegar("nova_solicitacao"),
-                            ft.Icons.ADD,
+                            t.ICONES["adicionar"],
                             400,
                         ),
                         ft.Container(height=2),

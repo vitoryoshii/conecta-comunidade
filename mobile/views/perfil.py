@@ -54,7 +54,7 @@ def _item_menu(
             [
                 ft.Icon(icone, size=20, color=cor),
                 ft.Text(rotulo, size=14, color=cor, expand=True),
-                ft.Icon(ft.Icons.CHEVRON_RIGHT, size=18, color=t.BORDA),
+                ft.Icon(t.ICONES["detalhe"], size=18, color=t.BORDA),
             ],
             spacing=14,
         ),
@@ -108,7 +108,7 @@ def construir(app: App) -> ft.Control:
                                     ft.Row(
                                         [
                                             ft.Icon(
-                                                ft.Icons.PLACE_OUTLINED,
+                                                t.ICONES["local"],
                                                 size=13,
                                                 color=t.TEXTO_SECUNDARIO,
                                             ),
@@ -124,7 +124,7 @@ def construir(app: App) -> ft.Control:
                                         ROTULOS_TIPO.get(
                                             usuario.get("tipo", ""), usuario.get("tipo", "")
                                         ),
-                                        icone=ft.Icons.BADGE_OUTLINED,
+                                        icone=t.ICONES["nome"],
                                     ),
                                 ],
                                 spacing=5,
@@ -143,19 +143,19 @@ def construir(app: App) -> ft.Control:
                         _numero_impacto(
                             impacto.get("solicitacoes_atendidas", 0),
                             "Solicitações atendidas",
-                            ft.Icons.TASK_ALT,
+                            t.ICONES["concluido"],
                             t.VERDE_PRIMARIO,
                         ),
                         _numero_impacto(
                             impacto.get("doacoes_recebidas", 0),
                             "Doações recebidas",
-                            ft.Icons.CARD_GIFTCARD,
+                            t.ICONES["doar"],
                             t.AZUL_INSTITUCIONAL,
                         ),
                         _numero_impacto(
                             impacto.get("acoes_voluntario", 0),
                             "Ações como voluntário",
-                            ft.Icons.GROUPS_OUTLINED,
+                            t.ICONES["voluntariado"],
                             t.AMARELO_ATENCAO,
                         ),
                     ],
@@ -167,11 +167,11 @@ def construir(app: App) -> ft.Control:
                     [
                         t.etiqueta(
                             f"{impacto.get('total_solicitacoes_criadas', 0)} pedidos publicados",
-                            icone=ft.Icons.ASSIGNMENT_OUTLINED,
+                            icone=t.ICONES["pedido"],
                         ),
                         t.etiqueta(
                             f"{impacto.get('total_ofertas_criadas', 0)} ofertas enviadas",
-                            icone=ft.Icons.VOLUNTEER_ACTIVISM,
+                            icone=t.ICONES["doacoes"],
                         ),
                     ],
                     spacing=8,
@@ -183,44 +183,44 @@ def construir(app: App) -> ft.Control:
                     ft.Column(
                         [
                             _item_menu(
-                                ft.Icons.ASSIGNMENT_OUTLINED,
+                                t.ICONES["pedido"],
                                 "Minhas solicitações",
                                 lambda _: app.navegar("minhas_solicitacoes"),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
                             _item_menu(
-                                ft.Icons.CARD_GIFTCARD,
+                                t.ICONES["doar"],
                                 "Minhas doações",
                                 lambda _: app.navegar("explorar", aba="ofertas"),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
                             _item_menu(
-                                ft.Icons.FAVORITE_BORDER,
+                                t.ICONES["doacoes"],
                                 "Favoritos",
                                 em_breve("Favoritos entram na próxima versão do app."),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
                             _item_menu(
-                                ft.Icons.STAR_OUTLINE,
+                                ft.Icons.STAR_OUTLINE_ROUNDED,
                                 "Avaliações",
                                 lambda _: app.navegar("ongs"),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
                             _item_menu(
-                                ft.Icons.SETTINGS_OUTLINED,
+                                t.ICONES["configuracoes"],
                                 "Configurações",
                                 em_breve("Configurações entram na próxima versão do app."),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
                             _item_menu(
-                                ft.Icons.HELP_OUTLINE,
+                                t.ICONES["ajuda"],
                                 "Ajuda",
                                 em_breve(
                                     "Dúvidas? Documentação da API em http://127.0.0.1:8000/docs"
                                 ),
                             ),
                             ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(ft.Icons.LOGOUT, "Sair", sair, t.URGENCIA),
+                            _item_menu(t.ICONES["sair"], "Sair", sair, t.URGENCIA),
                         ],
                         spacing=0,
                     ),

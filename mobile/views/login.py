@@ -25,8 +25,10 @@ CONTAS_DEMO = [
 
 def construir(app: App) -> ft.Control:
     """Formulário de acesso, com atalhos para as contas de demonstração."""
-    campo_email = t.campo_claro("seu@email.com", tipo_teclado=ft.KeyboardType.EMAIL)
-    campo_senha = t.campo_claro("Sua senha", senha=True)
+    campo_email = t.campo_claro(
+        "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
+    )
+    campo_senha = t.campo_claro("Sua senha", senha=True, icone=t.ICONES["senha"])
 
     def entrar(_: ft.ControlEvent) -> None:
         """Valida os campos, autentica e guarda o token no estado."""
@@ -120,7 +122,7 @@ def _contas_demo(app: App, ao_escolher) -> ft.Column:
             ft.TextButton(
                 content=ft.Row(
                     [
-                        ft.Icon(ft.Icons.SCIENCE_OUTLINED, size=13, color=t.MENTA_CLARA),
+                        ft.Icon(t.ICONES["demonstracao"], size=13, color=t.MENTA_CLARA),
                         ft.Text("Contas de demonstração", size=11, color=t.MENTA_CLARA),
                     ],
                     spacing=5,

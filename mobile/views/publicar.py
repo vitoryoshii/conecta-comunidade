@@ -37,7 +37,7 @@ def _opcao(
                     spacing=4,
                     expand=True,
                 ),
-                ft.Icon(ft.Icons.CHEVRON_RIGHT, color=t.BORDA),
+                ft.Icon(t.ICONES["detalhe"], color=t.BORDA),
             ],
             spacing=14,
         ),
@@ -61,14 +61,14 @@ def construir(app: App) -> ft.Control:
                 _opcao(
                     "Preciso de ajuda",
                     "Publique o que está faltando para você ou sua comunidade.",
-                    ft.Icons.PAN_TOOL_ALT_OUTLINED,
+                    t.ICONES["preciso_de_ajuda"],
                     t.URGENCIA,
                     lambda _: app.navegar("nova_solicitacao"),
                 ),
                 _opcao(
                     "Quero ajudar / Doar",
                     "Ofereça um item, transporte ou um ponto de retirada.",
-                    ft.Icons.VOLUNTEER_ACTIVISM,
+                    t.ICONES["doacoes"],
                     t.VERDE_PRIMARIO,
                     lambda _: app.navegar("nova_oferta"),
                 ),
@@ -76,7 +76,7 @@ def construir(app: App) -> ft.Control:
                 t.cartao(
                     ft.Row(
                         [
-                            ft.Icon(ft.Icons.CRISIS_ALERT, color=t.URGENCIA),
+                            ft.Icon(t.ICONES["emergencias"], color=t.URGENCIA),
                             ft.Column(
                                 [
                                     ft.Text(

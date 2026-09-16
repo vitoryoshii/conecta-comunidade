@@ -17,6 +17,7 @@ from backend.schemas.usuario import (
     UsuarioCriar,
     UsuarioLer,
     UsuarioLogin,
+    UsuarioPrivadoLer,
 )
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "UsuarioCriar",
     "UsuarioLer",
     "UsuarioLogin",
+    "UsuarioPrivadoLer",
 ]

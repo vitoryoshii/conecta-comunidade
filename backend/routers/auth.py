@@ -12,8 +12,9 @@ from backend.schemas import (
     UsuarioCriar,
     UsuarioLer,
     UsuarioLogin,
+    UsuarioPrivadoLer,
 )
-from backend.services import localidades_service
+from backend.services import dados_pessoais_service, localidades_service
 from backend.services.auth_service import criar_access_token, gerar_hash_senha, verificar_senha
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -44,6 +45,26 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
             detail="Já existe uma conta cadastrada com este e-mail.",
         )
 
+    # Dados pessoais: dígito verificador do CPF, DDD do telefone e idade mínima.
+    # Tudo volta normalizado (só dígitos), que é o formato gravado.
+    try:
+        cpf = dados_pessoais_service.validar_cpf(dados.cpf)
+        telefone = dados_pessoais_service.validar_telefone(dados.telefone)
+        nascimento = dados_pessoais_service.validar_data_de_nascimento(dados.data_nascimento)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+        ) from erro
+
+    # A unicidade também é garantida por índice no banco; a checagem aqui existe
+    # para devolver uma mensagem que faça sentido em vez de um erro de constraint.
+    cpf_em_uso = session.exec(select(Usuario).where(Usuario.cpf == cpf)).first()
+    if cpf_em_uso:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Já existe uma conta cadastrada com este CPF.",
+        )
+
     # A dupla estado/cidade é conferida contra a base do IBGE, que devolve a
     # sigla em maiúsculas, o nome oficial do município e as coordenadas da sede.
     try:
@@ -64,6 +85,9 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
         email=email_normalizado,
         senha_hash=gerar_hash_senha(dados.senha),
         tipo=dados.tipo,
+        cpf=cpf,
+        telefone=telefone,
+        data_nascimento=nascimento,
         estado=local.estado,
         cidade=local.cidade,
         latitude=latitude,
@@ -131,10 +155,16 @@ def recuperar_senha(dados: RecuperarSenha, session: SessionDep) -> RecuperarSenh
 
 @router.get(
     "/me",
-    response_model=UsuarioLer,
+    response_model=UsuarioPrivadoLer,
     summary="Usuário autenticado",
-    description="Devolve os dados do usuário dono do token enviado no header.",
+    description=(
+        "Devolve os dados do usuário dono do token enviado no header, incluindo "
+        "os dados pessoais que o perfil público não expõe. O CPF vem **mascarado** "
+        "(`***.456.789-**`) — o número completo não sai da API em nenhuma rota."
+    ),
 )
-def eu(usuario: UsuarioAtual) -> Usuario:
-    """Retorna o perfil do usuário logado."""
-    return usuario
+def eu(usuario: UsuarioAtual) -> UsuarioPrivadoLer:
+    """Retorna o perfil do usuário logado, com o CPF mascarado."""
+    privado = UsuarioPrivadoLer.model_validate(usuario)
+    privado.cpf = dados_pessoais_service.mascarar_cpf(usuario.cpf)
+    return privado

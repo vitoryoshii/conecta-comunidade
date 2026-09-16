@@ -1,6 +1,6 @@
 """Schemas de autenticação e de usuário."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -14,6 +14,11 @@ class UsuarioCriar(BaseModel):
     email: EmailStr
     # 72 é o limite de bytes do bcrypt — validar aqui evita erro no hash.
     senha: str = Field(min_length=6, max_length=72)
+    # Aceitos com ou sem máscara: o router normaliza para só dígitos antes de
+    # gravar, e valida dígito verificador, DDD e idade mínima (422 se falhar).
+    cpf: str = Field(min_length=11, max_length=14)
+    telefone: str = Field(min_length=10, max_length=15)
+    data_nascimento: date
     tipo: TipoUsuario = TipoUsuario.SOLICITANTE
     # Sigla da UF e nome do município; o router valida que a cidade pertence ao
     # estado antes de gravar (422 quando não pertence).
@@ -29,6 +34,9 @@ class UsuarioCriar(BaseModel):
                 "nome": "Ana Ribeiro",
                 "email": "ana@exemplo.com",
                 "senha": "senha123",
+                "cpf": "529.982.247-25",
+                "telefone": "(11) 98765-4321",
+                "data_nascimento": "1995-04-12",
                 "tipo": "solicitante",
                 "estado": "SP",
                 "cidade": "São Paulo",
@@ -71,7 +79,13 @@ class RecuperarSenhaResposta(BaseModel):
 
 
 class UsuarioLer(BaseModel):
-    """Representação pública de um usuário (nunca expõe o hash da senha)."""
+    """Representação **pública** de um usuário.
+
+    É o que `GET /usuarios/{id}` devolve — o perfil que qualquer pessoa logada
+    vê no chat e no detalhe de uma solicitação. Por isso não tem senha, CPF,
+    telefone nem data de nascimento: acrescentar qualquer um deles aqui vaza o
+    dado para toda a plataforma. Dados pessoais vivem em `UsuarioPrivadoLer`.
+    """
 
     id: int
     nome: str
@@ -88,6 +102,19 @@ class UsuarioLer(BaseModel):
     acoes_voluntario: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UsuarioPrivadoLer(UsuarioLer):
+    """Retrato que **só o próprio dono** recebe (`GET /auth/me`).
+
+    O CPF sai mascarado (`***.456.789-**`) mesmo aqui: dá para o usuário
+    reconhecer o próprio número, mas não para reconstruí-lo caso a resposta
+    acabe em um log ou no cache de alguém.
+    """
+
+    cpf: str | None = None
+    telefone: str = ""
+    data_nascimento: date | None = None
 
 
 class UsuarioAtualizar(BaseModel):

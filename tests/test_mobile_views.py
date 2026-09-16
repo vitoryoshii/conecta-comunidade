@@ -8,6 +8,7 @@ e não durante a apresentação.
 """
 
 from collections.abc import Generator
+from datetime import date
 from types import SimpleNamespace
 from typing import Any
 
@@ -208,6 +209,25 @@ def test_cadastro_carrega_cidades_no_formato_da_api(app_mobile: App) -> None:
     assert "Salvador" in [opcao.key for opcao in seletor_cidade.options]
 
 
+def test_cadastro_exige_consentimento_lgpd(app_mobile: App) -> None:
+    """O botão "Criar conta" só liga depois de aceitar os termos."""
+    app_mobile.state.reiniciar("cadastro")
+    tela = ROTAS["cadastro"][0](app_mobile)
+
+    botao = next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton))
+    caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
+
+    assert botao.disabled is True, "cadastro não pode começar liberado"
+
+    caixa.value = True
+    caixa.on_change(SimpleNamespace(control=caixa))
+    assert botao.disabled is False
+
+    caixa.value = False
+    caixa.on_change(SimpleNamespace(control=caixa))
+    assert botao.disabled is True, "desmarcar os termos precisa travar de novo"
+
+
 def test_cadastro_envia_as_coordenadas_da_cidade(app_mobile: App) -> None:
     """O cadastro pela tela grava o usuário na cidade escolhida, não em (0, 0)."""
     app_mobile.state.reiniciar("cadastro")
@@ -222,6 +242,16 @@ def test_cadastro_envia_as_coordenadas_da_cidade(app_mobile: App) -> None:
     _por_dica(tela, "Seu nome completo").value = "Pessoa de Salvador"
     _por_dica(tela, "seu@email.com").value = "salvador.tela@teste.com"
     _por_dica(tela, "Mínimo 6 caracteres").value = "senha123"
+    # Digitados com máscara, como o usuário faria; a tela envia só os dígitos.
+    _por_dica(tela, "000.000.000-00").value = "529.982.247-25"
+    _por_dica(tela, "(00) 00000-0000").value = "(71) 98765-4321"
+
+    campo_data = _por_dica(tela, "Selecione sua data de nascimento")
+    campo_data.data = date(1995, 4, 12)
+
+    caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
+    caixa.value = True
+    caixa.on_change(SimpleNamespace(control=caixa))
 
     botao = next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton))
     botao.on_click(None)
@@ -231,3 +261,22 @@ def test_cadastro_envia_as_coordenadas_da_cidade(app_mobile: App) -> None:
     assert usuario["cidade"] == "Salvador"
     assert usuario["latitude"] != 0.0
     assert usuario["longitude"] != 0.0
+    # O perfil público não carrega dado pessoal nenhum.
+    for campo in ("cpf", "telefone", "data_nascimento"):
+        assert campo not in usuario
+
+
+def test_cadastro_acusa_campos_invalidos_antes_de_enviar(app_mobile: App) -> None:
+    """Com os termos aceitos e o formulário vazio, os campos acendem em vermelho."""
+    app_mobile.state.reiniciar("cadastro")
+    tela = ROTAS["cadastro"][0](app_mobile)
+
+    caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
+    caixa.value = True
+    caixa.on_change(SimpleNamespace(control=caixa))
+
+    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+
+    # Todos de uma vez, e não um por envio.
+    for dica in ("Seu nome completo", "000.000.000-00", "seu@email.com", "(00) 00000-0000"):
+        assert _por_dica(tela, dica).error, f"{dica} deveria estar marcado"

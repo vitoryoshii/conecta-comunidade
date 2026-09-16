@@ -72,6 +72,10 @@ ICONES = {
 
     # Campos de formulário
     "nome": ft.Icons.PERSON_OUTLINE_ROUNDED,
+    "cpf": ft.Icons.BADGE_OUTLINED,
+    "telefone": ft.Icons.PHONE_OUTLINED,
+    "nascimento": ft.Icons.CAKE_OUTLINED,
+    "privacidade": ft.Icons.PRIVACY_TIP_OUTLINED,
     "email": ft.Icons.MAIL_OUTLINE_ROUNDED,
     "senha": ft.Icons.LOCK_OUTLINE_ROUNDED,
     "participacao": ft.Icons.HANDSHAKE_OUTLINED,
@@ -447,6 +451,10 @@ def campo_claro(
     senha: bool = False,
     icone: ft.IconData | None = None,
     tipo_teclado: ft.KeyboardType = ft.KeyboardType.TEXT,
+    maximo: int | None = None,
+    somente_numeros: bool = False,
+    ao_mudar=None,
+    ao_sair=None,
 ) -> ft.TextField:
     """Campo branco arredondado, sem rótulo interno (ele fica acima, em branco).
 
@@ -472,6 +480,12 @@ def campo_claro(
         cursor_color=VERDE_PRIMARIO,
         hint_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
         content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+        max_length=maximo,
+        # Filtrar na origem evita que a máscara receba letra e se perca.
+        input_filter=ft.NumbersOnlyInputFilter() if somente_numeros else None,
+        on_change=ao_mudar,
+        on_blur=ao_sair,
+        error_style=ft.TextStyle(color=URGENCIA, size=11),
     )
 
 

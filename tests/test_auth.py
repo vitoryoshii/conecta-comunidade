@@ -13,6 +13,15 @@ from backend.services.auth_service import (
 )
 
 
+# O cadastro passou a exigir dados pessoais; estes campos completam qualquer
+# payload de teste que não esteja exercitando justamente essa validação.
+DADOS_PESSOAIS = {
+    "cpf": "529.982.247-25",
+    "telefone": "(11) 98765-4321",
+    "data_nascimento": "1995-04-12",
+}
+
+
 def test_registro_cria_usuario_e_devolve_token(client: TestClient) -> None:
     """O cadastro deve responder 201 com token e dados do usuário."""
     resposta = client.post(
@@ -26,6 +35,7 @@ def test_registro_cria_usuario_e_devolve_token(client: TestClient) -> None:
             "cidade": "São Paulo",
             "latitude": -23.55,
             "longitude": -46.63,
+            **DADOS_PESSOAIS,
         },
     )
 
@@ -43,7 +53,12 @@ def test_registro_rejeita_email_duplicado(client: TestClient, usuario_ana: Usuar
     """Dois cadastros com o mesmo e-mail devem resultar em 409."""
     resposta = client.post(
         "/auth/register",
-        json={"nome": "Outra Ana", "email": usuario_ana.email, "senha": "senha123"},
+        json={
+            "nome": "Outra Ana",
+            "email": usuario_ana.email,
+            "senha": "senha123",
+            **DADOS_PESSOAIS,
+        },
     )
 
     assert resposta.status_code == 409
@@ -74,6 +89,7 @@ def test_registro_grava_as_coordenadas_da_cidade(client: TestClient) -> None:
             "senha": "senha123",
             "estado": "BA",
             "cidade": "Salvador",
+            **DADOS_PESSOAIS,
         },
     )
 
@@ -95,6 +111,7 @@ def test_registro_rejeita_cidade_que_nao_e_do_estado(client: TestClient) -> None
             "senha": "senha123",
             "estado": "SP",
             "cidade": "Salvador",
+            **DADOS_PESSOAIS,
         },
     )
 
@@ -110,6 +127,7 @@ def test_registro_normaliza_estado_e_cidade(client: TestClient) -> None:
             "nome": "Pessoa Baiana",
             "email": "baiana@teste.com",
             "senha": "senha123",
+            **DADOS_PESSOAIS,
             "estado": "ba",
             "cidade": "salvador",
         },

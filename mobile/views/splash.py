@@ -19,7 +19,11 @@ FLEX_ANTES_DOS_BOTOES = 3
 
 # Largura fixa de cada pilar: sem ela, as legendas ("Doações" e "Voluntariado"
 # têm larguras bem diferentes) deixariam os círculos desalinhados entre si.
-LARGURA_DO_PILAR = 92
+LARGURA_DO_PILAR = 100
+
+# Disco branco de cada pilar e o ícone colorido dentro dele.
+LADO_DO_DISCO_DO_PILAR = 64
+LADO_DO_ICONE_DO_PILAR = 28
 
 
 def construir(app: App) -> ft.Control:
@@ -95,26 +99,39 @@ def construir(app: App) -> ft.Control:
     return t.fundo_foto(conteudo, t.FOTO_DE_FUNDO)
 
 
-def _pilar(icone: ft.IconData, rotulo: str, cor: str = t.BRANCO) -> ft.Column:
-    """Ícone + legenda usados na linha de destaques da abertura."""
+def _pilar(icone: ft.IconData, rotulo: str, cor: str = t.VERDE_PRIMARIO) -> ft.Column:
+    """Ícone + legenda usados na linha de destaques da abertura.
+
+    O disco é branco sólido, e não um verde translúcido: sobre a foto, o
+    translúcido deixava a borda indefinida e "sujava" a imagem por baixo. Com o
+    branco opaco mais uma sombra curta, o ícone descola do fundo e a cor dele
+    passa a carregar o significado (verde para ajuda, vermelho para urgência).
+    """
     return ft.Column(
         [
             ft.Container(
-                content=ft.Icon(icone, size=t.ICONE_DESTAQUE, color=cor),
-                width=52,
-                height=52,
-                bgcolor="#332E9E5B",
-                border_radius=26,
+                content=ft.Icon(icone, size=LADO_DO_ICONE_DO_PILAR, color=cor),
+                width=LADO_DO_DISCO_DO_PILAR,
+                height=LADO_DO_DISCO_DO_PILAR,
+                bgcolor=t.BRANCO,
+                border_radius=LADO_DO_DISCO_DO_PILAR / 2,
                 alignment=ft.Alignment.CENTER,
+                shadow=ft.BoxShadow(blur_radius=8, color="#330E2A47", offset=ft.Offset(0, 3)),
             ),
             ft.Text(
                 rotulo,
-                size=11,
-                color="#E7F4EC",
+                size=14,
+                weight=ft.FontWeight.W_500,
+                color=t.BRANCO,
                 text_align=ft.TextAlign.CENTER,
+                # A foto tem trechos claros; a sombra segura o texto neles.
+                # No Flet 0.86 a sombra de texto vem pelo TextStyle, não pelo Text.
+                style=ft.TextStyle(
+                    shadow=ft.BoxShadow(blur_radius=4, color="#660E2A47", offset=ft.Offset(0, 1))
+                ),
             ),
         ],
         width=LARGURA_DO_PILAR,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=8,
+        spacing=10,
     )

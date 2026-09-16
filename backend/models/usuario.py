@@ -1,6 +1,6 @@
 """Modelo de Usuário — pessoa física ou representante de instituição."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlmodel import Field, SQLModel
 
@@ -26,6 +26,17 @@ class Usuario(SQLModel, table=True):
     email: str = Field(unique=True, index=True, max_length=180)
     senha_hash: str = Field(max_length=255)
     tipo: TipoUsuario = Field(default=TipoUsuario.SOLICITANTE, index=True)
+
+    # --- Dados pessoais ----------------------------------------------------
+    # Guardados apenas com dígitos (sem máscara). O CPF é `None` para os
+    # cadastros anteriores à exigência do campo — daí ser anulável apesar de
+    # único: o índice aceita vários NULL, mas nenhum número repetido.
+    #
+    # Nenhum destes três campos aparece em `UsuarioLer`, o schema do perfil
+    # público; só o próprio dono os recebe, e o CPF ainda vai mascarado.
+    cpf: str | None = Field(default=None, unique=True, index=True, max_length=11)
+    telefone: str = Field(default="", max_length=11)
+    data_nascimento: date | None = Field(default=None)
 
     # Localização usada no cálculo de distância (haversine). `estado` guarda a
     # sigla da UF e `cidade` o nome oficial do município no IBGE — separados,

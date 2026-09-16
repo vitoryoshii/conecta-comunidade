@@ -8,7 +8,7 @@ telas vazias não mostram nada do que foi construído.
 Todos os usuários de exemplo usam a mesma senha: **senha123**.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlmodel import Session, func, select
 
@@ -31,6 +31,19 @@ from backend.models import (
 from backend.services.auth_service import gerar_hash_senha
 
 SENHA_PADRAO = "senha123"
+
+
+def _cpf_de_demonstracao(base: str) -> str:
+    """Completa uma base de 9 dígitos com os verificadores corretos.
+
+    Os CPFs do seed precisam passar pela mesma validação do cadastro real, então
+    não dá para inventar números: calculamos os dígitos a partir da base.
+    """
+    from backend.services.dados_pessoais_service import _digito_verificador
+
+    primeiro = _digito_verificador(base, 10)
+    segundo = _digito_verificador(f"{base}{primeiro}", 11)
+    return f"{base}{primeiro}{segundo}"
 
 # Categorias fixas da plataforma. O `icone` é o nome de um Material Icon,
 # consumido diretamente pelo Flet (ft.Icons.<NOME>).
@@ -82,23 +95,30 @@ def _criar_usuarios(session: Session) -> dict[str, Usuario]:
     """Cria os cinco usuários de demonstração, espalhados pela cidade."""
     senha = gerar_hash_senha(SENHA_PADRAO)
     definicoes = [
-        # (chave, nome, email, tipo, estado, cidade, lat, long, impacto)
+        # (chave, nome, email, tipo, estado, cidade, lat, long, impacto,
+        #  base do CPF, telefone, nascimento)
         # `cidade` agora é o município oficial do IBGE; as coordenadas é que
         # espalham os usuários por bairros diferentes de São Paulo.
         ("ana", "Ana Ribeiro", "ana@conecta.com", TipoUsuario.SOLICITANTE,
-         "SP", "São Paulo", -23.5545, -46.6896, (0, 2, 0)),
+         "SP", "São Paulo", -23.5545, -46.6896, (0, 2, 0),
+         "111444777", "11987650001", date(1991, 3, 14)),
         ("carlos", "Carlos Mendes", "carlos@conecta.com", TipoUsuario.DOADOR,
-         "SP", "São Paulo", -23.5670, -46.7020, (5, 0, 3)),
+         "SP", "São Paulo", -23.5670, -46.7020, (5, 0, 3),
+         "222555888", "11987650002", date(1985, 8, 2)),
         ("juliana", "Juliana Souza", "juliana@conecta.com", TipoUsuario.VOLUNTARIO,
-         "SP", "São Paulo", -23.5710, -46.7200, (8, 1, 12)),
+         "SP", "São Paulo", -23.5710, -46.7200, (8, 1, 12),
+         "333666999", "11987650003", date(1998, 11, 27)),
         ("marcos", "Marcos Lima", "marcos@conecta.com", TipoUsuario.SOLICITANTE,
-         "SP", "São Paulo", -23.6600, -46.7700, (0, 4, 1)),
+         "SP", "São Paulo", -23.6600, -46.7700, (0, 4, 1),
+         "444777000", "11987650004", date(1979, 5, 9)),
         ("beatriz", "Beatriz Alves", "beatriz@semear.org", TipoUsuario.ONG,
-         "SP", "São Paulo", -23.5460, -46.6360, (23, 0, 30)),
+         "SP", "São Paulo", -23.5460, -46.6360, (23, 0, 30),
+         "555888111", "11987650005", date(1988, 1, 21)),
     ]
 
     usuarios: dict[str, Usuario] = {}
-    for chave, nome, email, tipo, estado, cidade, lat, lon, impacto in definicoes:
+    for (chave, nome, email, tipo, estado, cidade, lat, lon, impacto,
+         base_cpf, telefone, nascimento) in definicoes:
         atendidas, recebidas, voluntario = impacto
         usuario = Usuario(
             nome=nome,
@@ -107,6 +127,9 @@ def _criar_usuarios(session: Session) -> dict[str, Usuario]:
             tipo=tipo,
             estado=estado,
             cidade=cidade,
+            cpf=_cpf_de_demonstracao(base_cpf),
+            telefone=telefone,
+            data_nascimento=nascimento,
             latitude=lat,
             longitude=lon,
             solicitacoes_atendidas=atendidas,

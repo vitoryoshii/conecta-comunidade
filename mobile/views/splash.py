@@ -11,21 +11,33 @@ from mobile import theme as t
 if TYPE_CHECKING:  # pragma: no cover - apenas para tipagem
     from mobile.main import App
 
-SPLASH_BG = "brand/img/splash-bg.png"
 LOGO_SPLASH = "brand/logo/logo-white-amber.svg"
 
+# Lado do símbolo da abertura.
+LADO_DO_LOGO = 116
 
-def _logo() -> ft.Container:
+# Os dois espaçadores flexíveis dividem a sobra vertical nesta proporção: o de
+# baixo fica com a fatia maior, o que empurra o miolo para cima e deixa a
+# margem superior generosa sem depender da altura exata do aparelho.
+FLEX_ACIMA_DO_LOGO = 2
+FLEX_ANTES_DOS_BOTOES = 3
+
+# Largura fixa de cada pilar: sem ela, as legendas ("Doações" e "Voluntariado"
+# têm larguras bem diferentes) deixariam os círculos desalinhados entre si.
+LARGURA_DO_PILAR = 92
+
+
+def _logo() -> ft.Image:
     """Marca principal da abertura, carregada pelo assets_dir do Flet."""
     return ft.Image(
         src=LOGO_SPLASH,
-        width=150,
-        height=150,
+        width=LADO_DO_LOGO,
+        height=LADO_DO_LOGO,
         fit=ft.BoxFit.CONTAIN,
         error_content=ft.Container(
-            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=70, color=t.BRANCO),
-            width=150,
-            height=150,
+            content=ft.Icon(ft.Icons.VOLUNTEER_ACTIVISM, size=54, color=t.BRANCO),
+            width=LADO_DO_LOGO,
+            height=LADO_DO_LOGO,
             alignment=ft.Alignment.CENTER,
         ),
     )
@@ -43,7 +55,7 @@ def construir(app: App) -> ft.Control:
     conteudo = ft.Container(
         content=ft.Column(
             [
-                ft.Container(expand=True),
+                ft.Container(expand=FLEX_ACIMA_DO_LOGO),
                 _logo(),
                 ft.Container(height=10),
                 ft.Text(
@@ -68,9 +80,9 @@ def construir(app: App) -> ft.Control:
                         _pilar(ft.Icons.CRISIS_ALERT, "Emergências"),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=26,
+                    spacing=12,
                 ),
-                ft.Container(expand=True),
+                ft.Container(expand=FLEX_ANTES_DOS_BOTOES),
                 t.botao_primario(
                     "Criar conta",
                     lambda _: app.navegar("cadastro"),
@@ -89,46 +101,19 @@ def construir(app: App) -> ft.Control:
                     on_click=continuar_como_visitante,
                     style=ft.ButtonStyle(color="#E7F4EC"),
                 ),
-                ft.Container(height=10),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10,
             expand=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=28, vertical=20),
+        # Base folgada: sem ela os botões encostam na borda da tela.
+        padding=ft.Padding.only(left=28, right=28, top=20, bottom=32),
         expand=True,
     )
 
-    return ft.Container(
-        content=ft.Stack(
-            [
-                ft.Container(
-                    left=0,
-                    top=0,
-                    right=0,
-                    bottom=0,
-                    gradient=ft.LinearGradient(
-                        begin=ft.Alignment.TOP_LEFT,
-                        end=ft.Alignment.BOTTOM_RIGHT,
-                        colors=[t.TEAL, "#0E6B42"],
-                    ),
-                ),
-                ft.Image(
-                    src=SPLASH_BG,
-                    fit=ft.BoxFit.COVER,
-                    expand=True,
-                    left=0,
-                    top=0,
-                    right=0,
-                    bottom=0,
-                ),
-                conteudo,
-            ],
-            expand=True,
-        ),
-        expand=True,
-        bgcolor=t.VERDE_ESCURO,
-    )
+    # Mesma foto e mesmo empilhamento das telas de autenticação: a abertura e o
+    # login precisam parecer a mesma tela do mesmo produto.
+    return t.fundo_foto(conteudo, t.FOTO_DE_FUNDO)
 
 
 def _pilar(icone: ft.IconData, rotulo: str) -> ft.Column:
@@ -143,8 +128,14 @@ def _pilar(icone: ft.IconData, rotulo: str) -> ft.Column:
                 border_radius=26,
                 alignment=ft.Alignment.CENTER,
             ),
-            ft.Text(rotulo, size=11, color="#E7F4EC"),
+            ft.Text(
+                rotulo,
+                size=11,
+                color="#E7F4EC",
+                text_align=ft.TextAlign.CENTER,
+            ),
         ],
+        width=LARGURA_DO_PILAR,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         spacing=8,
     )

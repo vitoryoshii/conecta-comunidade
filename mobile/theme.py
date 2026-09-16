@@ -68,10 +68,10 @@ ROTULOS_MAPA = {
 
 # Arquivos da marca servidos pelo `assets_dir` do Flet.
 LOGO_SIMBOLO = "brand/logo/logo-symbol.svg"
-# Fundo compartilhado por login, cadastro e recuperação de senha. A imagem já
-# vem da identidade visual com o overlay verde embutido: nenhuma tela deve
-# empilhar outra camada de cor por cima dela.
-FUNDO_AUTH = "brand/img/login-bg.jpg"
+# Foto de fundo compartilhada pela abertura e pelas telas de autenticação. A
+# imagem já vem da identidade visual com o overlay verde embutido: nenhuma tela
+# deve empilhar outra camada de cor por cima dela.
+FOTO_DE_FUNDO = "brand/img/login-bg.jpg"
 
 # Raio padrão de arredondamento e espaçamento base das telas.
 RAIO = 16
@@ -320,7 +320,7 @@ def tela_de_autenticacao(
         padding=ft.Padding.symmetric(horizontal=36, vertical=16),
         expand=True,
     )
-    return fundo_foto(conteudo, FUNDO_AUTH)
+    return fundo_foto(conteudo, FOTO_DE_FUNDO)
 
 
 def logo_circular(tamanho: int = 60) -> ft.Container:

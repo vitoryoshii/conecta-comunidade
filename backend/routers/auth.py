@@ -5,6 +5,7 @@ from sqlmodel import select
 
 from backend.deps import SessionDep, UsuarioAtual
 from backend.models import Usuario
+from backend.models.usuario import agora_utc
 from backend.schemas import (
     RecuperarSenha,
     RecuperarSenhaResposta,
@@ -31,7 +32,9 @@ MENSAGEM_RECUPERACAO = "Se o e-mail existir, enviamos um link para redefinir a s
     summary="Criar conta",
     description=(
         "Cadastra um novo usuário, grava a senha como hash bcrypt e já devolve "
-        "um token JWT — assim o app entra direto na Home após o cadastro."
+        "um token JWT — assim o app entra direto na Home após o cadastro.\n\n"
+        "Exige `aceite_termos = true`: o consentimento é a base legal do "
+        "tratamento, e a data dele é registrada com a hora do servidor."
     ),
 )
 def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
@@ -43,6 +46,14 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe uma conta cadastrada com este e-mail.",
+        )
+
+    # Consentimento antes de tudo: sem aceite não há base legal para tratar o
+    # resto dos dados, então nem faz sentido validá-los.
+    if not dados.aceite_termos:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="É preciso aceitar os Termos de Uso e a Política de Privacidade.",
         )
 
     # Dados pessoais: dígito verificador do CPF, DDD do telefone e idade mínima.
@@ -88,6 +99,10 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
         cpf=cpf,
         telefone=telefone,
         data_nascimento=nascimento,
+        aceite_termos=True,
+        # A hora do aceite é do servidor, não do cliente: o app não tem como
+        # provar quando o usuário marcou a caixa.
+        data_aceite=agora_utc(),
         estado=local.estado,
         cidade=local.cidade,
         latitude=latitude,

@@ -39,6 +39,7 @@ from mobile.views import (  # noqa: E402
     chat,
     conversas,
     detalhe_solicitacao,
+    documento_legal,
     explorar,
     home,
     login,
@@ -66,6 +67,8 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
     "login": (login.construir, False),
     "cadastro": (cadastro.construir, False),
     "recuperar_senha": (recuperar_senha.construir, False),
+    # Termos de Uso e Política de Privacidade, abertos pelos links do cadastro.
+    "documento_legal": (documento_legal.construir, False),
     "home": (home.construir, True),
     "explorar": (explorar.construir, True),
     "publicar": (publicar.construir, True),

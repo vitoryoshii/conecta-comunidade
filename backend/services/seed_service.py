@@ -130,6 +130,11 @@ def _criar_usuarios(session: Session) -> dict[str, Usuario]:
             cpf=_cpf_de_demonstracao(base_cpf),
             telefone=telefone,
             data_nascimento=nascimento,
+            # Os usuários de demonstração nascem com o consentimento dado, do
+            # contrário o perfil deles mostraria um aceite pendente que a
+            # apresentação não tem como resolver.
+            aceite_termos=True,
+            data_aceite=datetime.now(timezone.utc),
             latitude=lat,
             longitude=lon,
             solicitacoes_atendidas=atendidas,

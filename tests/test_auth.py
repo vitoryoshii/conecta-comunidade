@@ -13,12 +13,14 @@ from backend.services.auth_service import (
 )
 
 
-# O cadastro passou a exigir dados pessoais; estes campos completam qualquer
-# payload de teste que não esteja exercitando justamente essa validação.
+# O cadastro passou a exigir dados pessoais e o aceite dos termos; estes campos
+# completam qualquer payload de teste que não esteja exercitando justamente essa
+# validação.
 DADOS_PESSOAIS = {
     "cpf": "529.982.247-25",
     "telefone": "(11) 98765-4321",
     "data_nascimento": "1995-04-12",
+    "aceite_termos": True,
 }
 
 

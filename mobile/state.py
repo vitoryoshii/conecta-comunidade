@@ -35,6 +35,13 @@ class AppState:
     # As categorias mudam pouco e são usadas em várias telas; buscamos uma vez.
     categorias: list[dict[str, Any]] = field(default_factory=list)
 
+    # --- Rascunho do cadastro ----------------------------------------------
+    # As telas são reconstruídas a cada navegação (`App.renderizar`), então
+    # abrir os Termos de Uso no meio do cadastro apagaria o formulário. O
+    # rascunho guarda o que já foi digitado para a volta. Vive só na memória
+    # desta sessão e é apagado quando a conta é criada ou o fluxo é abandonado.
+    rascunho_cadastro: dict[str, Any] = field(default_factory=dict)
+
     # --- Propriedades de conveniência --------------------------------------
     @property
     def autenticado(self) -> bool:
@@ -82,10 +89,21 @@ class AppState:
         self.usuario = None
         self.visitante = False
         self.pilha.clear()
+        # O rascunho carrega senha: não pode sobreviver ao fim da sessão.
+        self.rascunho_cadastro = {}
 
     def atualizar_usuario(self, usuario: dict[str, Any]) -> None:
         """Substitui os dados do usuário logado (após editar o perfil)."""
         self.usuario = usuario
+
+    # --- Rascunho do cadastro ----------------------------------------------
+    def guardar_rascunho(self, campos: dict[str, Any]) -> None:
+        """Guarda o formulário de cadastro antes de sair da tela."""
+        self.rascunho_cadastro = campos
+
+    def limpar_rascunho(self) -> None:
+        """Descarta o rascunho — inclusive a senha que ele carrega."""
+        self.rascunho_cadastro = {}
 
     # --- Pilha de navegação ------------------------------------------------
     @property

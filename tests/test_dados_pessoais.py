@@ -1,9 +1,10 @@
-"""Testes de CPF, telefone e data de nascimento no cadastro."""
+"""Testes de CPF, telefone, data de nascimento e consentimento no cadastro."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from backend.models import Usuario
 from backend.services import dados_pessoais_service as dados
@@ -21,6 +22,7 @@ def _payload(**sobrescrever) -> dict:
         "cpf": CPF_VALIDO,
         "telefone": "(11) 98765-4321",
         "data_nascimento": "1995-04-12",
+        "aceite_termos": True,
         "estado": "SP",
         "cidade": "São Paulo",
     }
@@ -149,3 +151,42 @@ def test_cpf_nunca_sai_completo_da_api(client: TestClient) -> None:
 
     assert "52998224725" not in eu.text
     assert eu.json()["cpf"] == "***.982.247-**"
+
+
+# --------------------------------------------------------------------------- #
+# Consentimento (LGPD)
+# --------------------------------------------------------------------------- #
+def test_cadastro_exige_o_aceite_dos_termos(client: TestClient) -> None:
+    """Sem `aceite_termos = true` não há base legal: 422, com mensagem clara."""
+    recusado = client.post("/auth/register", json=_payload(aceite_termos=False))
+
+    assert recusado.status_code == 422, recusado.text
+    assert "Termos" in recusado.json()["detail"]
+
+
+def test_cadastro_sem_o_campo_de_aceite_tambem_e_recusado(client: TestClient) -> None:
+    """Omitir o campo não vale como aceite — ele não tem default."""
+    payload = _payload()
+    del payload["aceite_termos"]
+
+    assert client.post("/auth/register", json=payload).status_code == 422
+
+
+def test_aceite_fica_registrado_com_a_data(client: TestClient, session: Session) -> None:
+    """O banco guarda o aceite e o momento dele, e o titular consegue conferir."""
+    antes = datetime.now(timezone.utc)
+    resposta = client.post("/auth/register", json=_payload())
+    assert resposta.status_code == 201, resposta.text
+
+    gravado = session.exec(select(Usuario).where(Usuario.email == "pessoa@teste.com")).one()
+    assert gravado.aceite_termos is True
+    assert gravado.data_aceite is not None
+    # O SQLite devolve a data sem fuso; comparamos como UTC, que é como foi gravada.
+    assert gravado.data_aceite.replace(tzinfo=timezone.utc) >= antes.replace(microsecond=0)
+
+    eu = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {resposta.json()['access_token']}"},
+    ).json()
+    assert eu["aceite_termos"] is True
+    assert eu["data_aceite"] is not None

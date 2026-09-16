@@ -30,6 +30,9 @@ AMARELO_ATENCAO = "#F5A623"     # urgência média e pontos de retirada
 CINZA_CLARO = "#EEF2F0"         # fundo de campos e superfícies neutras
 MENTA_CLARA = "#D9F2E4"         # textos de apoio sobre fundo escuro/foto
 AMBAR_CLARO = "#FFDC8C"         # links de destaque sobre fundo escuro/foto
+VERDE_CONFIRMA = "#7BE8A5"      # confirmação ("as senhas coincidem") sobre foto
+VERMELHO_CLARO = "#FFB4AB"      # erro sobre fundo escuro/foto — o URGENCIA
+                                # some na foto, escuro demais para esse fundo
 
 # Cores por nível de urgência, usadas nos badges dos cartões.
 CORES_URGENCIA = {
@@ -75,9 +78,15 @@ ICONES = {
     "cpf": ft.Icons.BADGE_OUTLINED,
     "telefone": ft.Icons.PHONE_OUTLINED,
     "nascimento": ft.Icons.CAKE_OUTLINED,
+    "calendario": ft.Icons.CALENDAR_MONTH_ROUNDED,
     "privacidade": ft.Icons.PRIVACY_TIP_OUTLINED,
+    "documento": ft.Icons.DESCRIPTION_OUTLINED,
     "email": ft.Icons.MAIL_OUTLINE_ROUNDED,
     "senha": ft.Icons.LOCK_OUTLINE_ROUNDED,
+    "confirmar_senha": ft.Icons.LOCK_RESET_ROUNDED,
+    # Par de confirmação/erro do feedback ao vivo dos formulários.
+    "confere": ft.Icons.CHECK_CIRCLE_ROUNDED,
+    "nao_confere": ft.Icons.CANCEL_ROUNDED,
     "participacao": ft.Icons.HANDSHAKE_OUTLINED,
     "estado": ft.Icons.MAP_OUTLINED,
     "cidade": ft.Icons.LOCATION_CITY_OUTLINED,
@@ -455,11 +464,19 @@ def campo_claro(
     somente_numeros: bool = False,
     ao_mudar=None,
     ao_sair=None,
+    ao_clicar=None,
+    somente_leitura: bool = False,
+    sufixo: ft.Control | None = None,
 ) -> ft.TextField:
     """Campo branco arredondado, sem rótulo interno (ele fica acima, em branco).
 
     Quando `senha=True`, o Flet já desenha o ícone de olho que mostra e oculta
     o texto digitado.
+
+    `ao_clicar` precisa ficar **no próprio campo**, e não em um `Container` em
+    volta: o `TextField` consome o clique do mouse, então um handler externo
+    nunca dispara no desktop. É o que faz um campo somente-leitura abrir um
+    seletor (o caso da data de nascimento).
     """
     return ft.TextField(
         hint_text=dica,
@@ -485,7 +502,31 @@ def campo_claro(
         input_filter=ft.NumbersOnlyInputFilter() if somente_numeros else None,
         on_change=ao_mudar,
         on_blur=ao_sair,
+        on_click=ao_clicar,
+        read_only=somente_leitura,
+        suffix=sufixo,
         error_style=ft.TextStyle(color=URGENCIA, size=11),
+    )
+
+
+def status_claro(texto: str, ok: bool, visivel: bool = True) -> ft.Row:
+    """Linha de confirmação (verde) ou de erro (vermelho) sob um campo, sobre a foto.
+
+    Serve ao feedback ao vivo da confirmação de senha: a cor e o ícone dizem a
+    mesma coisa, de modo que a informação não depende só da cor.
+    """
+    cor = VERDE_CONFIRMA if ok else VERMELHO_CLARO
+    return ft.Row(
+        [
+            ft.Icon(
+                ICONES["confere"] if ok else ICONES["nao_confere"],
+                size=ICONE_CAMPO - 2,
+                color=cor,
+            ),
+            ft.Text(texto, size=11, color=cor, weight=ft.FontWeight.W_500, expand=True),
+        ],
+        spacing=6,
+        visible=visivel,
     )
 
 

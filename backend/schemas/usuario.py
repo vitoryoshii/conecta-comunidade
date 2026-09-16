@@ -19,6 +19,10 @@ class UsuarioCriar(BaseModel):
     cpf: str = Field(min_length=11, max_length=14)
     telefone: str = Field(min_length=10, max_length=15)
     data_nascimento: date
+    # Base legal do tratamento (LGPD): sem `True` aqui o cadastro é recusado
+    # com 422. Sem default de propósito — um aceite que vem por omissão não é
+    # consentimento.
+    aceite_termos: bool
     tipo: TipoUsuario = TipoUsuario.SOLICITANTE
     # Sigla da UF e nome do município; o router valida que a cidade pertence ao
     # estado antes de gravar (422 quando não pertence).
@@ -37,6 +41,7 @@ class UsuarioCriar(BaseModel):
                 "cpf": "529.982.247-25",
                 "telefone": "(11) 98765-4321",
                 "data_nascimento": "1995-04-12",
+                "aceite_termos": True,
                 "tipo": "solicitante",
                 "estado": "SP",
                 "cidade": "São Paulo",
@@ -115,6 +120,10 @@ class UsuarioPrivadoLer(UsuarioLer):
     cpf: str | None = None
     telefone: str = ""
     data_nascimento: date | None = None
+    # O titular precisa poder conferir que consentiu e quando — é o registro do
+    # consentimento visto de dentro do app.
+    aceite_termos: bool = False
+    data_aceite: datetime | None = None
 
 
 class UsuarioAtualizar(BaseModel):

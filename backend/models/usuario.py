@@ -38,6 +38,14 @@ class Usuario(SQLModel, table=True):
     telefone: str = Field(default="", max_length=11)
     data_nascimento: date | None = Field(default=None)
 
+    # --- Consentimento (LGPD) ----------------------------------------------
+    # O aceite dos Termos e da Política é a base legal do tratamento, então
+    # precisa ficar registrado com a hora: dizer "a pessoa aceitou" sem poder
+    # dizer *quando* não comprova nada. `data_aceite` é anulável porque os
+    # cadastros anteriores à exigência não têm esse momento registrado.
+    aceite_termos: bool = Field(default=False)
+    data_aceite: datetime | None = Field(default=None)
+
     # Localização usada no cálculo de distância (haversine). `estado` guarda a
     # sigla da UF e `cidade` o nome oficial do município no IBGE — separados,
     # para permitir filtrar por UF sem precisar interpretar texto livre.

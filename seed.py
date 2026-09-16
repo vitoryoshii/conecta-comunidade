@@ -40,6 +40,9 @@ def main() -> int:
         print(f"  - {entidade:14s} {quantidade}")
     print()
     print("Contas de demonstração (senha: " + SENHA_PADRAO + "):")
+    # A cidade de todos é São Paulo/SP; o que muda é o bairro em que as
+    # coordenadas os colocam, e é ele que aparece na última coluna.
+    print("  e-mail               perfil       bairro (todos em São Paulo/SP)")
     print("  ana@conecta.com      solicitante  Vila Madalena")
     print("  carlos@conecta.com   doador       Pinheiros")
     print("  juliana@conecta.com  voluntário   Butantã")

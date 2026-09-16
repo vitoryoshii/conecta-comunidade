@@ -147,8 +147,11 @@ class ApiClient:
         """`GET /localidades/estados` — as 27 UFs, ordenadas por nome."""
         return self._requisitar("GET", "/localidades/estados")
 
-    def listar_cidades(self, sigla: str) -> list[str]:
-        """`GET /localidades/estados/{sigla}/cidades` — municípios da UF."""
+    def listar_cidades(self, sigla: str) -> list[dict[str, Any]]:
+        """`GET /localidades/estados/{sigla}/cidades` — municípios da UF.
+
+        Cada item traz `nome`, `lat` e `lng` (coordenadas da sede).
+        """
         return self._requisitar("GET", f"/localidades/estados/{sigla}/cidades")
 
     # ----------------------------------------------------------------- #

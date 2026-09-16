@@ -46,15 +46,20 @@ def atualizar_meu_perfil(
     # deixaria o cadastro aceitar combinações que a tela nunca produz.
     if "estado" in enviados or "cidade" in enviados:
         try:
-            enviados["estado"], enviados["cidade"] = (
-                localidades_service.validar_estado_e_cidade(
-                    enviados.get("estado") or "", enviados.get("cidade") or ""
-                )
+            local = localidades_service.validar_estado_e_cidade(
+                enviados.get("estado") or "", enviados.get("cidade") or ""
             )
         except ValueError as erro:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
             ) from erro
+
+        enviados["estado"] = local.estado
+        enviados["cidade"] = local.cidade
+        # Mudar de cidade sem mover o ponto deixaria o usuário no mapa antigo;
+        # coordenadas explícitas no mesmo patch continuam tendo precedência.
+        enviados.setdefault("latitude", local.latitude)
+        enviados.setdefault("longitude", local.longitude)
 
     for campo, valor in enviados.items():
         setattr(usuario, campo, valor)

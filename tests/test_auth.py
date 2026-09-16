@@ -1,5 +1,6 @@
 """Testes do fluxo de autenticação (cadastro, login e JWT)."""
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -61,6 +62,27 @@ def test_login_com_senha_errada(client: TestClient, usuario_ana: Usuario) -> Non
     resposta = client.post("/auth/login", json={"email": usuario_ana.email, "senha": "errada"})
 
     assert resposta.status_code == 401
+
+
+def test_registro_grava_as_coordenadas_da_cidade(client: TestClient) -> None:
+    """Quem se cadastra em Salvador nasce lá, não em (0, 0)."""
+    resposta = client.post(
+        "/auth/register",
+        json={
+            "nome": "Pessoa de Salvador",
+            "email": "salvador@teste.com",
+            "senha": "senha123",
+            "estado": "BA",
+            "cidade": "Salvador",
+        },
+    )
+
+    assert resposta.status_code == 201, resposta.text
+    usuario = resposta.json()["usuario"]
+    assert usuario["latitude"] != 0.0
+    assert usuario["longitude"] != 0.0
+    assert usuario["latitude"] == pytest.approx(-12.97, abs=0.05)
+    assert usuario["longitude"] == pytest.approx(-38.50, abs=0.05)
 
 
 def test_registro_rejeita_cidade_que_nao_e_do_estado(client: TestClient) -> None:

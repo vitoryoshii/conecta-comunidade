@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from backend.schemas import EstadoLer
+from backend.schemas import CidadeLer, EstadoLer
 from backend.services import localidades_service
 
 router = APIRouter(prefix="/localidades", tags=["Localidades"])
@@ -25,12 +25,16 @@ def listar_estados() -> list[dict[str, str]]:
 
 @router.get(
     "/estados/{sigla}/cidades",
-    response_model=list[str],
+    response_model=list[CidadeLer],
     summary="Listar cidades de um estado",
-    description="Municípios da UF informada, em ordem alfabética.",
+    description=(
+        "Municípios da UF informada, em ordem alfabética, cada um com a "
+        "latitude/longitude da sede — é o que o cadastro grava como localização "
+        "do usuário."
+    ),
     responses={404: {"description": "Sigla de estado desconhecida."}},
 )
-def listar_cidades(sigla: str) -> list[str]:
+def listar_cidades(sigla: str) -> list[dict]:
     """Devolve os municípios da UF, ou 404 quando a sigla não existe."""
     cidades = localidades_service.listar_cidades(sigla)
     if cidades is None:

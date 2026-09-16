@@ -47,10 +47,16 @@ def construir(app: App) -> ft.Control:
         [], dica="Escolha o estado primeiro", desabilitado=True, filtravel=True
     )
 
+    # Coordenadas da cidade escolhida, guardadas ao carregar a lista: o seletor
+    # só devolve o nome, e é a partir delas que o usuário nasce no lugar certo
+    # do mapa em vez de em (0, 0).
+    coordenadas: dict[str, tuple[float, float]] = {}
+
     def carregar_cidades(_: ft.ControlEvent) -> None:
         """Preenche e habilita o seletor de cidade para a UF escolhida."""
         sigla = seletor_estado.value
         seletor_cidade.value = None
+        coordenadas.clear()
 
         cidades = app.executar(lambda: app.api.listar_cidades(sigla)) if sigla else None
         if cidades is None:
@@ -58,7 +64,10 @@ def construir(app: App) -> ft.Control:
             seletor_cidade.disabled = True
             seletor_cidade.hint_text = "Escolha o estado primeiro"
         else:
-            seletor_cidade.options = [ft.DropdownOption(key=c, text=c) for c in cidades]
+            coordenadas.update({c["nome"]: (c["lat"], c["lng"]) for c in cidades})
+            seletor_cidade.options = [
+                ft.DropdownOption(key=c["nome"], text=c["nome"]) for c in cidades
+            ]
             seletor_cidade.disabled = False
             seletor_cidade.hint_text = "Digite para buscar"
 
@@ -97,6 +106,7 @@ def construir(app: App) -> ft.Control:
             app.aviso("Escolha a sua cidade.", erro=True)
             return
 
+        latitude, longitude = coordenadas.get(seletor_cidade.value, (0.0, 0.0))
         resposta = app.executar(
             lambda: app.api.registrar(
                 {
@@ -106,6 +116,8 @@ def construir(app: App) -> ft.Control:
                     "tipo": seletor_tipo.value,
                     "estado": seletor_estado.value,
                     "cidade": seletor_cidade.value,
+                    "latitude": latitude,
+                    "longitude": longitude,
                 }
             )
         )

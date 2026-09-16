@@ -44,24 +44,30 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
             detail="Já existe uma conta cadastrada com este e-mail.",
         )
 
-    # A dupla estado/cidade é conferida contra a base do IBGE; o serviço devolve
-    # a sigla em maiúsculas e o nome oficial do município.
+    # A dupla estado/cidade é conferida contra a base do IBGE, que devolve a
+    # sigla em maiúsculas, o nome oficial do município e as coordenadas da sede.
     try:
-        estado, cidade = localidades_service.validar_estado_e_cidade(dados.estado, dados.cidade)
+        local = localidades_service.validar_estado_e_cidade(dados.estado, dados.cidade)
     except ValueError as erro:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
         ) from erro
+
+    # As coordenadas vêm da cidade escolhida. O cliente ainda pode mandar um
+    # ponto próprio (um GPS de verdade, no futuro); só não pode ficar em (0, 0)
+    # por omissão, que era o que acontecia antes.
+    latitude = dados.latitude or local.latitude
+    longitude = dados.longitude or local.longitude
 
     usuario = Usuario(
         nome=dados.nome.strip(),
         email=email_normalizado,
         senha_hash=gerar_hash_senha(dados.senha),
         tipo=dados.tipo,
-        estado=estado,
-        cidade=cidade,
-        latitude=dados.latitude,
-        longitude=dados.longitude,
+        estado=local.estado,
+        cidade=local.cidade,
+        latitude=latitude,
+        longitude=longitude,
         avatar_url=dados.avatar_url,
     )
     session.add(usuario)

@@ -153,3 +153,81 @@ def test_sair_limpa_a_sessao(app_mobile: App) -> None:
     assert app_mobile.state.autenticado is False
     assert app_mobile.state.token is None
     assert app_mobile.state.pilha == []
+
+def _descendentes(controle: ft.Control):
+    """Percorre a árvore de controles de uma tela montada."""
+    vistos: set[int] = set()
+    pilha = [controle]
+    while pilha:
+        atual = pilha.pop()
+        if id(atual) in vistos:
+            continue
+        vistos.add(id(atual))
+        yield atual
+        for campo in ("content", "controls"):
+            valor = getattr(atual, campo, None)
+            if isinstance(valor, list):
+                pilha.extend(c for c in valor if isinstance(c, ft.Control))
+            elif isinstance(valor, ft.Control):
+                pilha.append(valor)
+
+
+def _por_dica(tela: ft.Control, dica: str) -> Any:
+    """Acha um campo ou seletor pelo `hint_text`.
+
+    A busca é por dica, e não por posição na árvore, porque a ordem em que os
+    controles aparecem na varredura não acompanha a ordem de montagem da tela.
+    """
+    for controle in _descendentes(tela):
+        if getattr(controle, "hint_text", None) == dica:
+            return controle
+    raise AssertionError(f"nenhum controle com a dica {dica!r}")
+
+
+def test_cadastro_carrega_cidades_no_formato_da_api(app_mobile: App) -> None:
+    """Escolher a UF preenche o seletor de cidade com o que a API devolve hoje.
+
+    Este teste existe porque os testes de API sozinhos não pegam um descompasso
+    de formato: se `/localidades/.../cidades` voltar a devolver strings, ou o
+    handler passar a esperar outra coisa, o cadastro quebra em runtime com
+    `TypeError` e só a tela denuncia.
+    """
+    app_mobile.state.reiniciar("cadastro")
+    tela = ROTAS["cadastro"][0](app_mobile)
+
+    seletor_estado = _por_dica(tela, "Selecione seu estado")
+    seletor_cidade = _por_dica(tela, "Escolha o estado primeiro")
+
+    assert seletor_cidade.disabled is True, "cidade deve começar bloqueada"
+
+    seletor_estado.value = "BA"
+    seletor_estado.on_select(None)
+
+    assert seletor_cidade.disabled is False
+    assert len(seletor_cidade.options) == 417
+    assert "Salvador" in [opcao.key for opcao in seletor_cidade.options]
+
+
+def test_cadastro_envia_as_coordenadas_da_cidade(app_mobile: App) -> None:
+    """O cadastro pela tela grava o usuário na cidade escolhida, não em (0, 0)."""
+    app_mobile.state.reiniciar("cadastro")
+    tela = ROTAS["cadastro"][0](app_mobile)
+
+    seletor_estado = _por_dica(tela, "Selecione seu estado")
+    seletor_cidade = _por_dica(tela, "Escolha o estado primeiro")
+    seletor_estado.value = "BA"
+    seletor_estado.on_select(None)
+    seletor_cidade.value = "Salvador"
+
+    _por_dica(tela, "Seu nome completo").value = "Pessoa de Salvador"
+    _por_dica(tela, "seu@email.com").value = "salvador.tela@teste.com"
+    _por_dica(tela, "Mínimo 6 caracteres").value = "senha123"
+
+    botao = next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton))
+    botao.on_click(None)
+
+    usuario = app_mobile.state.usuario
+    assert usuario["estado"] == "BA"
+    assert usuario["cidade"] == "Salvador"
+    assert usuario["latitude"] != 0.0
+    assert usuario["longitude"] != 0.0

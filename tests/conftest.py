@@ -88,7 +88,8 @@ def fixture_usuario_ana(session: Session) -> Usuario:
         nome="Ana Ribeiro",
         email="ana@teste.com",
         senha_hash=gerar_hash_senha("senha123"),
-        cidade="Vila Madalena",
+        estado="SP",
+        cidade="São Paulo",
         latitude=COORD_VILA_MADALENA[0],
         longitude=COORD_VILA_MADALENA[1],
     )
@@ -105,7 +106,8 @@ def fixture_usuario_carlos(session: Session) -> Usuario:
         nome="Carlos Mendes",
         email="carlos@teste.com",
         senha_hash=gerar_hash_senha("senha123"),
-        cidade="Pinheiros",
+        estado="SP",
+        cidade="São Paulo",
         latitude=COORD_PINHEIROS[0],
         longitude=COORD_PINHEIROS[1],
     )

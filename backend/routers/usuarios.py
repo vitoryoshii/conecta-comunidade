@@ -6,6 +6,7 @@ from sqlmodel import func, select
 from backend.deps import SessionDep, UsuarioAtual
 from backend.models import Oferta, Solicitacao, StatusSolicitacao, Usuario
 from backend.schemas import ImpactoLer, UsuarioAtualizar, UsuarioLer
+from backend.services import localidades_service
 
 router = APIRouter(prefix="/usuarios", tags=["Usuários"])
 router_perfil = APIRouter(prefix="/perfil", tags=["Usuários"])
@@ -29,13 +30,33 @@ def obter_usuario(usuario_id: int, session: SessionDep) -> Usuario:
     "/me",
     response_model=UsuarioLer,
     summary="Editar meu perfil",
-    description="Atualiza nome, cidade, coordenadas ou avatar do usuário logado.",
+    description=(
+        "Atualiza nome, estado/cidade, coordenadas ou avatar do usuário logado. "
+        "Ao mexer na região, envie `estado` e `cidade` juntos: a cidade é "
+        "validada contra a base do IBGE (422 quando não pertence à UF)."
+    ),
 )
 def atualizar_meu_perfil(
     dados: UsuarioAtualizar, usuario: UsuarioAtual, session: SessionDep
 ) -> Usuario:
     """Aplica apenas os campos enviados (patch parcial)."""
-    for campo, valor in dados.model_dump(exclude_unset=True).items():
+    enviados = dados.model_dump(exclude_unset=True)
+
+    # Região só muda em par: validar uma metade contra a outra já gravada
+    # deixaria o cadastro aceitar combinações que a tela nunca produz.
+    if "estado" in enviados or "cidade" in enviados:
+        try:
+            enviados["estado"], enviados["cidade"] = (
+                localidades_service.validar_estado_e_cidade(
+                    enviados.get("estado") or "", enviados.get("cidade") or ""
+                )
+            )
+        except ValueError as erro:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+            ) from erro
+
+    for campo, valor in enviados.items():
         setattr(usuario, campo, valor)
 
     session.add(usuario)

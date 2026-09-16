@@ -15,6 +15,9 @@ class UsuarioCriar(BaseModel):
     # 72 é o limite de bytes do bcrypt — validar aqui evita erro no hash.
     senha: str = Field(min_length=6, max_length=72)
     tipo: TipoUsuario = TipoUsuario.SOLICITANTE
+    # Sigla da UF e nome do município; o router valida que a cidade pertence ao
+    # estado antes de gravar (422 quando não pertence).
+    estado: str = Field(default="", max_length=2)
     cidade: str = Field(default="", max_length=120)
     latitude: float = 0.0
     longitude: float = 0.0
@@ -27,7 +30,8 @@ class UsuarioCriar(BaseModel):
                 "email": "ana@exemplo.com",
                 "senha": "senha123",
                 "tipo": "solicitante",
-                "cidade": "São Paulo - SP",
+                "estado": "SP",
+                "cidade": "São Paulo",
                 "latitude": -23.5505,
                 "longitude": -46.6333,
             }
@@ -73,6 +77,7 @@ class UsuarioLer(BaseModel):
     nome: str
     email: EmailStr
     tipo: TipoUsuario
+    estado: str
     cidade: str
     latitude: float
     longitude: float
@@ -89,6 +94,7 @@ class UsuarioAtualizar(BaseModel):
     """Campos editáveis do perfil (`PATCH /usuarios/me`)."""
 
     nome: str | None = Field(default=None, min_length=2, max_length=120)
+    estado: str | None = Field(default=None, max_length=2)
     cidade: str | None = None
     latitude: float | None = None
     longitude: float | None = None

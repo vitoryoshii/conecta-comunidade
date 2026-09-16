@@ -13,6 +13,7 @@ from backend.schemas import (
     UsuarioLer,
     UsuarioLogin,
 )
+from backend.services import localidades_service
 from backend.services.auth_service import criar_access_token, gerar_hash_senha, verificar_senha
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -43,12 +44,22 @@ def registrar(dados: UsuarioCriar, session: SessionDep) -> Token:
             detail="Já existe uma conta cadastrada com este e-mail.",
         )
 
+    # A dupla estado/cidade é conferida contra a base do IBGE; o serviço devolve
+    # a sigla em maiúsculas e o nome oficial do município.
+    try:
+        estado, cidade = localidades_service.validar_estado_e_cidade(dados.estado, dados.cidade)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+        ) from erro
+
     usuario = Usuario(
         nome=dados.nome.strip(),
         email=email_normalizado,
         senha_hash=gerar_hash_senha(dados.senha),
         tipo=dados.tipo,
-        cidade=dados.cidade,
+        estado=estado,
+        cidade=cidade,
         latitude=dados.latitude,
         longitude=dados.longitude,
         avatar_url=dados.avatar_url,

@@ -27,7 +27,10 @@ class Usuario(SQLModel, table=True):
     senha_hash: str = Field(max_length=255)
     tipo: TipoUsuario = Field(default=TipoUsuario.SOLICITANTE, index=True)
 
-    # Localização usada no cálculo de distância (haversine).
+    # Localização usada no cálculo de distância (haversine). `estado` guarda a
+    # sigla da UF e `cidade` o nome oficial do município no IBGE — separados,
+    # para permitir filtrar por UF sem precisar interpretar texto livre.
+    estado: str = Field(default="", max_length=2, index=True)
     cidade: str = Field(default="", max_length=120)
     latitude: float = Field(default=0.0)
     longitude: float = Field(default=0.0)

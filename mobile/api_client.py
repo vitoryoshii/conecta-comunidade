@@ -141,6 +141,17 @@ class ApiClient:
         return self._requisitar("GET", "/perfil/impacto")
 
     # ----------------------------------------------------------------- #
+    # Localidades (estados e municípios do IBGE)
+    # ----------------------------------------------------------------- #
+    def listar_estados(self) -> list[dict[str, str]]:
+        """`GET /localidades/estados` — as 27 UFs, ordenadas por nome."""
+        return self._requisitar("GET", "/localidades/estados")
+
+    def listar_cidades(self, sigla: str) -> list[str]:
+        """`GET /localidades/estados/{sigla}/cidades` — municípios da UF."""
+        return self._requisitar("GET", f"/localidades/estados/{sigla}/cidades")
+
+    # ----------------------------------------------------------------- #
     # Categorias
     # ----------------------------------------------------------------- #
     def listar_categorias(self) -> list[dict[str, Any]]:

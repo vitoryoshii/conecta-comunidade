@@ -2,6 +2,9 @@
 
 Uma das três telas de autenticação; todas compartilham o andaime visual
 `theme.tela_de_autenticacao` (foto de fundo, disco do logo, campos brancos).
+
+A região é escolhida em dois passos — estado e depois cidade —, servidos por
+`GET /localidades/...` a partir da base do IBGE.
 """
 
 from __future__ import annotations
@@ -23,18 +26,6 @@ TIPOS = [
     ("ong", "Represento uma ONG", ft.Icons.APARTMENT),
 ]
 
-# Localizações pré-definidas: evitam pedir GPS e já deixam o cálculo de
-# distância funcionando na primeira execução.
-LOCALIDADES = [
-    ("Vila Madalena - São Paulo/SP", -23.5545, -46.6896),
-    ("Pinheiros - São Paulo/SP", -23.5670, -46.7020),
-    ("Butantã - São Paulo/SP", -23.5710, -46.7200),
-    ("Centro - São Paulo/SP", -23.5460, -46.6360),
-    ("Capão Redondo - São Paulo/SP", -23.6600, -46.7700),
-    ("Santo Amaro - São Paulo/SP", -23.6520, -46.7080),
-    ("Tatuapé - São Paulo/SP", -23.5400, -46.5760),
-]
-
 
 def construir(app: App) -> ft.Control:
     """Formulário de criação de conta."""
@@ -50,9 +41,38 @@ def construir(app: App) -> ft.Control:
         valor="solicitante",
     )
 
-    seletor_local = t.dropdown_claro(
-        [ft.DropdownOption(key=nome, text=nome) for nome, _, _ in LOCALIDADES],
-        valor=LOCALIDADES[0][0],
+    # A cidade só abre depois do estado: são 5.571 municípios no país, e a lista
+    # de um estado só faz sentido depois de saber qual é.
+    seletor_cidade = t.dropdown_claro(
+        [], dica="Escolha o estado primeiro", desabilitado=True, filtravel=True
+    )
+
+    def carregar_cidades(_: ft.ControlEvent) -> None:
+        """Preenche e habilita o seletor de cidade para a UF escolhida."""
+        sigla = seletor_estado.value
+        seletor_cidade.value = None
+
+        cidades = app.executar(lambda: app.api.listar_cidades(sigla)) if sigla else None
+        if cidades is None:
+            seletor_cidade.options = []
+            seletor_cidade.disabled = True
+            seletor_cidade.hint_text = "Escolha o estado primeiro"
+        else:
+            seletor_cidade.options = [ft.DropdownOption(key=c, text=c) for c in cidades]
+            seletor_cidade.disabled = False
+            seletor_cidade.hint_text = "Digite para buscar"
+
+        app.page.update()
+
+    # A lista de estados é curta e não muda: vem junto com a montagem da tela.
+    # Se a API estiver fora, o erro sobe para `App.renderizar`, que troca a tela
+    # pelo aviso de "sem conexão" — melhor do que um seletor vazio sem explicação.
+    estados = app.api.listar_estados()
+    seletor_estado = t.dropdown_claro(
+        [ft.DropdownOption(key=e["sigla"], text=e["nome"]) for e in estados],
+        dica="Selecione seu estado",
+        filtravel=True,
+        ao_selecionar=carregar_cidades,
     )
 
     def cadastrar(_: ft.ControlEvent) -> None:
@@ -70,13 +90,12 @@ def construir(app: App) -> ft.Control:
         if len(senha) < 6:
             app.aviso("A senha precisa ter ao menos 6 caracteres.", erro=True)
             return
-
-        # Converte a localidade escolhida em coordenadas.
-        cidade = seletor_local.value
-        latitude, longitude = next(
-            ((lat, lon) for nome_local, lat, lon in LOCALIDADES if nome_local == cidade),
-            (LOCALIDADES[0][1], LOCALIDADES[0][2]),
-        )
+        if not seletor_estado.value:
+            app.aviso("Escolha o seu estado.", erro=True)
+            return
+        if not seletor_cidade.value:
+            app.aviso("Escolha a sua cidade.", erro=True)
+            return
 
         resposta = app.executar(
             lambda: app.api.registrar(
@@ -85,9 +104,8 @@ def construir(app: App) -> ft.Control:
                     "email": email,
                     "senha": senha,
                     "tipo": seletor_tipo.value,
-                    "cidade": cidade,
-                    "latitude": latitude,
-                    "longitude": longitude,
+                    "estado": seletor_estado.value,
+                    "cidade": seletor_cidade.value,
                 }
             )
         )
@@ -105,7 +123,8 @@ def construir(app: App) -> ft.Control:
             t.campo_rotulado("E-mail", campo_email),
             t.campo_rotulado("Senha", campo_senha),
             t.campo_rotulado("Como você quer participar?", seletor_tipo),
-            t.campo_rotulado("Onde você está?", seletor_local),
+            t.campo_rotulado("Estado", seletor_estado),
+            t.campo_rotulado("Cidade", seletor_cidade),
             t.ajuda_clara("Usamos sua região apenas para mostrar pedidos próximos."),
             ft.Container(height=6),
             t.botao_primario(

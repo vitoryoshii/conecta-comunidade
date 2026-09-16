@@ -82,27 +82,30 @@ def _criar_usuarios(session: Session) -> dict[str, Usuario]:
     """Cria os cinco usuários de demonstração, espalhados pela cidade."""
     senha = gerar_hash_senha(SENHA_PADRAO)
     definicoes = [
-        # (chave, nome, email, tipo, cidade, lat, long, impacto)
+        # (chave, nome, email, tipo, estado, cidade, lat, long, impacto)
+        # `cidade` agora é o município oficial do IBGE; as coordenadas é que
+        # espalham os usuários por bairros diferentes de São Paulo.
         ("ana", "Ana Ribeiro", "ana@conecta.com", TipoUsuario.SOLICITANTE,
-         "Vila Madalena - São Paulo/SP", -23.5545, -46.6896, (0, 2, 0)),
+         "SP", "São Paulo", -23.5545, -46.6896, (0, 2, 0)),
         ("carlos", "Carlos Mendes", "carlos@conecta.com", TipoUsuario.DOADOR,
-         "Pinheiros - São Paulo/SP", -23.5670, -46.7020, (5, 0, 3)),
+         "SP", "São Paulo", -23.5670, -46.7020, (5, 0, 3)),
         ("juliana", "Juliana Souza", "juliana@conecta.com", TipoUsuario.VOLUNTARIO,
-         "Butantã - São Paulo/SP", -23.5710, -46.7200, (8, 1, 12)),
+         "SP", "São Paulo", -23.5710, -46.7200, (8, 1, 12)),
         ("marcos", "Marcos Lima", "marcos@conecta.com", TipoUsuario.SOLICITANTE,
-         "Capão Redondo - São Paulo/SP", -23.6600, -46.7700, (0, 4, 1)),
+         "SP", "São Paulo", -23.6600, -46.7700, (0, 4, 1)),
         ("beatriz", "Beatriz Alves", "beatriz@semear.org", TipoUsuario.ONG,
-         "Centro - São Paulo/SP", -23.5460, -46.6360, (23, 0, 30)),
+         "SP", "São Paulo", -23.5460, -46.6360, (23, 0, 30)),
     ]
 
     usuarios: dict[str, Usuario] = {}
-    for chave, nome, email, tipo, cidade, lat, lon, impacto in definicoes:
+    for chave, nome, email, tipo, estado, cidade, lat, lon, impacto in definicoes:
         atendidas, recebidas, voluntario = impacto
         usuario = Usuario(
             nome=nome,
             email=email,
             senha_hash=senha,
             tipo=tipo,
+            estado=estado,
             cidade=cidade,
             latitude=lat,
             longitude=lon,

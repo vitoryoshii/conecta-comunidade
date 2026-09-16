@@ -1,6 +1,7 @@
 """Schemas Pydantic v2 usados nas requisições e respostas da API."""
 
 from backend.schemas.categoria import CategoriaLer
+from backend.schemas.localidade import EstadoLer
 from backend.schemas.entrega import EntregaAtualizar, EntregaCriar, EntregaLer
 from backend.schemas.mapa import PontoMapa, RespostaMapa
 from backend.schemas.mensagem import ConversaLer, MensagemCriar, MensagemLer
@@ -25,6 +26,7 @@ __all__ = [
     "EntregaAtualizar",
     "EntregaCriar",
     "EntregaLer",
+    "EstadoLer",
     "ImpactoLer",
     "MensagemCriar",
     "MensagemLer",

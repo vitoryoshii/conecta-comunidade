@@ -21,6 +21,7 @@ def test_registro_cria_usuario_e_devolve_token(client: TestClient) -> None:
             "email": "nova@teste.com",
             "senha": "senha123",
             "tipo": "doador",
+            "estado": "SP",
             "cidade": "São Paulo",
             "latitude": -23.55,
             "longitude": -46.63,
@@ -60,6 +61,42 @@ def test_login_com_senha_errada(client: TestClient, usuario_ana: Usuario) -> Non
     resposta = client.post("/auth/login", json={"email": usuario_ana.email, "senha": "errada"})
 
     assert resposta.status_code == 401
+
+
+def test_registro_rejeita_cidade_que_nao_e_do_estado(client: TestClient) -> None:
+    """Salvador é da Bahia: enviá-la como cidade de SP precisa dar 422."""
+    resposta = client.post(
+        "/auth/register",
+        json={
+            "nome": "Fora de Lugar",
+            "email": "fora@teste.com",
+            "senha": "senha123",
+            "estado": "SP",
+            "cidade": "Salvador",
+        },
+    )
+
+    assert resposta.status_code == 422, resposta.text
+    assert "SP" in resposta.json()["detail"]
+
+
+def test_registro_normaliza_estado_e_cidade(client: TestClient) -> None:
+    """Sigla em minúscula e cidade sem acento viram o dado oficial do IBGE."""
+    resposta = client.post(
+        "/auth/register",
+        json={
+            "nome": "Pessoa Baiana",
+            "email": "baiana@teste.com",
+            "senha": "senha123",
+            "estado": "ba",
+            "cidade": "salvador",
+        },
+    )
+
+    assert resposta.status_code == 201, resposta.text
+    usuario = resposta.json()["usuario"]
+    assert usuario["estado"] == "BA"
+    assert usuario["cidade"] == "Salvador"
 
 
 def test_recuperar_senha_responde_igual_para_email_conhecido_e_desconhecido(

@@ -20,6 +20,7 @@ from backend.routers import (
     auth,
     categorias,
     entregas,
+    localidades,
     mapa,
     mensagens,
     ofertas,
@@ -55,6 +56,7 @@ TAGS_METADATA = [
     {"name": "Autenticação", "description": "Cadastro, login e identificação via JWT."},
     {"name": "Usuários", "description": "Perfil público, edição e números de *Meu impacto*."},
     {"name": "Categorias", "description": "Tipos de necessidade usados nos filtros e na Home."},
+    {"name": "Localidades", "description": "Estados e municípios do IBGE usados no cadastro."},
     {"name": "Solicitações", "description": "Pedidos de ajuda, com filtros e ordenação por distância."},
     {"name": "Ofertas", "description": "Propostas de quem tem item, pode entregar ou oferece retirada."},
     {"name": "ONGs", "description": "Instituições parceiras, avaliações e selo de verificação."},
@@ -99,6 +101,7 @@ app.include_router(auth.router)
 app.include_router(usuarios.router)
 app.include_router(usuarios.router_perfil)
 app.include_router(categorias.router)
+app.include_router(localidades.router)
 app.include_router(solicitacoes.router)
 app.include_router(ofertas.router)
 app.include_router(ongs.router)

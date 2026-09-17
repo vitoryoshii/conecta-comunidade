@@ -7,11 +7,13 @@ Home, em Explorar e em Minhas solicitações. A barra inferior e o FAB moraram
 aqui um tempo; hoje têm arquivo próprio (`nav_bar.py` e `fab.py`).
 """
 
+from datetime import datetime
 from typing import Any, Callable
 
 import flet as ft
 
 from mobile import theme as t
+from mobile.components.avatar import avatar
 
 
 # --------------------------------------------------------------------------- #
@@ -89,14 +91,35 @@ def quadrado_de_categoria(icone: str | None, lado: int = 46) -> ft.Container:
     )
 
 
+def coracao(
+    favoritada: bool, ao_favoritar: Callable[[int], None], solicitacao_id: int
+) -> ft.IconButton:
+    """Botão de favoritar: cheio e vermelho quando guardado, vazado quando não."""
+    return ft.IconButton(
+        ft.Icons.FAVORITE_ROUNDED if favoritada else ft.Icons.FAVORITE_BORDER_ROUNDED,
+        icon_color=t.URGENCIA if favoritada else t.TEXTO_INATIVO,
+        icon_size=20,
+        tooltip="Remover dos favoritos" if favoritada else "Guardar nos favoritos",
+        on_click=lambda _: ao_favoritar(solicitacao_id),
+        # Sem o padding apertado, o botão empurra o conteúdo do cartão.
+        padding=ft.Padding.all(4),
+    )
+
+
 def cartao_solicitacao(
-    solicitacao: dict[str, Any], ao_clicar: Callable[[int], None]
+    solicitacao: dict[str, Any],
+    ao_clicar: Callable[[int], None],
+    ao_favoritar: Callable[[int], None] | None = None,
 ) -> ft.Container:
     """Cartão de pedido de ajuda: urgência, distância e tempo de publicação.
 
     A hierarquia é a mesma em toda lista do app: quadrado da categoria, badges,
     título em bold, metadados em cinza e o chevron à direita — que é o que
     informa, sem texto, que o cartão inteiro abre uma tela.
+
+    `ao_favoritar` é opcional: sem ele, o cartão é exatamente o que sempre foi.
+    Com ele, o chevron dá lugar ao coração — as duas coisas juntas, do mesmo
+    lado, virariam um alvo de toque ambíguo.
     """
     badges: list[ft.Control] = [t.badge_urgencia(solicitacao.get("urgencia", "media"))]
     if solicitacao.get("emergencia"):
@@ -117,6 +140,13 @@ def cartao_solicitacao(
     if solicitacao.get("tempo_publicacao"):
         partes.append(str(solicitacao["tempo_publicacao"]))
 
+    if ao_favoritar is not None:
+        direita: ft.Control = coracao(
+            bool(solicitacao.get("favoritada")), ao_favoritar, solicitacao["id"]
+        )
+    else:
+        direita = ft.Icon(t.ICONES["detalhe"], size=20, color=t.TEXTO_INATIVO)
+
     conteudo = ft.Row(
         [
             quadrado_de_categoria(solicitacao.get("categoria_icone")),
@@ -133,7 +163,7 @@ def cartao_solicitacao(
                 spacing=6,
                 expand=True,
             ),
-            ft.Icon(t.ICONES["detalhe"], size=20, color=t.TEXTO_INATIVO),
+            direita,
         ],
         spacing=12,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -291,17 +321,57 @@ def cartao_ong(ong: dict[str, Any], ao_clicar: Callable[[int], None]) -> ft.Cont
     return t.cartao(conteudo, on_click=lambda _: ao_clicar(ong["id"]))
 
 
+def horario_curto(momento: str | None) -> str:
+    """Hora da última mensagem: "14:32" hoje, "ontem", ou a data.
+
+    Na lista de conversas, o que importa é "quando foi" de relance. A hora cheia
+    só ajuda no mesmo dia; depois disso, a data diz mais.
+    """
+    if not momento:
+        return ""
+
+    try:
+        quando = datetime.fromisoformat(str(momento))
+    except ValueError:
+        return ""
+
+    if quando.tzinfo is not None:
+        quando = quando.astimezone().replace(tzinfo=None)
+
+    hoje = datetime.now()
+    passaram = (hoje.date() - quando.date()).days
+    if passaram <= 0:
+        return quando.strftime("%H:%M")
+    if passaram == 1:
+        return "ontem"
+    if passaram < 7:
+        return f"há {passaram} d"
+    return quando.strftime("%d/%m")
+
+
 def cartao_conversa(
     conversa: dict[str, Any], ao_clicar: Callable[[dict], None]
 ) -> ft.Container:
-    """Linha da aba Mensagens: interlocutor, última fala e não lidas."""
+    """Linha da aba Mensagens: interlocutor, última fala, horário e não lidas.
+
+    O avatar é o mesmo componente do resto do app (foto quando existe, inicial
+    quando não), e o horário vai no alto à direita — alinhado ao nome, que é o
+    que a pessoa lê primeiro.
+    """
     nao_lidas = conversa.get("nao_lidas", 0)
 
-    direita: list[ft.Control] = []
+    # Coluna da direita: horário em cima, contador embaixo. Sem não lidas, ela
+    # tem só o horário, e a linha não fica com um buraco.
+    direita: list[ft.Control] = [t.meta(horario_curto(conversa.get("ultima_em")))]
     if nao_lidas:
         direita.append(
             ft.Container(
-                content=ft.Text(str(nao_lidas), size=11, color=t.BRANCO, weight=ft.FontWeight.BOLD),
+                content=ft.Text(
+                    str(nao_lidas) if nao_lidas < 10 else "9+",
+                    size=11,
+                    color=t.BRANCO,
+                    weight=ft.FontWeight.BOLD,
+                ),
                 bgcolor=t.VERDE_PRIMARIO,
                 width=22,
                 height=22,
@@ -310,46 +380,42 @@ def cartao_conversa(
             )
         )
 
+    meio: list[ft.Control] = [
+        t.titulo_cartao(
+            conversa.get("interlocutor_nome", ""),
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        ),
+        ft.Text(
+            conversa.get("ultima_mensagem", ""),
+            size=12.5,
+            # Mensagem não lida em negrito escuro: a lista se lê sem procurar a
+            # bolinha verde.
+            weight=ft.FontWeight.W_600 if nao_lidas else ft.FontWeight.NORMAL,
+            color=t.TEXTO_FORTE if nao_lidas else t.TEXTO_SECUNDARIO,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        ),
+    ]
+    if conversa.get("solicitacao_titulo"):
+        meio.append(
+            t.etiqueta(
+                conversa["solicitacao_titulo"],
+                icone=t.ICONES["pedido"],
+            )
+        )
+
     conteudo = ft.Row(
         [
-            ft.CircleAvatar(
-                content=ft.Text(
-                    conversa.get("interlocutor_nome", "?")[0].upper(),
-                    color=t.BRANCO,
-                    weight=ft.FontWeight.BOLD,
-                ),
-                bgcolor=t.VERDE_PRIMARIO,
-                radius=22,
-            ),
+            avatar({"nome": conversa.get("interlocutor_nome"),
+                    "avatar_url": conversa.get("interlocutor_avatar")}, 48),
+            ft.Column(meio, spacing=5, expand=True),
             ft.Column(
-                [
-                    ft.Text(
-                        conversa.get("interlocutor_nome", ""),
-                        size=15,
-                        weight=ft.FontWeight.W_600,
-                        color=t.TEXTO_FORTE,
-                    ),
-                    ft.Text(
-                        conversa.get("ultima_mensagem", ""),
-                        size=12,
-                        color=t.TEXTO_SECUNDARIO,
-                        max_lines=1,
-                        overflow=ft.TextOverflow.ELLIPSIS,
-                    ),
-                    *(
-                        [
-                            t.etiqueta(
-                                conversa["solicitacao_titulo"], icone=t.ICONES["doacoes"]
-                            )
-                        ]
-                        if conversa.get("solicitacao_titulo")
-                        else []
-                    ),
-                ],
-                spacing=4,
-                expand=True,
+                direita,
+                horizontal_alignment=ft.CrossAxisAlignment.END,
+                alignment=ft.MainAxisAlignment.START,
+                spacing=8,
             ),
-            ft.Column(direita, horizontal_alignment=ft.CrossAxisAlignment.END, spacing=6),
         ],
         spacing=12,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,

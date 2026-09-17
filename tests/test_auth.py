@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from backend.models import Usuario
+from tests.conftest import cabecalho_autenticado
 from backend.services.auth_service import (
     criar_access_token,
     decodificar_access_token,
@@ -195,3 +196,75 @@ def test_ciclo_do_token_jwt() -> None:
 
     assert decodificar_access_token(token) == 42
     assert decodificar_access_token("nao-e-um-jwt") is None
+
+
+# --------------------------------------------------------------------------- #
+# Troca de senha
+# --------------------------------------------------------------------------- #
+def test_trocar_senha_exige_a_senha_atual(client: TestClient, usuario_ana: Usuario) -> None:
+    """Com o token na mão, mas sem a senha atual correta, a troca é recusada."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me/senha",
+        json={"senha_atual": "chute-errado", "senha_nova": "nova-senha-456"},
+        headers=headers,
+    )
+
+    assert resposta.status_code == 400, resposta.text
+    assert "atual" in resposta.json()["detail"].lower()
+    # A senha antiga continua valendo: nada foi trocado.
+    assert client.post(
+        "/auth/login", json={"email": usuario_ana.email, "senha": "senha123"}
+    ).status_code == 200
+
+
+def test_trocar_senha_com_a_atual_correta(client: TestClient, usuario_ana: Usuario) -> None:
+    """Com a senha atual certa, a nova passa a valer e a antiga para de valer."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me/senha",
+        json={"senha_atual": "senha123", "senha_nova": "nova-senha-456"},
+        headers=headers,
+    )
+    assert resposta.status_code == 204, resposta.text
+
+    assert client.post(
+        "/auth/login", json={"email": usuario_ana.email, "senha": "nova-senha-456"}
+    ).status_code == 200
+    assert client.post(
+        "/auth/login", json={"email": usuario_ana.email, "senha": "senha123"}
+    ).status_code == 401
+
+
+def test_trocar_senha_recusa_repetir_a_mesma(client: TestClient, usuario_ana: Usuario) -> None:
+    """Trocar por ela mesma não é troca."""
+    resposta = client.patch(
+        "/usuarios/me/senha",
+        json={"senha_atual": "senha123", "senha_nova": "senha123"},
+        headers=cabecalho_autenticado(client, usuario_ana.email),
+    )
+
+    assert resposta.status_code == 400
+
+
+def test_trocar_senha_exige_minimo_de_seis(client: TestClient, usuario_ana: Usuario) -> None:
+    """A nova senha respeita o mesmo mínimo do cadastro."""
+    resposta = client.patch(
+        "/usuarios/me/senha",
+        json={"senha_atual": "senha123", "senha_nova": "123"},
+        headers=cabecalho_autenticado(client, usuario_ana.email),
+    )
+
+    assert resposta.status_code == 422
+
+
+def test_trocar_senha_exige_sessao(client: TestClient) -> None:
+    """Sem token, a rota nem chega a olhar o corpo."""
+    resposta = client.patch(
+        "/usuarios/me/senha",
+        json={"senha_atual": "senha123", "senha_nova": "nova-senha-456"},
+    )
+
+    assert resposta.status_code == 401

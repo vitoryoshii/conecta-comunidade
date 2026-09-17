@@ -20,6 +20,7 @@ from backend.services.apresentacao import (
     carregar_mapa_usuarios,
     montar_solicitacao,
 )
+from backend.services.favoritos_service import ids_favoritados
 from backend.services.geo_service import chave_ordenacao_distancia
 
 router = APIRouter(prefix="/solicitacoes", tags=["Solicitações"])
@@ -99,8 +100,18 @@ def listar_solicitacoes(
     usuarios = carregar_mapa_usuarios(session, {r.usuario_id for r in registros})
     origem_lat, origem_lon = _coordenadas_de_referencia(lat, long, usuario)
 
+    # Os favoritos do usuário vêm de uma consulta só, e não de uma por cartão.
+    favoritados = ids_favoritados(session, usuario, [r.id for r in registros if r.id])
+
     itens = [
-        montar_solicitacao(registro, categorias, usuarios, origem_lat, origem_lon)
+        montar_solicitacao(
+            registro,
+            categorias,
+            usuarios,
+            origem_lat,
+            origem_lon,
+            favoritada=registro.id in favoritados,
+        )
         for registro in registros
     ]
 
@@ -142,6 +153,7 @@ def obter_solicitacao(
         carregar_mapa_usuarios(session, {registro.usuario_id}),
         origem_lat,
         origem_lon,
+        favoritada=registro.id in ids_favoritados(session, usuario, [solicitacao_id]),
     )
 
 

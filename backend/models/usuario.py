@@ -46,6 +46,14 @@ class Usuario(SQLModel, table=True):
     aceite_termos: bool = Field(default=False)
     data_aceite: datetime | None = Field(default=None)
 
+    # --- Preferências de notificação ---------------------------------------
+    # Guardadas de verdade para que a tela de Configurações reflita uma escolha,
+    # e não um botão decorativo. O envio em si ainda não existe: nada no app
+    # dispara push ou e-mail — quando existir, é aqui que ele vai perguntar.
+    notificar_solicitacoes: bool = Field(default=True)
+    notificar_mensagens: bool = Field(default=True)
+    notificar_atualizacoes: bool = Field(default=True)
+
     # Localização usada no cálculo de distância (haversine). `estado` guarda a
     # sigla da UF e `cidade` o nome oficial do município no IBGE — separados,
     # para permitir filtrar por UF sem precisar interpretar texto livre.

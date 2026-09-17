@@ -1,12 +1,13 @@
 """Rotas de perfil do usuário e dos números de "Meu impacto"."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlmodel import func, select
 
 from backend.deps import SessionDep, UsuarioAtual
 from backend.models import Oferta, Solicitacao, StatusSolicitacao, Usuario
-from backend.schemas import ImpactoLer, UsuarioAtualizar, UsuarioLer
-from backend.services import localidades_service
+from backend.schemas import ImpactoLer, TrocarSenha, UsuarioAtualizar, UsuarioLer
+from backend.services import dados_pessoais_service, localidades_service
+from backend.services.auth_service import gerar_hash_senha, verificar_senha
 
 router = APIRouter(prefix="/usuarios", tags=["Usuários"])
 router_perfil = APIRouter(prefix="/perfil", tags=["Usuários"])
@@ -42,6 +43,18 @@ def atualizar_meu_perfil(
     """Aplica apenas os campos enviados (patch parcial)."""
     enviados = dados.model_dump(exclude_unset=True)
 
+    # O telefone chega com máscara da tela e é gravado só com dígitos, pelas
+    # mesmas regras do cadastro (DDD existente, 10 ou 11 dígitos).
+    if "telefone" in enviados:
+        try:
+            enviados["telefone"] = dados_pessoais_service.validar_telefone(
+                enviados["telefone"] or ""
+            )
+        except ValueError as erro:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+            ) from erro
+
     # Região só muda em par: validar uma metade contra a outra já gravada
     # deixaria o cadastro aceitar combinações que a tela nunca produz.
     if "estado" in enviados or "cidade" in enviados:
@@ -68,6 +81,40 @@ def atualizar_meu_perfil(
     session.commit()
     session.refresh(usuario)
     return usuario
+
+
+@router.patch(
+    "/me/senha",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Alterar minha senha",
+    description=(
+        "Troca a senha do usuário logado. Exige a **senha atual**: o token "
+        "sozinho não basta, para que um aparelho destravado ou um token vazado "
+        "não permitam trancar o dono fora da própria conta."
+    ),
+)
+def alterar_minha_senha(
+    dados: TrocarSenha, usuario: UsuarioAtual, session: SessionDep
+) -> Response:
+    """Confere a senha atual e grava o hash da nova."""
+    if not verificar_senha(dados.senha_atual, usuario.senha_hash):
+        # 400, e não 422: o formato do pedido está correto; o que não confere é
+        # a credencial. A mensagem não diz mais do que precisa.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Senha atual incorreta."
+        )
+
+    if dados.senha_nova == dados.senha_atual:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A nova senha precisa ser diferente da atual.",
+        )
+
+    usuario.senha_hash = gerar_hash_senha(dados.senha_nova)
+    session.add(usuario)
+    session.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router_perfil.get(

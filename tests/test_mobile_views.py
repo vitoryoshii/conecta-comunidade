@@ -699,3 +699,212 @@ def test_mapa_interativo_gera_pagina_leaflet_com_os_pontos(app_mobile: App) -> N
     assert "tile.openstreetmap.org" in pagina
     for ponto in app_mobile.api.pontos_do_mapa(**app_mobile.coordenadas())["pontos"]:
         assert f'"id": {ponto["id"]}' in pagina
+
+
+# --------------------------------------------------------------------------- #
+# Telas do menu do Perfil
+# --------------------------------------------------------------------------- #
+def _linhas_do_menu(tela: ft.Control) -> dict[str, ft.Container]:
+    """Linhas clicáveis do menu, indexadas pelo rótulo."""
+    linhas: dict[str, ft.Container] = {}
+    for container in _descendentes(tela):
+        if not isinstance(container, ft.Container) or container.on_click is None:
+            continue
+        for texto in _descendentes(container):
+            if isinstance(texto, ft.Text) and texto.size == 13.5 and texto.value:
+                linhas[texto.value] = container
+    return linhas
+
+
+def test_menu_do_perfil_abre_cada_tela(app_mobile: App) -> None:
+    """Todo item do menu leva a uma tela de verdade — nenhum "em breve"."""
+    app_mobile.state.reiniciar("perfil")
+    tela = ROTAS["perfil"][0](app_mobile)
+
+    esperados = {
+        "Editar perfil": "editar_perfil",
+        "Favoritos": "favoritos",
+        "Configurações": "configuracoes",
+        "Ajuda e suporte": "ajuda",
+    }
+    linhas = _linhas_do_menu(tela)
+
+    for rotulo, rota in esperados.items():
+        assert rotulo in linhas, f"{rotulo} sumiu do menu"
+
+        app_mobile.state.reiniciar("perfil")
+        linhas[rotulo].on_click(None)
+        assert app_mobile.state.rota_atual.nome == rota, f"{rotulo} não abriu {rota}"
+        # E a tela do outro lado monta de verdade.
+        assert isinstance(ROTAS[rota][0](app_mobile), ft.Control)
+
+
+def test_editar_perfil_mostra_email_e_cpf_travados(app_mobile: App) -> None:
+    """E-mail e CPF aparecem, mas não em campo editável — e o CPF vem mascarado."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    textos = [c.value for c in _descendentes(tela) if isinstance(c, ft.Text) and c.value]
+    assert app_mobile.state.usuario["email"] in textos
+
+    # O CPF exibido é exatamente o que a API devolve — que já vem mascarado — ou
+    # um traço, para quem se cadastrou antes de o campo existir.
+    da_api = app_mobile.api.eu()["cpf"]
+    assert (da_api or "—") in textos
+    if da_api:
+        assert da_api.startswith("***"), "a tela não pode mostrar o CPF inteiro"
+
+    # Nenhum campo digitável carrega e-mail ou CPF.
+    editaveis = [c.value for c in _descendentes(tela) if isinstance(c, ft.TextField)]
+    assert app_mobile.state.usuario["email"] not in editaveis
+    assert da_api not in editaveis
+
+
+def test_editar_perfil_salva_nome_e_telefone(app_mobile: App) -> None:
+    """Salvar envia o PATCH e a sessão passa a refletir o novo nome."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    _digitar(tela, "Seu nome completo", "Ana Ribeiro da Silva")
+    _digitar(tela, "(00) 00000-0000", "(11) 98888-7777")
+
+    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+
+    assert app_mobile.state.usuario["nome"] == "Ana Ribeiro da Silva"
+    # O telefone é dado do titular: conferimos em /auth/me, já só com dígitos.
+    assert app_mobile.api.eu()["telefone"] == "11988887777"
+
+
+def _interruptor_de(tela: ft.Control, rotulo: str) -> ft.Switch:
+    """O `Switch` que está na mesma linha do rótulo informado."""
+    for linha in _descendentes(tela):
+        if not isinstance(linha, ft.Row):
+            continue
+        tem_rotulo = any(
+            isinstance(filho, ft.Column)
+            and any(
+                isinstance(texto, ft.Text) and texto.value == rotulo
+                for texto in filho.controls
+            )
+            for filho in linha.controls
+        )
+        if not tem_rotulo:
+            continue
+        for filho in linha.controls:
+            if isinstance(filho, ft.Switch):
+                return filho
+    raise AssertionError(f"nenhum interruptor ao lado de {rotulo!r}")
+
+
+def test_configuracoes_grava_a_preferencia_de_notificacao(app_mobile: App) -> None:
+    """Desligar um aviso persiste — o interruptor não é decorativo."""
+    app_mobile.state.reiniciar("configuracoes")
+    tela = ROTAS["configuracoes"][0](app_mobile)
+
+    # A varredura da árvore não segue a ordem da tela, e o container externo
+    # também "contém" o rótulo: procuramos a Row em que o texto e o interruptor
+    # são vizinhos diretos.
+    interruptor = _interruptor_de(tela, "Novas solicitações próximas")
+    assert interruptor.value is True
+
+    interruptor.value = False
+    interruptor.on_change(SimpleNamespace(control=interruptor))
+
+    assert app_mobile.api.eu()["notificar_solicitacoes"] is False
+
+
+def test_ajuda_traz_faq_e_contato(app_mobile: App) -> None:
+    """A tela de ajuda responde as dúvidas comuns e mostra o e-mail de contato."""
+    app_mobile.state.reiniciar("ajuda")
+    tela = ROTAS["ajuda"][0](app_mobile)
+
+    perguntas = [
+        c.title.value
+        for c in _descendentes(tela)
+        if isinstance(c, ft.ExpansionTile) and isinstance(c.title, ft.Text)
+    ]
+    assert "Como publico um pedido?" in perguntas
+    assert len(perguntas) == 5
+
+    textos = [c.value for c in _descendentes(tela) if isinstance(c, ft.Text) and c.value]
+    assert "caio.cacalho@al.ibta.edu.br" in textos
+
+
+# --------------------------------------------------------------------------- #
+# Favoritos
+# --------------------------------------------------------------------------- #
+def _coracao(tela: ft.Control, guardado: bool) -> ft.IconButton:
+    """O botão de coração, no estado pedido."""
+    alvo = "Remover dos favoritos" if guardado else "Guardar nos favoritos"
+    return next(
+        c for c in _descendentes(tela) if isinstance(c, ft.IconButton) and c.tooltip == alvo
+    )
+
+
+def test_favoritar_pela_home_e_ver_em_favoritos(app_mobile: App) -> None:
+    """O coração da Home guarda o pedido, e ele aparece na tela de Favoritos."""
+    solicitacao_id = _id_da_primeira_solicitacao(app_mobile)
+    titulo = app_mobile.api.obter_solicitacao(solicitacao_id)["titulo"]
+
+    app_mobile.state.reiniciar("home")
+    _coracao(ROTAS["home"][0](app_mobile), guardado=False).on_click(None)
+
+    app_mobile.state.reiniciar("favoritos")
+    tela = ROTAS["favoritos"][0](app_mobile)
+    titulos = [c.value for c in _descendentes(tela) if isinstance(c, ft.Text) and c.value]
+    assert titulo in titulos
+
+
+def test_desfavoritar_esvazia_a_tela_com_recado(app_mobile: App) -> None:
+    """Soltar o último favorito devolve o estado vazio, com instrução."""
+    app_mobile.api.favoritar(_id_da_primeira_solicitacao(app_mobile))
+
+    app_mobile.state.reiniciar("favoritos")
+    _coracao(ROTAS["favoritos"][0](app_mobile), guardado=True).on_click(None)
+
+    assert app_mobile.api.listar_favoritos() == []
+    vazia = ROTAS["favoritos"][0](app_mobile)
+    textos = [c.value for c in _descendentes(vazia) if isinstance(c, ft.Text) and c.value]
+    assert any("Toque no coração" in texto for texto in textos)
+
+
+def test_cartao_sem_callback_de_favorito_mantem_o_chevron() -> None:
+    """Sem `ao_favoritar`, o cartão continua exatamente o que era."""
+    from mobile.components.comuns import cartao_solicitacao
+
+    dados = {"id": 1, "titulo": "Pedido", "urgencia": "media", "categoria_icone": "water_drop"}
+
+    sem = cartao_solicitacao(dados, lambda _: None)
+    assert not any(isinstance(c, ft.IconButton) for c in _descendentes(sem))
+
+    com = cartao_solicitacao(dados, lambda _: None, ao_favoritar=lambda _: None)
+    assert any(isinstance(c, ft.IconButton) for c in _descendentes(com))
+
+
+# --------------------------------------------------------------------------- #
+# Mensagens premium
+# --------------------------------------------------------------------------- #
+def test_lista_de_conversas_vazia_explica_o_que_fazer(app_mobile: App) -> None:
+    """Sem conversa nenhuma, a tela orienta em vez de ficar em branco."""
+    app_mobile.state.reiniciar("conversas")
+    tela = ROTAS["conversas"][0](app_mobile)
+
+    textos = [c.value for c in _descendentes(tela) if isinstance(c, ft.Text) and c.value]
+    assert any("Nenhuma conversa ainda" in texto for texto in textos)
+
+
+def test_horario_curto_da_conversa() -> None:
+    """O horário encurta conforme a conversa envelhece."""
+    from datetime import timedelta
+
+    from mobile.components.comuns import horario_curto
+
+    agora = datetime.now()
+    assert horario_curto(agora.isoformat()) == agora.strftime("%H:%M")
+    assert horario_curto((agora - timedelta(days=1)).isoformat()) == "ontem"
+    assert horario_curto((agora - timedelta(days=3)).isoformat()) == "há 3 d"
+    antiga = agora - timedelta(days=40)
+    assert horario_curto(antiga.isoformat()) == antiga.strftime("%d/%m")
+    # Sem data (ou com lixo), a linha simplesmente não mostra horário.
+    assert horario_curto(None) == ""
+    assert horario_curto("nao-e-data") == ""

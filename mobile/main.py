@@ -36,12 +36,17 @@ from mobile.components.fab import botao_flutuante  # noqa: E402
 from mobile.components.nav_bar import barra_de_navegacao  # noqa: E402
 from mobile.state import AppState  # noqa: E402
 from mobile.views import (  # noqa: E402
+    ajuda,
+    alterar_senha,
     cadastro,
+    configuracoes,
     chat,
     conversas,
     detalhe_solicitacao,
     documento_legal,
+    editar_perfil,
     explorar,
+    favoritos,
     home,
     login,
     mapa,
@@ -82,6 +87,12 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
     "ongs": (ongs.construir, True),
     "perfil_ong": (perfil_ong.construir, False),
     "minhas_solicitacoes": (minhas_solicitacoes.construir, False),
+    # Telas abertas pelo menu do Perfil.
+    "editar_perfil": (editar_perfil.construir, False),
+    "configuracoes": (configuracoes.construir, False),
+    "alterar_senha": (alterar_senha.construir, False),
+    "ajuda": (ajuda.construir, False),
+    "favoritos": (favoritos.construir, False),
     "nova_solicitacao": (nova_solicitacao.construir, False),
     "nova_oferta": (nova_oferta.construir, False),
 }
@@ -91,6 +102,9 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
 ABAS_PRINCIPAIS = {"home", "explorar", "mapa", "conversas", "perfil"}
 ROTAS_COM_DADOS = {
     "home",
+    "favoritos",
+    "editar_perfil",
+    "configuracoes",
     "explorar",
     "conversas",
     "perfil",
@@ -238,6 +252,30 @@ class App:
                 duration=3000,
             )
         )
+
+    def alternar_favorito(self, solicitacao_id: int, favoritada: bool) -> None:
+        """Guarda (ou solta) um pedido nos favoritos e redesenha a tela.
+
+        Vive aqui, e não em cada view, porque o coração aparece na Home, no
+        Explorar, no detalhe e na própria tela de Favoritos — quatro cópias da
+        mesma regra sairiam do lugar na primeira mudança.
+        """
+        if not self.state.autenticado:
+            self.aviso("Entre na sua conta para guardar pedidos.", erro=True)
+            self.reiniciar("login")
+            return
+
+        try:
+            if favoritada:
+                self.api.desfavoritar(solicitacao_id)
+            else:
+                self.api.favoritar(solicitacao_id)
+        except ErroApi as erro:
+            self.aviso(erro.mensagem, erro=True)
+            return
+
+        self.aviso("Removido dos favoritos." if favoritada else "Guardado nos favoritos.")
+        self.renderizar()
 
     def nao_lidas(self) -> int:
         """Total de mensagens não lidas, exibido no badge da aba Mensagens."""

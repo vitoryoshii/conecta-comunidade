@@ -282,7 +282,13 @@ def _lista(app: App, aba: str, itens: list[dict[str, Any]]) -> ft.Control:
         tipo = item.get("_tipo", "solicitacao" if aba != "ofertas" else "oferta")
         if tipo == "solicitacao":
             cartoes.append(
-                cartao_solicitacao(item, lambda i: app.navegar("detalhe_solicitacao", id=i))
+                cartao_solicitacao(
+                    item,
+                    lambda i: app.navegar("detalhe_solicitacao", id=i),
+                    ao_favoritar=lambda i, f=bool(item.get("favoritada")): (
+                        app.alternar_favorito(i, f)
+                    ),
+                )
             )
         else:
             cartoes.append(cartao_oferta(item))

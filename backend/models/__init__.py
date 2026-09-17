@@ -6,6 +6,7 @@ registre o metadata completo (necessário para `create_all` e para o Alembic).
 
 from backend.models.categoria import Categoria
 from backend.models.entrega import Entrega
+from backend.models.favorito import Favorito
 from backend.models.enums import (
     StatusEntrega,
     StatusOferta,
@@ -24,6 +25,7 @@ from backend.models.usuario import Usuario, agora_utc
 __all__ = [
     "Categoria",
     "Entrega",
+    "Favorito",
     "Mensagem",
     "ONG",
     "Oferta",

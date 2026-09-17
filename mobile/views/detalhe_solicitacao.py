@@ -8,7 +8,7 @@ import flet as ft
 
 from mobile import theme as t
 from mobile.components.avatar import avatar
-from mobile.components.comuns import cabecalho, quadrado_de_categoria
+from mobile.components.comuns import cabecalho, coracao, quadrado_de_categoria
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -264,12 +264,17 @@ def construir(app: App) -> ft.Control:
                 "Detalhe da solicitação",
                 app.voltar,
                 [
+                    coracao(
+                        bool(dados.get("favoritada")),
+                        lambda i: app.alternar_favorito(i, bool(dados.get("favoritada"))),
+                        dados["id"],
+                    ),
                     ft.IconButton(
                         t.ICONES["compartilhar"],
                         icon_color=t.TEXTO_FORTE,
                         on_click=compartilhar,
                         tooltip="Compartilhar",
-                    )
+                    ),
                 ],
             ),
             ft.Container(

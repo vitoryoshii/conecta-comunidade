@@ -20,6 +20,7 @@ from backend.routers import (
     auth,
     categorias,
     entregas,
+    favoritos,
     localidades,
     mapa,
     mensagens,
@@ -108,6 +109,7 @@ app.include_router(ongs.router)
 app.include_router(mensagens.router)
 app.include_router(entregas.router)
 app.include_router(mapa.router)
+app.include_router(favoritos.router)
 
 
 @app.get("/", tags=["Autenticação"], summary="Healthcheck", include_in_schema=False)

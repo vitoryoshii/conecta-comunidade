@@ -70,6 +70,7 @@ def montar_solicitacao(
     usuarios: dict[int, Usuario],
     origem_lat: float | None = None,
     origem_lon: float | None = None,
+    favoritada: bool = False,
 ) -> SolicitacaoLer:
     """Converte uma `Solicitacao` no schema de leitura enriquecido."""
     categoria = categorias.get(solicitacao.categoria_id)
@@ -88,6 +89,7 @@ def montar_solicitacao(
         distancia_km=distancia,
         distancia_formatada=formatar_distancia(distancia),
         tempo_publicacao=tempo_desde(solicitacao.criada_em),
+        favoritada=favoritada,
     )
 
 

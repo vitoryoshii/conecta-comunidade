@@ -206,25 +206,20 @@ def construir(app: App) -> ft.Control:
         app.aviso("Você saiu da sua conta.")
         app.reiniciar("splash")
 
-    def em_breve(mensagem: str):
-        """Itens do menu que dependem de funcionalidades futuras."""
-        return lambda _: app.aviso(mensagem)
-
     menu = [
+        (ft.Icons.EDIT_OUTLINED, "Editar perfil", lambda _: app.navegar("editar_perfil"),
+         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
         (t.ICONES["pedido"], "Minhas solicitações", lambda _: app.navegar("minhas_solicitacoes"),
          t.VERDE_PRIMARIO, t.TEXTO_FORTE),
         (t.ICONES["doar"], "Minhas doações", lambda _: app.navegar("explorar", aba="ofertas"),
          t.VERDE_PRIMARIO, t.TEXTO_FORTE),
-        (t.ICONES["doacoes"], "Favoritos",
-         em_breve("Favoritos entram na próxima versão do app."),
-         t.AMARELO_ATENCAO, t.TEXTO_FORTE),
+        (ft.Icons.FAVORITE_BORDER_ROUNDED, "Favoritos", lambda _: app.navegar("favoritos"),
+         t.URGENCIA, t.TEXTO_FORTE),
         (ft.Icons.STAR_OUTLINE_ROUNDED, "Avaliações", lambda _: app.navegar("ongs"),
          t.AMARELO_ATENCAO, t.TEXTO_FORTE),
-        (t.ICONES["configuracoes"], "Configurações",
-         em_breve("Configurações entram na próxima versão do app."),
+        (t.ICONES["configuracoes"], "Configurações", lambda _: app.navegar("configuracoes"),
          t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
-        (t.ICONES["ajuda"], "Ajuda",
-         em_breve("Dúvidas? Documentação da API em http://127.0.0.1:8000/docs"),
+        (t.ICONES["ajuda"], "Ajuda e suporte", lambda _: app.navegar("ajuda"),
          t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
     ]
 

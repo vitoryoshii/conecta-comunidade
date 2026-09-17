@@ -304,8 +304,16 @@ def construir(app: App) -> ft.Control:
 
     if proximas:
         lista_proximas: ft.Control = ft.Column(
-            [cartao_solicitacao(item, lambda i: app.navegar("detalhe_solicitacao", id=i))
-             for item in proximas],
+            [
+                cartao_solicitacao(
+                    item,
+                    lambda i: app.navegar("detalhe_solicitacao", id=i),
+                    ao_favoritar=lambda i, f=bool(item.get("favoritada")): (
+                        app.alternar_favorito(i, f)
+                    ),
+                )
+                for item in proximas
+            ],
             spacing=12,
         )
     else:

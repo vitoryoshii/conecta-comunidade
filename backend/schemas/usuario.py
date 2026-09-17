@@ -124,17 +124,43 @@ class UsuarioPrivadoLer(UsuarioLer):
     # consentimento visto de dentro do app.
     aceite_termos: bool = False
     data_aceite: datetime | None = None
+    notificar_solicitacoes: bool = True
+    notificar_mensagens: bool = True
+    notificar_atualizacoes: bool = True
 
 
 class UsuarioAtualizar(BaseModel):
     """Campos editáveis do perfil (`PATCH /usuarios/me`)."""
 
     nome: str | None = Field(default=None, min_length=2, max_length=120)
+    # Aceito com ou sem máscara; o router normaliza e valida DDD e tamanho.
+    telefone: str | None = Field(default=None, min_length=10, max_length=15)
     estado: str | None = Field(default=None, max_length=2)
     cidade: str | None = None
     latitude: float | None = None
     longitude: float | None = None
     avatar_url: str | None = None
+    notificar_solicitacoes: bool | None = None
+    notificar_mensagens: bool | None = None
+    notificar_atualizacoes: bool | None = None
+
+
+class TrocarSenha(BaseModel):
+    """Payload de `PATCH /usuarios/me/senha`.
+
+    A senha atual é exigida mesmo com o token na mão: token vazado ou celular
+    destravado não deve bastar para trocar a senha e expulsar o dono da conta.
+    """
+
+    senha_atual: str = Field(min_length=1, max_length=72)
+    # 72 é o limite de bytes do bcrypt — validar aqui evita erro no hash.
+    senha_nova: str = Field(min_length=6, max_length=72)
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"senha_atual": "senha123", "senha_nova": "nova-senha-456"}
+        }
+    )
 
 
 class Token(BaseModel):

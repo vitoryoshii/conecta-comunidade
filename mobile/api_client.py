@@ -136,9 +136,32 @@ class ApiClient:
         """`PATCH /usuarios/me` — edita os dados do próprio perfil."""
         return self._requisitar("PATCH", "/usuarios/me", json=dados)
 
+    def trocar_senha(self, senha_atual: str, senha_nova: str) -> None:
+        """`PATCH /usuarios/me/senha` — troca a senha conferindo a atual."""
+        self._requisitar(
+            "PATCH",
+            "/usuarios/me/senha",
+            json={"senha_atual": senha_atual, "senha_nova": senha_nova},
+        )
+
     def impacto(self) -> dict[str, Any]:
         """`GET /perfil/impacto` — números da seção "Meu impacto"."""
         return self._requisitar("GET", "/perfil/impacto")
+
+    # ----------------------------------------------------------------- #
+    # Favoritos
+    # ----------------------------------------------------------------- #
+    def listar_favoritos(self) -> list[dict[str, Any]]:
+        """`GET /favoritos` — solicitações guardadas pelo usuário logado."""
+        return self._requisitar("GET", "/favoritos")
+
+    def favoritar(self, solicitacao_id: int) -> dict[str, Any]:
+        """`POST /favoritos` — guarda uma solicitação."""
+        return self._requisitar("POST", "/favoritos", json={"solicitacao_id": solicitacao_id})
+
+    def desfavoritar(self, solicitacao_id: int) -> None:
+        """`DELETE /favoritos/{id}` — tira a solicitação dos favoritos."""
+        self._requisitar("DELETE", f"/favoritos/{solicitacao_id}")
 
     # ----------------------------------------------------------------- #
     # Localidades (estados e municípios do IBGE)

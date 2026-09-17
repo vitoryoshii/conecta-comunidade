@@ -8,6 +8,7 @@ from backend.schemas.mensagem import ConversaLer, MensagemCriar, MensagemLer
 from backend.schemas.oferta import OfertaCriar, OfertaLer
 from backend.schemas.ong import AvaliacaoCriar, ONGLer
 from backend.schemas.solicitacao import SolicitacaoAtualizar, SolicitacaoCriar, SolicitacaoLer
+from backend.schemas.favorito import FavoritoCriar, FavoritoLer
 from backend.schemas.usuario import (
     ImpactoLer,
     RecuperarSenha,
@@ -18,9 +19,12 @@ from backend.schemas.usuario import (
     UsuarioLer,
     UsuarioLogin,
     UsuarioPrivadoLer,
+    TrocarSenha,
 )
 
 __all__ = [
+    "FavoritoCriar",
+    "FavoritoLer",
     "AvaliacaoCriar",
     "CategoriaLer",
     "CidadeLer",
@@ -48,4 +52,5 @@ __all__ = [
     "UsuarioLer",
     "UsuarioLogin",
     "UsuarioPrivadoLer",
+    "TrocarSenha",
 ]

@@ -90,5 +90,8 @@ class SolicitacaoLer(BaseModel):
     distancia_km: float | None = None
     distancia_formatada: str = "--"
     tempo_publicacao: str = ""
+    # Verdadeiro só para o usuário logado que favoritou este pedido: sem sessão
+    # (e para quem não favoritou), o coração aparece vazio.
+    favoritada: bool = False
 
     model_config = ConfigDict(from_attributes=True)

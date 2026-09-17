@@ -32,7 +32,8 @@ if str(RAIZ_DO_PROJETO) not in sys.path:
 
 from mobile import theme as t  # noqa: E402
 from mobile.api_client import ApiClient, ErroApi  # noqa: E402
-from mobile.components.comuns import navegacao_inferior  # noqa: E402
+from mobile.components.fab import botao_flutuante  # noqa: E402
+from mobile.components.nav_bar import barra_de_navegacao  # noqa: E402
 from mobile.state import AppState  # noqa: E402
 from mobile.views import (  # noqa: E402
     cadastro,
@@ -85,8 +86,9 @@ ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
     "nova_oferta": (nova_oferta.construir, False),
 }
 
-# Rotas que correspondem a uma aba da navegação inferior.
-ABAS_PRINCIPAIS = {"home", "explorar", "publicar", "conversas", "perfil"}
+# Rotas que correspondem a um destino da navegação inferior. `publicar` saiu
+# daqui: virou a ação do FAB, e por isso empilha como qualquer outra tela.
+ABAS_PRINCIPAIS = {"home", "explorar", "mapa", "conversas", "perfil"}
 ROTAS_COM_DADOS = {
     "home",
     "explorar",
@@ -121,7 +123,13 @@ class App:
             animate=ft.Animation(180, ft.AnimationCurve.EASE),
         )
         self._barra = ft.Container(visible=False)
-        self._raiz = ft.Column([self._area, self._barra], spacing=0, expand=True)
+        # O FAB flutua SOBRE a área de conteúdo, e não dentro da barra: daí a
+        # área virar um `Stack`. Ele é criado uma vez e só troca de visibilidade
+        # conforme a tela, para não recriar o controle a cada navegação.
+        self._fab = botao_flutuante(lambda _: self.publicar())
+        self._fab.visible = False
+        self._camada = ft.Stack([self._area, self._fab], expand=True)
+        self._raiz = ft.Column([self._camada, self._barra], spacing=0, expand=True)
 
     # ------------------------------------------------------------------ #
     # Ciclo de vida
@@ -192,15 +200,27 @@ class App:
         self._area.content = conteudo
         self._barra.visible = mostra_barra
         self._barra.content = (
-            navegacao_inferior(rota.nome, self._selecionar_aba, self.nao_lidas())
+            barra_de_navegacao(rota.nome, self._selecionar_aba, self.nao_lidas())
             if mostra_barra
             else None
         )
+        # O FAB acompanha os cinco destinos. Em telas empilhadas (detalhe, chat,
+        # o próprio publicar) ele sumiria atrás do conteúdo ou duplicaria a ação
+        # que a tela já oferece.
+        self._fab.visible = rota.nome in ABAS_PRINCIPAIS
         self.page.update()
+
+    def publicar(self) -> None:
+        """Ação do FAB: abre a tela de publicar, exigindo sessão ativa."""
+        if not self.state.autenticado:
+            self.aviso("Entre na sua conta para publicar.", erro=True)
+            self.reiniciar("login")
+            return
+        self.navegar("publicar")
 
     def _selecionar_aba(self, rota: str) -> None:
         """Trata o clique na navegação inferior (exige sessão ativa)."""
-        if rota in {"publicar", "conversas", "perfil"} and not self.state.autenticado:
+        if rota in {"conversas", "perfil"} and not self.state.autenticado:
             self.aviso("Entre na sua conta para usar esta área.", erro=True)
             self.reiniciar("login")
             return

@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Any
 
 import flet as ft
 
+from mobile import avatares
 from mobile import theme as t
+from mobile.components.avatar import avatar
+from mobile.components.fab import ESPACO_PARA_O_FAB
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -18,14 +21,27 @@ ROTULOS_TIPO = {
     "ong": "Representante de ONG",
 }
 
+LADO_DO_AVATAR = 82
 
-def _numero_impacto(valor: int, rotulo: str, icone: ft.IconData, cor: str) -> ft.Container:
-    """Um dos três números da seção "Meu impacto"."""
+
+def _cartao_impacto(valor: int, rotulo: str, icone: ft.IconData, cor: str) -> ft.Container:
+    """Um dos três números da seção "Meu impacto".
+
+    `expand=True` no lugar da largura fixa que existia antes: com três larguras
+    de 122px em 430px de tela, o terceiro cartão saía da linha e aparecia
+    cortado. Expandindo, os três dividem a largura disponível, seja qual for.
+    """
     return ft.Container(
         content=ft.Column(
             [
-                ft.Icon(icone, size=20, color=cor),
-                ft.Text(str(valor), size=22, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL),
+                ft.Icon(icone, size=18, color=cor),
+                ft.Text(
+                    str(valor),
+                    size=26,
+                    weight=ft.FontWeight.BOLD,
+                    color=t.TEXTO_FORTE,
+                    style=ft.TextStyle(letter_spacing=-0.8),
+                ),
                 ft.Text(
                     rotulo,
                     size=10,
@@ -34,33 +50,147 @@ def _numero_impacto(valor: int, rotulo: str, icone: ft.IconData, cor: str) -> ft
                     max_lines=2,
                 ),
             ],
-            spacing=4,
+            spacing=2,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         ),
         padding=ft.Padding.symmetric(vertical=14, horizontal=6),
         bgcolor=t.BRANCO,
-        border_radius=14,
-        border=ft.Border.all(1, t.BORDA),
-        width=122,
+        border_radius=t.RAIO_CARD,
+        shadow=t.SOMBRA_CARD,
+        expand=True,
     )
 
 
 def _item_menu(
-    icone: ft.IconData, rotulo: str, on_click, cor: str = t.AZUL_INSTITUCIONAL
+    icone: ft.IconData,
+    rotulo: str,
+    on_click,
+    cor: str = t.VERDE_PRIMARIO,
+    cor_texto: str = t.TEXTO_FORTE,
 ) -> ft.Container:
-    """Linha do menu inferior do perfil."""
+    """Linha do menu: ícone em quadradinho suave, rótulo e chevron."""
     return ft.Container(
         content=ft.Row(
             [
-                ft.Icon(icone, size=20, color=cor),
-                ft.Text(rotulo, size=14, color=cor, expand=True),
-                ft.Icon(t.ICONES["detalhe"], size=18, color=t.BORDA),
+                ft.Container(
+                    content=ft.Icon(icone, size=17, color=cor),
+                    width=34,
+                    height=34,
+                    bgcolor=f"{cor}1A" if cor.startswith("#") else t.VERDE_SUAVE,
+                    border_radius=11,
+                    alignment=ft.Alignment.CENTER,
+                ),
+                ft.Text(
+                    rotulo,
+                    size=13.5,
+                    weight=ft.FontWeight.W_500,
+                    color=cor_texto,
+                    expand=True,
+                ),
+                ft.Icon(t.ICONES["detalhe"], size=18, color=t.TEXTO_INATIVO),
             ],
-            spacing=14,
+            spacing=12,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         ),
-        padding=ft.Padding.symmetric(horizontal=14, vertical=14),
+        padding=ft.Padding.symmetric(horizontal=14, vertical=11),
         on_click=on_click,
         ink=True,
+        border_radius=t.RAIO_CARD,
+    )
+
+
+def _identificacao(app: App, usuario: dict[str, Any]) -> ft.Container:
+    """Avatar grande com botão de trocar a foto, nome, cidade e tipo."""
+
+    async def trocar_foto(_: ft.ControlEvent) -> None:
+        """Escolhe uma imagem e a grava como avatar do usuário.
+
+        O `FilePicker` do Flet 0.86 é um *service*: basta criá-lo dentro do
+        handler (ele se registra na página sozinho) e aguardar `pick_files`.
+        """
+        seletor = ft.FilePicker()
+        escolhidos = await seletor.pick_files(
+            dialog_title="Escolha sua foto de perfil",
+            file_type=ft.FilePickerFileType.IMAGE,
+            allow_multiple=False,
+        )
+        if not escolhidos:
+            return
+
+        origem = escolhidos[0].path
+        if not origem:
+            # No navegador o Flet não entrega o caminho local do arquivo.
+            app.aviso("Trocar a foto só funciona no aplicativo instalado.", erro=True)
+            return
+
+        try:
+            caminho = avatares.salvar(int(usuario.get("id", 0)), origem)
+        except (ValueError, OSError) as erro:
+            app.aviso(str(erro) or "Não foi possível salvar a imagem.", erro=True)
+            return
+
+        atualizado = app.executar(lambda: app.api.atualizar_perfil({"avatar_url": caminho}))
+        if atualizado is None:
+            return
+
+        app.state.atualizar_usuario(atualizado)
+        app.aviso("Foto de perfil atualizada.")
+        app.renderizar()
+
+    botao_camera = ft.Container(
+        content=ft.Icon(ft.Icons.PHOTO_CAMERA_ROUNDED, size=15, color=t.BRANCO),
+        width=30,
+        height=30,
+        bgcolor=t.VERDE_PRIMARIO,
+        border_radius=15,
+        alignment=ft.Alignment.CENTER,
+        border=ft.Border.all(2.5, t.BRANCO),
+        on_click=trocar_foto,
+        ink=True,
+        tooltip="Trocar foto",
+        right=0,
+        bottom=0,
+    )
+
+    return ft.Container(
+        content=ft.Row(
+            [
+                ft.Stack(
+                    [avatar(usuario, LADO_DO_AVATAR), botao_camera],
+                    width=LADO_DO_AVATAR,
+                    height=LADO_DO_AVATAR,
+                ),
+                ft.Column(
+                    [
+                        t.titulo(usuario.get("nome", "Visitante"), 19),
+                        ft.Row(
+                            [
+                                ft.Icon(t.ICONES["local"], size=14, color=t.VERDE_PRIMARIO),
+                                t.meta(
+                                    ", ".join(
+                                        p
+                                        for p in (usuario.get("cidade"), usuario.get("estado"))
+                                        if p
+                                    )
+                                    or "Sem cidade definida"
+                                ),
+                            ],
+                            spacing=5,
+                        ),
+                        ft.Container(height=2),
+                        t.etiqueta(
+                            ROTULOS_TIPO.get(usuario.get("tipo", ""), usuario.get("tipo", "")),
+                            icone=t.ICONES["participacao"],
+                        ),
+                    ],
+                    spacing=4,
+                    expand=True,
+                ),
+            ],
+            spacing=16,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+        padding=ft.Padding.symmetric(vertical=4),
     )
 
 
@@ -80,79 +210,45 @@ def construir(app: App) -> ft.Control:
         """Itens do menu que dependem de funcionalidades futuras."""
         return lambda _: app.aviso(mensagem)
 
+    menu = [
+        (t.ICONES["pedido"], "Minhas solicitações", lambda _: app.navegar("minhas_solicitacoes"),
+         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
+        (t.ICONES["doar"], "Minhas doações", lambda _: app.navegar("explorar", aba="ofertas"),
+         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
+        (t.ICONES["doacoes"], "Favoritos",
+         em_breve("Favoritos entram na próxima versão do app."),
+         t.AMARELO_ATENCAO, t.TEXTO_FORTE),
+        (ft.Icons.STAR_OUTLINE_ROUNDED, "Avaliações", lambda _: app.navegar("ongs"),
+         t.AMARELO_ATENCAO, t.TEXTO_FORTE),
+        (t.ICONES["configuracoes"], "Configurações",
+         em_breve("Configurações entram na próxima versão do app."),
+         t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
+        (t.ICONES["ajuda"], "Ajuda",
+         em_breve("Dúvidas? Documentação da API em http://127.0.0.1:8000/docs"),
+         t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
+    ]
+
     return ft.Container(
         content=ft.Column(
             [
-                # --- Identificação ------------------------------------------
-                t.cartao(
-                    ft.Row(
-                        [
-                            ft.CircleAvatar(
-                                content=ft.Text(
-                                    (usuario.get("nome") or "?")[0].upper(),
-                                    size=24,
-                                    color=t.BRANCO,
-                                    weight=ft.FontWeight.BOLD,
-                                ),
-                                bgcolor=t.VERDE_PRIMARIO,
-                                radius=32,
-                            ),
-                            ft.Column(
-                                [
-                                    ft.Text(
-                                        usuario.get("nome", "Visitante"),
-                                        size=18,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=t.AZUL_INSTITUCIONAL,
-                                    ),
-                                    ft.Row(
-                                        [
-                                            ft.Icon(
-                                                t.ICONES["local"],
-                                                size=13,
-                                                color=t.TEXTO_SECUNDARIO,
-                                            ),
-                                            ft.Text(
-                                                usuario.get("cidade") or "Sem cidade definida",
-                                                size=12,
-                                                color=t.TEXTO_SECUNDARIO,
-                                            ),
-                                        ],
-                                        spacing=4,
-                                    ),
-                                    t.etiqueta(
-                                        ROTULOS_TIPO.get(
-                                            usuario.get("tipo", ""), usuario.get("tipo", "")
-                                        ),
-                                        icone=t.ICONES["nome"],
-                                    ),
-                                ],
-                                spacing=5,
-                                expand=True,
-                            ),
-                        ],
-                        spacing=14,
-                    )
-                ),
+                _identificacao(app, usuario),
                 # --- Meu impacto --------------------------------------------
-                ft.Text(
-                    "Meu impacto", size=16, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL
-                ),
+                t.titulo_secao("Meu impacto"),
                 ft.Row(
                     [
-                        _numero_impacto(
+                        _cartao_impacto(
                             impacto.get("solicitacoes_atendidas", 0),
                             "Solicitações atendidas",
                             t.ICONES["concluido"],
                             t.VERDE_PRIMARIO,
                         ),
-                        _numero_impacto(
+                        _cartao_impacto(
                             impacto.get("doacoes_recebidas", 0),
                             "Doações recebidas",
                             t.ICONES["doar"],
-                            t.AZUL_INSTITUCIONAL,
+                            t.TEAL,
                         ),
-                        _numero_impacto(
+                        _cartao_impacto(
                             impacto.get("acoes_voluntario", 0),
                             "Ações como voluntário",
                             t.ICONES["voluntariado"],
@@ -160,8 +256,6 @@ def construir(app: App) -> ft.Control:
                         ),
                     ],
                     spacing=10,
-                    wrap=True,
-                    alignment=ft.MainAxisAlignment.CENTER,
                 ),
                 ft.Row(
                     [
@@ -176,64 +270,31 @@ def construir(app: App) -> ft.Control:
                     ],
                     spacing=8,
                     wrap=True,
+                    run_spacing=8,
                 ),
                 # --- Menu ----------------------------------------------------
-                ft.Container(height=4),
+                ft.Container(height=2),
                 t.cartao(
                     ft.Column(
-                        [
-                            _item_menu(
-                                t.ICONES["pedido"],
-                                "Minhas solicitações",
-                                lambda _: app.navegar("minhas_solicitacoes"),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(
-                                t.ICONES["doar"],
-                                "Minhas doações",
-                                lambda _: app.navegar("explorar", aba="ofertas"),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(
-                                t.ICONES["doacoes"],
-                                "Favoritos",
-                                em_breve("Favoritos entram na próxima versão do app."),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(
-                                ft.Icons.STAR_OUTLINE_ROUNDED,
-                                "Avaliações",
-                                lambda _: app.navegar("ongs"),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(
-                                t.ICONES["configuracoes"],
-                                "Configurações",
-                                em_breve("Configurações entram na próxima versão do app."),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(
-                                t.ICONES["ajuda"],
-                                "Ajuda",
-                                em_breve(
-                                    "Dúvidas? Documentação da API em http://127.0.0.1:8000/docs"
-                                ),
-                            ),
-                            ft.Divider(height=1, color=t.BORDA),
-                            _item_menu(t.ICONES["sair"], "Sair", sair, t.URGENCIA),
-                        ],
+                        [_item_menu(*item) for item in menu],
                         spacing=0,
                     ),
-                    padding=0,
+                    padding=4,
                 ),
-                ft.Container(height=10),
+                # Sair fica em um cartão à parte: é a única ação destrutiva da
+                # tela, e separá-la evita o toque errado no fim da lista.
+                t.cartao(
+                    _item_menu(t.ICONES["sair"], "Sair", sair, t.URGENCIA, t.URGENCIA),
+                    padding=4,
+                ),
+                ft.Container(height=6),
                 ft.Text(
                     "Conecta Comunidade · v1.0.0",
                     size=11,
-                    color=t.BORDA,
+                    color=t.TEXTO_INATIVO,
                     text_align=ft.TextAlign.CENTER,
                 ),
-                ft.Container(height=10),
+                ft.Container(height=ESPACO_PARA_O_FAB),
             ],
             spacing=12,
             scroll=ft.ScrollMode.AUTO,

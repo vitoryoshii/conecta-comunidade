@@ -9,8 +9,11 @@ e não durante a apresentação.
 
 from collections.abc import Generator
 from datetime import date, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import flet as ft
 import pytest
@@ -21,7 +24,11 @@ from backend.database import get_session
 from backend.main import app as api_fastapi
 from backend.models import ONG, Categoria, Usuario
 from mobile.api_client import ApiClient
-from mobile.main import ROTAS, App
+from mobile import mapa_tiles
+from mobile import theme as t
+from mobile.views import mapa as mapa_view
+from mobile.components.nav_bar import DESTINOS
+from mobile.main import ABAS_PRINCIPAIS, ROTAS, App
 
 
 class PaginaFalsa(SimpleNamespace):
@@ -469,3 +476,226 @@ def test_cadastro_acusa_campos_invalidos_antes_de_enviar(app_mobile: App) -> Non
     # Todos de uma vez, e não um por envio.
     for dica in ("Seu nome completo", "000.000.000-00", "seu@email.com", "(00) 00000-0000"):
         assert _por_dica(tela, dica).error, f"{dica} deveria estar marcado"
+
+
+# --------------------------------------------------------------------------- #
+# Navegação: cinco destinos + FAB
+# --------------------------------------------------------------------------- #
+def test_barra_tem_cinco_destinos_uniformes_com_o_mapa() -> None:
+    """A barra tem cinco destinos de mesmo peso; publicar não é destino."""
+    rotas = [rota for rota, _, _, _ in DESTINOS]
+
+    assert rotas == ["home", "explorar", "mapa", "conversas", "perfil"]
+    assert "publicar" not in rotas, "publicar é ação do FAB, não um destino"
+    # Toda rota da barra precisa existir e reiniciar a pilha ao ser tocada.
+    assert set(rotas) == ABAS_PRINCIPAIS
+    assert set(rotas) <= set(ROTAS)
+
+
+def test_fab_aparece_nos_destinos_e_some_nas_telas_empilhadas(app_mobile: App) -> None:
+    """O FAB acompanha os cinco destinos e sai do caminho nas telas de detalhe."""
+    app_mobile.reiniciar("home")
+    # `_fab` é da composição do App: o teste o lê para garantir que a camada
+    # flutuante existe e que a visibilidade acompanha a rota.
+    assert app_mobile._fab.visible is True
+
+    app_mobile.navegar("detalhe_solicitacao", id=_id_da_primeira_solicitacao(app_mobile))
+    assert app_mobile._fab.visible is False
+
+    app_mobile.reiniciar("explorar")
+    assert app_mobile._fab.visible is True
+
+
+def test_fab_abre_a_tela_de_publicar(app_mobile: App) -> None:
+    """A ação do FAB é a mesma de antes: escolher o que publicar."""
+    app_mobile.reiniciar("home")
+
+    app_mobile.publicar()
+
+    assert app_mobile.state.rota_atual.nome == "publicar"
+    # Empilhou: dá para voltar de onde veio.
+    assert app_mobile.state.desempilhar() is True
+    assert app_mobile.state.rota_atual.nome == "home"
+
+
+def test_fab_exige_sessao_para_publicar(app_mobile: App) -> None:
+    """Visitante que toca no FAB vai para o login, não para o formulário."""
+    app_mobile.state.sair()
+
+    app_mobile.publicar()
+
+    assert app_mobile.state.rota_atual.nome == "login"
+
+
+# --------------------------------------------------------------------------- #
+# Padrão visual premium
+# --------------------------------------------------------------------------- #
+def test_cartao_separa_por_sombra_e_nao_por_traco() -> None:
+    """A superfície padrão não desenha contorno: quem separa é a sombra."""
+    comum = t.cartao(ft.Text("qualquer"))
+
+    assert comum.border is None, "o traço cinza saiu do cartão padrão"
+    assert comum.shadow is t.SOMBRA_CARD
+    assert comum.border_radius == t.RAIO_CARD
+
+    # A borda sobreviveu como exceção: hoje, só a emergência a usa.
+    destacado = t.cartao(ft.Text("emergência"), borda=t.URGENCIA)
+    assert destacado.border is not None
+
+
+def test_telas_do_redesign_nao_tem_borda_cinza(app_mobile: App) -> None:
+    """Nenhuma superfície das telas internas volta a desenhar traço cinza."""
+    for rota in ("home", "explorar", "perfil", "mapa"):
+        app_mobile.state.reiniciar(rota)
+        tela = ROTAS[rota][0](app_mobile)
+
+        for controle in _descendentes(tela):
+            borda = getattr(controle, "border", None)
+            if borda is None:
+                continue
+            lados = [getattr(borda, lado, None) for lado in ("top", "right", "bottom", "left")]
+            cores = {getattr(s, "color", None) for s in lados if s is not None}
+            assert t.BORDA not in cores, f"{rota}: sobrou contorno cinza em {controle}"
+
+
+def test_cor_da_categoria_nao_depende_da_ordem_da_api() -> None:
+    """A mesma categoria tem sempre o mesmo par de cores, pelo nome do ícone."""
+    agua = t.cores_da_categoria("water_drop")
+    alimentos = t.cores_da_categoria("restaurant")
+
+    assert agua != alimentos
+    assert agua == t.cores_da_categoria("water_drop"), "a cor não pode variar"
+    # Categoria nova, criada no backend, cai no par neutro em vez de quebrar.
+    assert t.cores_da_categoria("brinquedos") == t.COR_CATEGORIA_PADRAO
+    assert t.cores_da_categoria(None) == t.COR_CATEGORIA_PADRAO
+
+
+def test_impacto_do_perfil_divide_a_largura_em_tres(app_mobile: App) -> None:
+    """Os três cartões de impacto expandem — nenhum fica cortado na tela estreita."""
+    app_mobile.state.reiniciar("perfil")
+    tela = ROTAS["perfil"][0](app_mobile)
+
+    rotulos = ("Solicitações atendidas", "Doações recebidas", "Ações como voluntário")
+    encontrados = [
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Container)
+        and isinstance(c.content, ft.Column)
+        and any(
+            isinstance(f, ft.Text) and f.value in rotulos
+            for f in c.content.controls
+        )
+    ]
+
+    assert len(encontrados) == 3, "os três números de impacto precisam estar na tela"
+    for cartao in encontrados:
+        assert cartao.expand is True, "largura fixa volta a cortar o terceiro cartão"
+        assert cartao.width is None
+
+
+# --------------------------------------------------------------------------- #
+# Mapa real (tiles do OpenStreetMap)
+# --------------------------------------------------------------------------- #
+def _imagens_de_tile(tela: ft.Control) -> list[ft.Image]:
+    """Todas as imagens de tile do OSM presentes na tela do mapa."""
+    return [
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Image) and "tile.openstreetmap.org" in (c.src or "")
+    ]
+
+
+def test_mapa_desenha_tiles_do_osm_e_nao_um_fundo_vazio(app_mobile: App) -> None:
+    """A área do mapa é coberta por imagens de tile, com crédito ao OSM."""
+    app_mobile.state.reiniciar("mapa")
+    tela = ROTAS["mapa"][0](app_mobile)
+
+    tiles = _imagens_de_tile(tela)
+    assert tiles, "sem tile, a tela volta a ser o retângulo vazio"
+    # Cada tile tem posição própria dentro da área e um fallback visual.
+    for tile in tiles:
+        assert tile.left is not None and tile.top is not None
+        assert tile.error_content is not None, "sem rede, o buraco tem de ser discreto"
+
+    creditos = [
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Text) and c.value == mapa_tiles.CREDITO
+    ]
+    assert creditos, "a atribuição ao OpenStreetMap é exigida pela licença"
+
+
+def test_mapa_posiciona_os_pinos_sobre_os_tiles(app_mobile: App) -> None:
+    """Cada ponto vira um pino dentro da área, na posição projetada."""
+    app_mobile.state.reiniciar("mapa")
+    pontos = app_mobile.api.pontos_do_mapa(**app_mobile.coordenadas())["pontos"]
+    assert pontos, "o cenário de teste precisa de pontos no mapa"
+
+    tela = ROTAS["mapa"][0](app_mobile)
+    pinos = [
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Container)
+        and c.tooltip
+        and isinstance(c.content, ft.Icon)
+        and c.left is not None
+        and c.on_click is not None
+    ]
+
+    assert len(pinos) == len(pontos)
+    for pino in pinos:
+        assert 0 <= pino.left <= mapa_view.LARGURA_MAPA
+        assert 0 <= pino.top <= mapa_view.ALTURA_MAPA
+
+
+def test_filtros_do_mapa_mudam_pontos_e_contagem(app_mobile: App) -> None:
+    """Desligar um tipo tira os pinos dele do mapa e do contador."""
+    # Garante os dois tipos no cenário: uma solicitação (ajuda) e a ONG.
+    _id_da_primeira_solicitacao(app_mobile)
+
+    app_mobile.state.reiniciar("mapa")
+    ROTAS["mapa"][0](app_mobile)
+    total_de_pontos = len(
+        app_mobile.api.pontos_do_mapa(**app_mobile.coordenadas())["pontos"]
+    )
+
+    # Só ONGs: o mesmo caminho que o toque no painel de filtros percorre.
+    app_mobile.state.substituir("mapa", tipos=["ong"])
+    filtrada = ROTAS["mapa"][0](app_mobile)
+
+    so_ongs = app_mobile.api.pontos_do_mapa(tipos=["ong"], **app_mobile.coordenadas())
+    assert all(p["tipo"] == "ong" for p in so_ongs["pontos"])
+    assert len(so_ongs["pontos"]) < total_de_pontos, "o filtro precisa reduzir os pontos"
+
+    # A contagem do cabeçalho acompanha o filtro.
+    rotulo = f"{len(so_ongs['pontos'])} ponto"
+    assert any(
+        isinstance(c, ft.Text) and c.value and c.value.startswith(rotulo)
+        for c in _descendentes(filtrada)
+    ), "o chip de contagem não acompanhou o filtro"
+
+
+def test_mapa_interativo_gera_pagina_leaflet_com_os_pontos(app_mobile: App) -> None:
+    """O botão do mapa interativo abre uma página Leaflet com os mesmos pontos."""
+    app_mobile.state.reiniciar("mapa")
+    tela = ROTAS["mapa"][0](app_mobile)
+
+    botao = next(
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Container) and c.tooltip == "Mapa com zoom e arrasto, no navegador"
+    )
+
+    abertos: list[str] = []
+    app_mobile.page.launch_url = abertos.append
+    botao.on_click(None)
+
+    assert abertos, "o botão precisa abrir alguma coisa"
+    caminho = Path(url2pathname(urlparse(abertos[0]).path))
+    pagina = caminho.read_text(encoding="utf-8")
+    caminho.unlink()
+
+    assert "leaflet" in pagina.lower()
+    assert "tile.openstreetmap.org" in pagina
+    for ponto in app_mobile.api.pontos_do_mapa(**app_mobile.coordenadas())["pontos"]:
+        assert f'"id": {ponto["id"]}' in pagina

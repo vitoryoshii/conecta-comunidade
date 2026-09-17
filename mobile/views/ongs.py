@@ -28,7 +28,7 @@ def construir(app: App) -> ft.Control:
         border_radius=14,
         border_color=t.BORDA,
         focused_border_color=t.VERDE_PRIMARIO,
-        color=t.AZUL_INSTITUCIONAL,
+        color=t.TEXTO_FORTE,
         on_submit=lambda e: app.substituir(
             "ongs", busca=e.control.value, verificadas=somente_verificadas
         ),
@@ -85,7 +85,7 @@ def construir(app: App) -> ft.Control:
                         t.titulo("ONGs e Instituições", 21),
                         ft.IconButton(
                             t.ICONES["estado"],
-                            icon_color=t.AZUL_INSTITUCIONAL,
+                            icon_color=t.TEXTO_FORTE,
                             tooltip="Ver no mapa",
                             on_click=lambda _: app.navegar("mapa", tipos=["ong"]),
                         ),

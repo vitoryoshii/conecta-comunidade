@@ -1,12 +1,19 @@
 """
 Tela 9 — Mapa.
 
-O pacote base do Flet 0.86 não traz o controle `ft.Map` (ele vive na extensão
-`flet-map`, que exige build nativo). Para o app funcionar em qualquer máquina
-sem passo extra de instalação, desenhamos aqui um **mapa esquemático**: uma
-tela de coordenadas onde cada pin é posicionado proporcionalmente à sua
-latitude/longitude, com a mesma paleta e os mesmos filtros por tipo previstos
-no projeto. A lista logo abaixo mostra os mesmos pontos em detalhe.
+Mapa **real**: as imagens de tile do OpenStreetMap são baixadas pelo próprio
+`ft.Image` e montadas em um `Stack`, com os pinos posicionados por cima pela
+mesma projeção Web Mercator (`mobile/mapa_tiles.py`). Ou seja, ruas de verdade,
+sem chave de API, sem dependência nova e sem WebView.
+
+Sobre o WebView: o `ft.WebView` **não existe** no pacote `flet` 0.86 — virou o
+pacote separado `flet-webview`, cujo plugin Flutter não suporta Windows
+desktop, que é onde o app é demonstrado. Por isso o mapa embutido é o de tiles,
+e o mapa interativo (zoom, arrasto, popups) é uma página Leaflet aberta no
+navegador pelo botão "Abrir mapa interativo" (`mobile/mapa_leaflet.py`).
+
+A área nunca cai no retângulo vazio: sem internet, o `error_content` de cada
+tile mostra a superfície verde-clara, e os pinos continuam nas posições certas.
 """
 
 from __future__ import annotations
@@ -15,19 +22,25 @@ from typing import TYPE_CHECKING, Any
 
 import flet as ft
 
+from mobile import mapa_leaflet, mapa_tiles
 from mobile import theme as t
+from mobile.components.fab import ESPACO_PARA_O_FAB
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
 
 TIPOS = ["ajuda", "oferecendo", "ong", "ponto_retirada"]
 
-# Dimensões da área de desenho do mapa esquemático.
-LARGURA_MAPA = 340
-ALTURA_MAPA = 270
-MARGEM = 30
+# Dimensões da área do mapa. São fixas de propósito: as posições dos tiles e
+# dos pinos são calculadas em pixels a partir delas.
+LARGURA_MAPA = 380
+ALTURA_MAPA = 300
 TAMANHO_PIN = 30
 TAMANHO_PIN_EMERGENCIA = 38
+
+# Centro usado quando não há nem usuário localizado nem pontos: o centro de São
+# Paulo, que é a região da demonstração.
+CENTRO_PADRAO = (-23.5505, -46.6333)
 
 
 def construir(app: App) -> ft.Control:
@@ -55,21 +68,21 @@ def construir(app: App) -> ft.Control:
                 ft.Row(
                     [
                         t.titulo("Mapa", 22),
-                        t.etiqueta(f"{len(pontos)} ponto(s)", icone=t.ICONES["local"]),
+                        t.etiqueta(
+                            f"{len(pontos)} ponto{'s' if len(pontos) != 1 else ''}",
+                            icone=t.ICONES["local"],
+                        ),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
                 t.subtitulo("Toque em um pino para abrir os detalhes do ponto."),
-                _mapa_esquematico(app, pontos),
+                _mapa(app, pontos),
+                _botao_interativo(app, pontos),
                 _painel_de_filtros(ativos, totais, alternar),
-                ft.Text(
-                    "Pontos listados",
-                    size=15,
-                    weight=ft.FontWeight.BOLD,
-                    color=t.AZUL_INSTITUCIONAL,
-                ),
+                t.titulo_secao("Pontos listados"),
                 _lista_de_pontos(app, pontos),
-                ft.Container(height=10),
+                # Folga para o último ponto não terminar embaixo do FAB.
+                ft.Container(height=ESPACO_PARA_O_FAB),
             ],
             spacing=12,
             scroll=ft.ScrollMode.AUTO,
@@ -81,120 +94,175 @@ def construir(app: App) -> ft.Control:
     )
 
 
-def _mapa_esquematico(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
-    """Desenha os pins posicionados por lat/long dentro de uma área fixa.
+def _botao_interativo(app: App, pontos: list[dict[str, Any]]) -> ft.Container:
+    """Abre a versão com zoom e arrasto (Leaflet) no navegador.
 
-    A projeção é linear: encontramos os extremos das coordenadas e mapeamos
-    cada ponto para a área de desenho. Não é uma projeção cartográfica de
-    verdade, mas preserva a posição relativa entre os pontos.
+    O mapa da tela é uma imagem: mostra onde as coisas estão, mas não se mexe.
+    Quem precisa procurar um endereço abre esta versão, que leva os mesmos
+    pontos, com os mesmos filtros já aplicados.
     """
-    grade: list[ft.Control] = [
-        # Linhas de grade, apenas para dar leitura de "mapa" à área.
-        ft.Container(
-            left=0,
-            top=y,
-            width=LARGURA_MAPA,
-            height=1,
-            bgcolor="#DDE7E1",
+
+    def abrir(_: ft.ControlEvent) -> None:
+        centro, zoom = _centro_e_zoom(app, pontos)
+        try:
+            endereco = mapa_leaflet.url_do_mapa(pontos, centro, zoom)
+        except OSError:
+            app.aviso("Não foi possível preparar o mapa interativo.", erro=True)
+            return
+        app.page.launch_url(endereco)
+        app.aviso("Mapa interativo aberto no navegador.")
+
+    return ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.OPEN_IN_NEW_ROUNDED, size=16, color=t.VERDE_PRIMARIO),
+                ft.Text(
+                    "Abrir mapa interativo",
+                    size=12.5,
+                    weight=ft.FontWeight.W_600,
+                    color=t.VERDE_PRIMARIO,
+                ),
+            ],
+            spacing=6,
+            tight=True,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        on_click=abrir,
+        padding=ft.Padding.symmetric(horizontal=12, vertical=10),
+        bgcolor=t.BRANCO,
+        border_radius=t.RAIO_BOTAO,
+        shadow=t.SOMBRA_CARD,
+        ink=True,
+        tooltip="Mapa com zoom e arrasto, no navegador",
+    )
+
+
+def _centro_e_zoom(
+    app: App, pontos: list[dict[str, Any]]
+) -> tuple[tuple[float, float], int]:
+    """Onde o mapa abre e em que zoom.
+
+    Com pontos, enquadramos todos; com um só (ou nenhum), centramos no usuário
+    e usamos o zoom de bairro. Sem usuário localizado, resta o centro padrão.
+    """
+    coordenadas = mapa_tiles.coordenadas(pontos)
+    do_usuario = app.coordenadas()
+    padrao = (
+        (do_usuario["lat"], do_usuario["long"])
+        if do_usuario
+        else CENTRO_PADRAO
+    )
+
+    centro = mapa_tiles.centro_dos_pontos(coordenadas, padrao)
+    zoom = mapa_tiles.zoom_que_cobre(coordenadas, LARGURA_MAPA, ALTURA_MAPA)
+    return centro, zoom
+
+
+def _tiles(centro: tuple[float, float], zoom: int) -> list[ft.Control]:
+    """Imagens de tile do OSM que cobrem a área, já posicionadas."""
+    return [
+        ft.Image(
+            src=tile.url,
+            width=mapa_tiles.LADO_DO_TILE,
+            height=mapa_tiles.LADO_DO_TILE,
+            fit=ft.BoxFit.COVER,
+            left=tile.left,
+            top=tile.top,
+            # Sem internet (ou com o tile indisponível), o buraco fica com a
+            # cor da superfície em vez de um ícone de imagem quebrada.
+            error_content=ft.Container(
+                width=mapa_tiles.LADO_DO_TILE,
+                height=mapa_tiles.LADO_DO_TILE,
+                bgcolor="#E8F2EC",
+            ),
         )
-        for y in range(42, ALTURA_MAPA, 52)
+        for tile in mapa_tiles.grade(centro, zoom, LARGURA_MAPA, ALTURA_MAPA)
     ]
-    grade += [
-        ft.Container(left=x, top=0, width=1, height=ALTURA_MAPA, bgcolor="#DDE7E1")
-        for x in range(55, LARGURA_MAPA, 55)
+
+
+def _credito() -> ft.Container:
+    """Atribuição ao OpenStreetMap, exigida pela licença dos dados."""
+    return ft.Container(
+        content=ft.Text(mapa_tiles.CREDITO, size=9, color=t.TEXTO_FORTE),
+        padding=ft.Padding.symmetric(horizontal=6, vertical=2),
+        bgcolor="#CCFFFFFF",
+        border_radius=6,
+        right=6,
+        bottom=6,
+    )
+
+
+def _aviso_sobre_o_mapa(texto: str) -> ft.Container:
+    """Mensagem centralizada sobre o mapa (sem pontos, sem coordenadas)."""
+    return ft.Container(
+        content=ft.Text(
+            texto,
+            size=12,
+            color=t.TEXTO_FORTE,
+            text_align=ft.TextAlign.CENTER,
+        ),
+        padding=ft.Padding.symmetric(horizontal=14, vertical=10),
+        bgcolor="#F2FFFFFF",
+        border_radius=t.RAIO_BOTAO,
+        shadow=t.SOMBRA_CARD,
+        left=24,
+        top=ALTURA_MAPA / 2 - 22,
+        width=LARGURA_MAPA - 48,
+        alignment=ft.Alignment.CENTER,
+    )
+
+
+def _mapa(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
+    """Mapa do OSM com os pinos dos pontos por cima."""
+    centro, zoom = _centro_e_zoom(app, pontos)
+    camadas: list[ft.Control] = _tiles(centro, zoom)
+
+    com_coordenadas = [
+        ponto
+        for ponto in pontos
+        if isinstance(ponto.get("latitude"), int | float)
+        and isinstance(ponto.get("longitude"), int | float)
     ]
+
+    for ponto in com_coordenadas:
+        x, y = mapa_tiles.posicao_na_area(
+            ponto["latitude"], ponto["longitude"], centro, zoom, LARGURA_MAPA, ALTURA_MAPA
+        )
+        camadas.append(_pino(app, ponto, x, y))
 
     if not pontos:
-        grade.append(
-            ft.Container(
-                content=ft.Text(
-                    "Nenhum ponto com os filtros atuais.",
-                    size=12,
-                    color=t.TEXTO_SECUNDARIO,
-                ),
-                left=0,
-                top=ALTURA_MAPA / 2 - 10,
-                width=LARGURA_MAPA,
-                alignment=ft.Alignment.CENTER,
-            )
+        camadas.append(_aviso_sobre_o_mapa("Nenhum ponto com os filtros atuais."))
+    elif not com_coordenadas:
+        camadas.append(
+            _aviso_sobre_o_mapa("Os pontos retornados não têm coordenadas válidas.")
         )
-    else:
-        pontos_validos = [
-            ponto
-            for ponto in pontos
-            if isinstance(ponto.get("latitude"), int | float)
-            and isinstance(ponto.get("longitude"), int | float)
-        ]
 
-        if not pontos_validos:
-            grade.append(
-                ft.Container(
-                    content=ft.Text(
-                        "Os pontos retornados não têm coordenadas válidas.",
-                        size=12,
-                        color=t.TEXTO_SECUNDARIO,
-                        text_align=ft.TextAlign.CENTER,
-                    ),
-                    left=18,
-                    top=ALTURA_MAPA / 2 - 18,
-                    width=LARGURA_MAPA - 36,
-                    alignment=ft.Alignment.CENTER,
-                )
-            )
-            return _area_do_mapa(grade)
-
-        latitudes = [ponto["latitude"] for ponto in pontos_validos]
-        longitudes = [ponto["longitude"] for ponto in pontos_validos]
-        lat_min, lat_max = min(latitudes), max(latitudes)
-        lon_min, lon_max = min(longitudes), max(longitudes)
-
-        def escalar(valor: float, minimo: float, maximo: float, tamanho: int) -> float:
-            """Mapeia um valor do intervalo geográfico para pixels."""
-            if maximo - minimo < 1e-9:  # todos os pontos no mesmo lugar
-                return tamanho / 2
-            proporcao = (valor - minimo) / (maximo - minimo)
-            return MARGEM + proporcao * (tamanho - 2 * MARGEM)
-
-        for ponto in pontos_validos:
-            # Latitude cresce para o norte, mas o eixo Y da tela cresce para
-            # baixo — por isso a inversão.
-            x = escalar(ponto["longitude"], lon_min, lon_max, LARGURA_MAPA)
-            y = ALTURA_MAPA - escalar(ponto["latitude"], lat_min, lat_max, ALTURA_MAPA)
-            grade.append(_pino(app, ponto, x, y))
-
-    return _area_do_mapa(grade)
+    camadas.append(_credito())
+    return _area_do_mapa(camadas)
 
 
-def _area_do_mapa(grade: list[ft.Control]) -> ft.Control:
-    """Cria a superfície fixa do mapa, usada também nos estados vazios."""
-    # A área tem tamanho fixo e recorte rígido: as posições dos pinos são
-    # calculadas em pixels, então o container precisa medir exatamente o mesmo
-    # que o Stack — do contrário um pino pode vazar pela borda.
+def _area_do_mapa(camadas: list[ft.Control]) -> ft.Control:
+    """Superfície fixa do mapa: tiles, pinos e crédito, recortados no cartão.
+
+    O tamanho é fixo e o recorte é rígido porque as posições dos tiles e dos
+    pinos são calculadas em pixels a partir dele — um container de outra medida
+    deslocaria tudo.
+    """
     area = ft.Container(
         content=ft.Stack(
-            [
-                ft.Container(
-                    left=12,
-                    top=12,
-                    right=12,
-                    bottom=12,
-                    border_radius=t.RAIO,
-                    border=ft.Border.all(1, "#D7E5DD"),
-                ),
-                *grade,
-            ],
+            list(camadas),
             width=LARGURA_MAPA,
             height=ALTURA_MAPA,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
         ),
         width=LARGURA_MAPA,
         height=ALTURA_MAPA,
+        # Cor da superfície enquanto os tiles carregam (e onde eles falharem).
         bgcolor="#E8F2EC",
-        border_radius=t.RAIO,
-        border=ft.Border.all(1, t.BORDA),
+        border_radius=t.RAIO_CARD,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
         padding=0,
-        shadow=ft.BoxShadow(blur_radius=12, color="#180E2A47", offset=ft.Offset(0, 4)),
+        shadow=t.SOMBRA_CARD,
     )
     # Em telas estreitas a Row rola na horizontal; em telas largas, centraliza.
     return ft.Row([area], alignment=ft.MainAxisAlignment.CENTER, scroll=ft.ScrollMode.AUTO)
@@ -218,7 +286,7 @@ def _pino(app: App, ponto: dict[str, Any], x: float, y: float) -> ft.Container:
         top=max(0, min(y - tamanho / 2, ALTURA_MAPA - tamanho)),
         tooltip=f"{ponto.get('titulo', '')} · {ponto.get('distancia_formatada', '--')}",
         on_click=lambda _: _abrir_detalhe(app, ponto),
-        shadow=ft.BoxShadow(blur_radius=8, color="#33000000", offset=ft.Offset(0, 3)),
+        shadow=t.SOMBRA_CARD,
         ink=True,
     )
 
@@ -239,22 +307,22 @@ def _painel_de_filtros(
                             content=ft.Icon(t.ICONES_MAPA[tipo], size=13, color=t.BRANCO),
                             width=24,
                             height=24,
-                            bgcolor=cor if ligado else t.BORDA,
+                            bgcolor=cor if ligado else t.TEXTO_INATIVO,
                             border_radius=12,
                             alignment=ft.Alignment.CENTER,
                         ),
                         ft.Text(
                             t.ROTULOS_MAPA[tipo],
                             size=12,
-                            color=t.AZUL_INSTITUCIONAL if ligado else t.TEXTO_SECUNDARIO,
+                            color=t.TEXTO_FORTE if ligado else t.TEXTO_SECUNDARIO,
                             weight=ft.FontWeight.W_600 if ligado else ft.FontWeight.NORMAL,
                             expand=True,
                         ),
                         ft.Text(str(totais.get(tipo, 0)), size=12, color=t.TEXTO_SECUNDARIO),
                         ft.Icon(
-                            ft.Icons.TOGGLE_ON_OUTLINED if ligado else ft.Icons.TOGGLE_OFF_OUTLINED,
-                            size=26,
-                            color=cor if ligado else t.BORDA,
+                            ft.Icons.TOGGLE_ON_ROUNDED if ligado else ft.Icons.TOGGLE_OFF_ROUNDED,
+                            size=28,
+                            color=cor if ligado else t.TEXTO_INATIVO,
                         ),
                     ],
                     spacing=10,
@@ -267,12 +335,7 @@ def _painel_de_filtros(
     return t.cartao(
         ft.Column(
             [
-                ft.Text(
-                    "Filtrar por tipo",
-                    size=13,
-                    weight=ft.FontWeight.BOLD,
-                    color=t.AZUL_INSTITUCIONAL,
-                ),
+                t.titulo("Filtrar por tipo", 13),
                 *linhas,
             ],
             spacing=2,
@@ -306,11 +369,8 @@ def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
                             [
                                 ft.Row(
                                     [
-                                        ft.Text(
+                                        t.titulo_cartao(
                                             ponto.get("titulo", ""),
-                                            size=13,
-                                            weight=ft.FontWeight.W_600,
-                                            color=t.AZUL_INSTITUCIONAL,
                                             max_lines=1,
                                             overflow=ft.TextOverflow.ELLIPSIS,
                                             expand=True,
@@ -319,24 +379,17 @@ def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
                                     ],
                                     spacing=4,
                                 ),
-                                ft.Text(
+                                t.meta(
                                     f"{ponto.get('subtitulo', '')} · "
                                     f"{ponto.get('distancia_formatada', '--')}",
-                                    size=11,
-                                    color=t.TEXTO_SECUNDARIO,
                                     max_lines=1,
                                     overflow=ft.TextOverflow.ELLIPSIS,
                                 ),
-                                ft.Text(
-                                    f"{ponto.get('latitude', 0):.4f}, {ponto.get('longitude', 0):.4f}",
-                                    size=10,
-                                    color=t.BORDA,
-                                ),
                             ],
-                            spacing=2,
+                            spacing=3,
                             expand=True,
                         ),
-                        ft.Icon(t.ICONES["detalhe"], color=t.BORDA),
+                        ft.Icon(t.ICONES["detalhe"], size=20, color=t.TEXTO_INATIVO),
                     ],
                     spacing=10,
                 ),
@@ -345,7 +398,7 @@ def _lista_de_pontos(app: App, pontos: list[dict[str, Any]]) -> ft.Control:
             )
         )
 
-    return ft.Column(linhas, spacing=8)
+    return ft.Column(linhas, spacing=10)
 
 
 def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
@@ -408,12 +461,7 @@ def _abrir_detalhe(app: App, ponto: dict[str, Any]) -> None:
                                     spacing=6,
                                     wrap=True,
                                 ),
-                                ft.Text(
-                                    ponto.get("titulo", ""),
-                                    size=18,
-                                    weight=ft.FontWeight.BOLD,
-                                    color=t.AZUL_INSTITUCIONAL,
-                                ),
+                                t.titulo(ponto.get("titulo", ""), 18),
                             ],
                             spacing=6,
                             expand=True,
@@ -469,7 +517,7 @@ def _metrica_detalhe(icone: ft.IconData, valor: str, rotulo: str) -> ft.Containe
                 ft.Icon(icone, size=16, color=t.VERDE_PRIMARIO),
                 ft.Column(
                     [
-                        ft.Text(valor, size=13, color=t.AZUL_INSTITUCIONAL, weight=ft.FontWeight.W_600),
+                        ft.Text(valor, size=13, color=t.TEXTO_FORTE, weight=ft.FontWeight.W_600),
                         ft.Text(rotulo, size=10, color=t.TEXTO_SECUNDARIO),
                     ],
                     spacing=0,
@@ -478,9 +526,9 @@ def _metrica_detalhe(icone: ft.IconData, valor: str, rotulo: str) -> ft.Containe
             spacing=8,
             tight=True,
         ),
-        padding=ft.Padding.symmetric(horizontal=10, vertical=8),
-        bgcolor=t.FUNDO_CLARO,
-        border_radius=12,
+        padding=ft.Padding.symmetric(horizontal=12, vertical=9),
+        bgcolor=t.CINZA_CLARO,
+        border_radius=t.RAIO_BOTAO,
     )
 
 

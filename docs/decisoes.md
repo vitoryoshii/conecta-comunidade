@@ -121,20 +121,28 @@ do próprio método. O bug apareceu no teste de renderização antes de chegar a
 
 ---
 
-## `06` Mapa esquemático em vez de `ft.Map`
+## `06` Tiles do OpenStreetMap em vez de `ft.Map` ou WebView
 
-**Contexto.** O controle `ft.Map` não vem no pacote base do Flet 0.86; ele está
-na extensão `flet-map`, que exige build nativo do app.
+**Contexto.** O controle `ft.Map` não vem no pacote base do Flet 0.86 (está na
+extensão `flet-map`, que exige build nativo), e `ft.WebView` **também não**: ele
+virou o pacote separado `flet-webview`, cujo plugin Flutter não suporta Windows
+desktop — justamente onde o app é desenvolvido e demonstrado. A primeira versão
+desta tela desenhava um mapa esquemático (pins sobre uma grade vazia), que se
+lia como wireframe.
 
-**Decisão.** Desenhar um **mapa esquemático**: um `ft.Stack` onde cada pin é
-posicionado por projeção linear das coordenadas, com os mesmos filtros por tipo
-e a mesma paleta previstos no projeto, seguido da lista detalhada dos pontos.
+**Decisão.** Baixar as imagens de tile do OpenStreetMap com o próprio
+`ft.Image` e montá-las em um `ft.Stack`, posicionando os pins por cima com a
+projeção **Web Mercator** de verdade (`mobile/mapa_tiles.py`). Para zoom e
+arrasto, o botão "Abrir mapa interativo" gera uma página **Leaflet** com os
+mesmos pontos e a abre no navegador (`mobile/mapa_leaflet.py`).
 
-**Consequência.** O projeto roda com `pip install -r requirements.txt` em
-qualquer máquina, sem toolchain nativa. A posição relativa entre os pontos é
-preservada, mas não é uma projeção cartográfica — trocar pelo `flet-map` depois
-afeta apenas `mobile/views/mapa.py`, porque o endpoint `/mapa` já devolve os
-pins prontos.
+**Consequência.** O app mostra ruas de verdade em qualquer plataforma, sem
+chave de API, sem dependência nova e sem toolchain nativa; os pins caem na
+posição geográfica correta, e não apenas na posição relativa. Em troca, o mapa
+embutido é estático (o zoom vem do enquadramento dos pontos) e depende de rede
+— sem ela, o `error_content` de cada tile devolve a superfície verde-clara e os
+pins continuam no lugar. O volume de tiles é pequeno e cabe na política de uso
+do OSM; um app com muitos usuários precisaria de provedor de tiles próprio.
 
 ---
 

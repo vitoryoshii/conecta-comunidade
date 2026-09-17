@@ -30,17 +30,17 @@ def _folha_de_estilo() -> ft.MarkdownStyleSheet:
     tamanho de página web, que ficam grandes demais em 430 px de largura.
     """
     return ft.MarkdownStyleSheet(
-        p_text_style=ft.TextStyle(size=13, color=t.AZUL_INSTITUCIONAL, height=1.5),
+        p_text_style=ft.TextStyle(size=13, color=t.TEXTO_FORTE, height=1.5),
         h1_text_style=ft.TextStyle(
-            size=19, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL
+            size=19, weight=ft.FontWeight.BOLD, color=t.TEXTO_FORTE
         ),
         h2_text_style=ft.TextStyle(
             size=15, weight=ft.FontWeight.BOLD, color=t.VERDE_ESCURO
         ),
         h3_text_style=ft.TextStyle(
-            size=14, weight=ft.FontWeight.W_600, color=t.AZUL_INSTITUCIONAL
+            size=14, weight=ft.FontWeight.W_600, color=t.TEXTO_FORTE
         ),
-        strong_text_style=ft.TextStyle(weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL),
+        strong_text_style=ft.TextStyle(weight=ft.FontWeight.BOLD, color=t.TEXTO_FORTE),
         em_text_style=ft.TextStyle(italic=True, color=t.TEXTO_SECUNDARIO),
         a_text_style=ft.TextStyle(color=t.VERDE_PRIMARIO, weight=ft.FontWeight.W_600),
         blockquote_text_style=ft.TextStyle(size=12, color=t.TEXTO_SECUNDARIO, height=1.45),
@@ -50,11 +50,11 @@ def _folha_de_estilo() -> ft.MarkdownStyleSheet:
         ),
         blockquote_padding=ft.Padding.all(12),
         table_head_text_style=ft.TextStyle(
-            size=12, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL
+            size=12, weight=ft.FontWeight.BOLD, color=t.TEXTO_FORTE
         ),
-        table_body_text_style=ft.TextStyle(size=12, color=t.AZUL_INSTITUCIONAL),
+        table_body_text_style=ft.TextStyle(size=12, color=t.TEXTO_FORTE),
         table_cells_padding=ft.Padding.symmetric(horizontal=8, vertical=6),
-        list_bullet_text_style=ft.TextStyle(size=13, color=t.AZUL_INSTITUCIONAL),
+        list_bullet_text_style=ft.TextStyle(size=13, color=t.TEXTO_FORTE),
         block_spacing=10,
     )
 

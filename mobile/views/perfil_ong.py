@@ -23,7 +23,7 @@ def _card_recurso(recurso: dict[str, Any]) -> ft.Container:
                     str(recurso.get("quantidade", "—")),
                     size=18,
                     weight=ft.FontWeight.BOLD,
-                    color=t.AZUL_INSTITUCIONAL,
+                    color=t.TEXTO_FORTE,
                 ),
                 ft.Text(
                     recurso.get("nome", ""),
@@ -56,7 +56,7 @@ def _dialogo_avaliacao(app: App, ong_id: int) -> None:
     app.page.show_dialog(
         ft.AlertDialog(
             modal=True,
-            title=ft.Text("Como foi sua experiência?", color=t.AZUL_INSTITUCIONAL),
+            title=ft.Text("Como foi sua experiência?", color=t.TEXTO_FORTE),
             content=ft.Row(
                 [
                     ft.IconButton(
@@ -112,7 +112,7 @@ def construir(app: App) -> ft.Control:
                                 color=t.BRANCO,
                                 weight=ft.FontWeight.BOLD,
                             ),
-                            bgcolor=t.AZUL_INSTITUCIONAL,
+                            bgcolor=t.TEXTO_FORTE,
                             radius=30,
                         ),
                         ft.Column(
@@ -123,7 +123,7 @@ def construir(app: App) -> ft.Control:
                                             ong["nome"],
                                             size=17,
                                             weight=ft.FontWeight.BOLD,
-                                            color=t.AZUL_INSTITUCIONAL,
+                                            color=t.TEXTO_FORTE,
                                             expand=True,
                                         ),
                                         *([t.selo_verificada()] if ong.get("verificada") else []),
@@ -188,7 +188,7 @@ def construir(app: App) -> ft.Control:
                                         "Sobre",
                                         size=14,
                                         weight=ft.FontWeight.BOLD,
-                                        color=t.AZUL_INSTITUCIONAL,
+                                        color=t.TEXTO_FORTE,
                                     ),
                                     ft.Text(
                                         ong.get("descricao") or "Sem descrição.",
@@ -203,7 +203,7 @@ def construir(app: App) -> ft.Control:
                             "Recursos disponíveis",
                             size=15,
                             weight=ft.FontWeight.BOLD,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                         ),
                         (
                             ft.Row(
@@ -234,14 +234,14 @@ def construir(app: App) -> ft.Control:
                             ),
                             t.ICONES["voluntariado"],
                             400,
-                            cor=t.AZUL_INSTITUCIONAL,
+                            cor=t.TEXTO_FORTE,
                         ),
                         t.botao_secundario(
                             "Falar com a ONG",
                             falar_com_a_ong,
                             t.ICONES["conversa"],
                             400,
-                            cor=t.AZUL_INSTITUCIONAL,
+                            cor=t.TEXTO_FORTE,
                         ),
                         ft.Container(height=16),
                     ],

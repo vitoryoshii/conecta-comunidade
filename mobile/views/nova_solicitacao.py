@@ -44,7 +44,7 @@ def construir(app: App) -> ft.Control:
         fill_color=t.BRANCO,
         border_radius=12,
         border_color=t.BORDA,
-        color=t.AZUL_INSTITUCIONAL,
+        color=t.TEXTO_FORTE,
     )
 
     urgencia = ["media"]
@@ -85,7 +85,7 @@ def construir(app: App) -> ft.Control:
         label="Marcar como emergência",
         value=False,
         active_color=t.URGENCIA,
-        label_text_style=ft.TextStyle(size=13, color=t.AZUL_INSTITUCIONAL),
+        label_text_style=ft.TextStyle(size=13, color=t.TEXTO_FORTE),
     )
 
     def publicar(_: ft.ControlEvent) -> None:
@@ -141,7 +141,7 @@ def construir(app: App) -> ft.Control:
                             "Nível de urgência",
                             size=13,
                             weight=ft.FontWeight.W_600,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                         ),
                         linha_urgencia,
                         t.cartao(

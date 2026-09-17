@@ -109,7 +109,7 @@ def construir(app: App) -> ft.Control:
                                                 solicitacao.get("titulo", ""),
                                                 size=14,
                                                 weight=ft.FontWeight.W_600,
-                                                color=t.AZUL_INSTITUCIONAL,
+                                                color=t.TEXTO_FORTE,
                                             ),
                                             ft.Text(
                                                 f"{solicitacao.get('quantidade') or '—'} · "
@@ -133,7 +133,7 @@ def construir(app: App) -> ft.Control:
                             "Como você pode ajudar?",
                             size=15,
                             weight=ft.FontWeight.BOLD,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                         ),
                         opcoes_coluna,
                         ft.Container(height=4),
@@ -197,7 +197,7 @@ def _cartao_opcao(
                             titulo,
                             size=14,
                             weight=ft.FontWeight.W_600,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                         ),
                         ft.Text(descricao, size=11, color=t.TEXTO_SECUNDARIO),
                     ],

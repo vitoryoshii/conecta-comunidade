@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 CORES_STATUS_ENTREGA = {
     "agendada": t.VERDE_PRIMARIO,
-    "realizada": t.AZUL_INSTITUCIONAL,
+    "realizada": t.TEXTO_FORTE,
     "cancelada": t.URGENCIA,
 }
 
@@ -39,7 +39,7 @@ def _bolha(mensagem: dict[str, Any], sou_eu: bool) -> ft.Row:
                 ft.Text(
                     mensagem.get("texto", ""),
                     size=13,
-                    color=t.BRANCO if sou_eu else t.AZUL_INSTITUCIONAL,
+                    color=t.BRANCO if sou_eu else t.TEXTO_FORTE,
                 ),
                 ft.Text(
                     horario,
@@ -116,7 +116,7 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
                             "Entrega agendada",
                             size=13,
                             weight=ft.FontWeight.BOLD,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                             expand=True,
                         ),
                         t.etiqueta(status.capitalize(), cor_texto=t.BRANCO, cor_fundo=cor),
@@ -166,7 +166,7 @@ def _dialogo_agendamento(app: App, solicitacao_id: int) -> None:
 
     dialogo = ft.AlertDialog(
         modal=True,
-        title=ft.Text("Agendar entrega", color=t.AZUL_INSTITUCIONAL),
+        title=ft.Text("Agendar entrega", color=t.TEXTO_FORTE),
         content=ft.Column([campo_data, campo_hora, campo_local], spacing=10, height=230),
     )
 
@@ -225,7 +225,7 @@ def construir(app: App) -> ft.Control:
         border_radius=24,
         border_color=t.BORDA,
         focused_border_color=t.VERDE_PRIMARIO,
-        color=t.AZUL_INSTITUCIONAL,
+        color=t.TEXTO_FORTE,
         content_padding=ft.Padding.symmetric(horizontal=16, vertical=12),
         expand=True,
         multiline=False,

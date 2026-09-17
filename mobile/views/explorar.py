@@ -8,6 +8,7 @@ import flet as ft
 
 from mobile import theme as t
 from mobile.components.comuns import cartao_oferta, cartao_solicitacao
+from mobile.components.fab import ESPACO_PARA_O_FAB
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -35,18 +36,26 @@ def construir(app: App) -> ft.Control:
     urgencia: str | None = parametros.get("urgencia")
     categoria_id: int | None = parametros.get("categoria_id")
 
-    campo_busca = ft.TextField(
-        value=busca,
-        hint_text="Buscar por item, categoria ou bairro...",
-        prefix_icon=t.ICONES["buscar"],
-        filled=True,
-        fill_color=t.BRANCO,
-        border_radius=14,
-        border_color=t.BORDA,
-        focused_border_color=t.VERDE_PRIMARIO,
-        color=t.AZUL_INSTITUCIONAL,
-        # `on_submit` evita uma chamada à API a cada tecla digitada.
-        on_submit=lambda e: _aplicar(app, aba, e.control.value, urgencia, categoria_id),
+    # A barra de busca é uma superfície branca com sombra, como os cartões: sem
+    # contorno, ela pertence à mesma família visual do resto da tela.
+    campo_busca = ft.Container(
+        content=ft.TextField(
+            value=busca,
+            hint_text="Buscar por item, categoria ou bairro...",
+            prefix_icon=t.ICONES["buscar"],
+            filled=True,
+            fill_color=t.BRANCO,
+            border_radius=t.RAIO_BOTAO,
+            border_color=t.TRANSPARENTE,
+            focused_border_color=t.TRANSPARENTE,
+            color=t.TEXTO_FORTE,
+            hint_style=ft.TextStyle(size=13, color=t.TEXTO_SECUNDARIO),
+            content_padding=ft.Padding.symmetric(horizontal=14, vertical=13),
+            # `on_submit` evita uma chamada à API a cada tecla digitada.
+            on_submit=lambda e: _aplicar(app, aba, e.control.value, urgencia, categoria_id),
+        ),
+        border_radius=t.RAIO_BOTAO,
+        shadow=t.SOMBRA_CARD,
     )
 
     resultados = _buscar(app, aba, busca, urgencia, categoria_id)
@@ -60,18 +69,19 @@ def construir(app: App) -> ft.Control:
                 _linha_de_filtros(app, aba, busca, urgencia, categoria_id),
                 ft.Row(
                     [
-                        t.subtitulo(f"{len(resultados)} resultado(s)"),
-                        ft.TextButton(
-                            content="Ver no mapa",
-                            icon=t.ICONES["estado"],
-                            on_click=lambda _: app.navegar("mapa"),
-                            style=ft.ButtonStyle(color=t.VERDE_PRIMARIO),
+                        ft.Text(
+                            f"{len(resultados)} resultado{'s' if len(resultados) != 1 else ''}",
+                            size=12.5,
+                            weight=ft.FontWeight.W_600,
+                            color=t.TEXTO_SECUNDARIO,
                         ),
+                        _atalho_do_mapa(app),
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
                 ft.Container(content=_lista(app, aba, resultados), expand=False),
-                ft.Container(height=18),
+                # Folga para o último cartão não terminar embaixo do FAB.
+                ft.Container(height=ESPACO_PARA_O_FAB),
             ],
             spacing=14,
             scroll=ft.ScrollMode.AUTO,
@@ -92,28 +102,73 @@ def _aplicar(
     )
 
 
+def _pilula(
+    rotulo: str,
+    ativa: bool,
+    on_click,
+    cor_ativa: str = t.VERDE_PRIMARIO,
+    icone: ft.IconData | None = None,
+) -> ft.Container:
+    """Chip de filtro: sólido quando ativo, branco com sombra quando não.
+
+    O contorno cinza saiu: inativa, a pílula se separa do fundo pela sombra —
+    o mesmo recurso dos cartões, o que mantém a tela com uma linguagem só.
+    """
+    filhos: list[ft.Control] = []
+    if icone is not None:
+        filhos.append(ft.Icon(icone, size=14, color=t.BRANCO if ativa else t.TEXTO_SECUNDARIO))
+    filhos.append(
+        ft.Text(
+            rotulo,
+            size=12,
+            weight=ft.FontWeight.W_600,
+            color=t.BRANCO if ativa else t.TEXTO_SECUNDARIO,
+        )
+    )
+
+    return ft.Container(
+        content=ft.Row(filhos, spacing=5, tight=True),
+        padding=ft.Padding.symmetric(horizontal=14, vertical=9),
+        bgcolor=cor_ativa if ativa else t.BRANCO,
+        border_radius=20,
+        shadow=t.SOMBRA_CARD,
+        on_click=on_click,
+        ink=True,
+    )
+
+
+def _atalho_do_mapa(app: App) -> ft.Container:
+    """Link "Ver no mapa" ao lado do contador de resultados."""
+    return ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(t.ICONES["estado"], size=16, color=t.VERDE_PRIMARIO),
+                ft.Text(
+                    "Ver no mapa", size=12, weight=ft.FontWeight.W_600, color=t.VERDE_PRIMARIO
+                ),
+            ],
+            spacing=5,
+            tight=True,
+        ),
+        on_click=lambda _: app.navegar("mapa"),
+        padding=ft.Padding.symmetric(horizontal=6, vertical=4),
+        border_radius=10,
+        ink=True,
+    )
+
+
 def _linha_de_abas(
     app: App, aba_ativa: str, busca: str, urgencia: str | None, categoria_id: int | None
 ) -> ft.Row:
     """Abas Todas / Precisando de ajuda / Oferecendo."""
-    botoes: list[ft.Control] = []
-    for chave, rotulo in ABAS:
-        ativa = chave == aba_ativa
-        botoes.append(
-            ft.Container(
-                content=ft.Text(
-                    rotulo,
-                    size=12,
-                    weight=ft.FontWeight.W_600,
-                    color=t.BRANCO if ativa else t.TEXTO_SECUNDARIO,
-                ),
-                padding=ft.Padding.symmetric(horizontal=14, vertical=9),
-                bgcolor=t.VERDE_PRIMARIO if ativa else t.BRANCO,
-                border_radius=20,
-                border=ft.Border.all(1, t.VERDE_PRIMARIO if ativa else t.BORDA),
-                on_click=lambda _, c=chave: _aplicar(app, c, busca, urgencia, categoria_id),
-            )
+    botoes = [
+        _pilula(
+            rotulo,
+            chave == aba_ativa,
+            lambda _, c=chave: _aplicar(app, c, busca, urgencia, categoria_id),
         )
+        for chave, rotulo in ABAS
+    ]
     return ft.Row(botoes, spacing=8, scroll=ft.ScrollMode.AUTO)
 
 
@@ -126,21 +181,12 @@ def _linha_de_filtros(
     # Urgência só faz sentido para solicitações.
     if aba != "ofertas":
         for chave, rotulo in FILTROS_URGENCIA:
-            ativo = chave == urgencia_ativa
             filhos.append(
-                ft.Container(
-                    content=ft.Text(
-                        rotulo,
-                        size=11,
-                        color=t.BRANCO if ativo else t.TEXTO_SECUNDARIO,
-                        weight=ft.FontWeight.W_600,
-                    ),
-                    padding=ft.Padding.symmetric(horizontal=12, vertical=7),
-                    bgcolor=(t.CORES_URGENCIA.get(chave or "", t.AZUL_INSTITUCIONAL)
-                             if ativo else t.BRANCO),
-                    border_radius=18,
-                    border=ft.Border.all(1, t.BORDA),
-                    on_click=lambda _, c=chave: _aplicar(app, aba, busca, c, categoria_id),
+                _pilula(
+                    rotulo,
+                    chave == urgencia_ativa,
+                    lambda _, c=chave: _aplicar(app, aba, busca, c, categoria_id),
+                    cor_ativa=t.CORES_URGENCIA.get(chave or "", t.TEXTO_FORTE),
                 )
             )
 
@@ -148,20 +194,28 @@ def _linha_de_filtros(
         nome = next(
             (c["nome"] for c in app.categorias() if c["id"] == categoria_id), "Categoria"
         )
+        # A pílula da categoria carrega a cor da própria categoria e um "x":
+        # ela é o único filtro que se remove tocando nele mesmo.
+        cor_icone, _ = t.cores_da_categoria(
+            next((c.get("icone") for c in app.categorias() if c["id"] == categoria_id), None)
+        )
         filhos.append(
             ft.Container(
                 content=ft.Row(
                     [
-                        ft.Text(nome, size=11, color=t.BRANCO, weight=ft.FontWeight.W_600),
-                        ft.Icon(t.ICONES["fechar"], size=13, color=t.BRANCO),
+                        ft.Text(nome, size=12, color=t.BRANCO, weight=ft.FontWeight.W_600),
+                        ft.Icon(t.ICONES["fechar"], size=14, color=t.BRANCO),
                     ],
-                    spacing=4,
+                    spacing=5,
                     tight=True,
                 ),
-                padding=ft.Padding.symmetric(horizontal=12, vertical=7),
-                bgcolor=t.AZUL_INSTITUCIONAL,
-                border_radius=18,
+                padding=ft.Padding.symmetric(horizontal=14, vertical=9),
+                bgcolor=cor_icone,
+                border_radius=20,
+                shadow=t.SOMBRA_CARD,
                 on_click=lambda _: _aplicar(app, aba, busca, urgencia_ativa, None),
+                ink=True,
+                tooltip="Remover o filtro de categoria",
             )
         )
 
@@ -219,7 +273,7 @@ def _lista(app: App, aba: str, itens: list[dict[str, Any]]) -> ft.Control:
     """Renderiza o cartão adequado a cada item da lista."""
     if not itens:
         return t.area_vazia(
-            "Nada encontrado com esses filtros.\nTente outra busca ou limpe os filtros.",
+            "Nada por aqui com esses filtros.\nTente outra busca, ou toque em Todas para ver o que está aberto.",
             t.ICONES["sem_resultado"],
         )
 
@@ -233,4 +287,4 @@ def _lista(app: App, aba: str, itens: list[dict[str, Any]]) -> ft.Control:
         else:
             cartoes.append(cartao_oferta(item))
 
-    return ft.Column(cartoes, spacing=10)
+    return ft.Column(cartoes, spacing=12)

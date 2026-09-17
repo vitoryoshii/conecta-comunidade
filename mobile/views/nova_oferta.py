@@ -34,7 +34,7 @@ def construir(app: App) -> ft.Control:
         fill_color=t.BRANCO,
         border_radius=12,
         border_color=t.BORDA,
-        color=t.AZUL_INSTITUCIONAL,
+        color=t.TEXTO_FORTE,
     )
 
     escolhido = ["tenho_item"]
@@ -97,7 +97,7 @@ def construir(app: App) -> ft.Control:
                             "Como você pode ajudar?",
                             size=13,
                             weight=ft.FontWeight.W_600,
-                            color=t.AZUL_INSTITUCIONAL,
+                            color=t.TEXTO_FORTE,
                         ),
                         opcoes_coluna,
                         ft.Container(height=4),

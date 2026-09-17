@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any
 import flet as ft
 
 from mobile import theme as t
-from mobile.components.comuns import cabecalho
+from mobile.components.avatar import avatar
+from mobile.components.comuns import cabecalho, quadrado_de_categoria
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -71,17 +72,23 @@ def _informacao(icone: ft.IconData, rotulo: str, valor: str) -> ft.Container:
     return ft.Container(
         content=ft.Column(
             [
-                ft.Icon(icone, size=18, color=t.VERDE_ESCURO),
-                ft.Text(valor, size=13, weight=ft.FontWeight.W_600, color=t.AZUL_INSTITUCIONAL),
+                ft.Icon(icone, size=18, color=t.VERDE_PRIMARIO),
+                ft.Text(
+                    valor,
+                    size=15,
+                    weight=ft.FontWeight.BOLD,
+                    color=t.TEXTO_FORTE,
+                    style=ft.TextStyle(letter_spacing=-0.3),
+                ),
                 ft.Text(rotulo, size=10, color=t.TEXTO_SECUNDARIO),
             ],
             spacing=3,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         ),
-        padding=ft.Padding.symmetric(vertical=12),
+        padding=ft.Padding.symmetric(vertical=14),
         bgcolor=t.BRANCO,
-        border_radius=12,
-        border=ft.Border.all(1, t.BORDA),
+        border_radius=t.RAIO_CARD,
+        shadow=t.SOMBRA_CARD,
         expand=True,
     )
 
@@ -142,32 +149,32 @@ def construir(app: App) -> ft.Control:
         )
     acoes.append(
         t.botao_secundario("Compartilhar", compartilhar, t.ICONES["compartilhar"], 400,
-                           cor=t.AZUL_INSTITUCIONAL)
+                           cor=t.TEXTO_FORTE)
     )
 
     corpo = ft.Column(
         [
             _galeria(dados.get("fotos") or []),
-            ft.Row(marcadores, spacing=6, wrap=True),
-            ft.Text(
-                dados["titulo"], size=21, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL
+            ft.Row(
+                [
+                    quadrado_de_categoria(dados.get("categoria_icone"), 52),
+                    ft.Column(
+                        [
+                            ft.Row(marcadores, spacing=6, wrap=True, run_spacing=4),
+                            t.titulo(dados["titulo"], 20),
+                        ],
+                        spacing=8,
+                        expand=True,
+                    ),
+                ],
+                spacing=12,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
             ft.Row(
                 [
-                    ft.CircleAvatar(
-                        content=ft.Text(
-                            (dados.get("autor_nome") or "?")[0].upper(),
-                            size=12,
-                            color=t.BRANCO,
-                            weight=ft.FontWeight.BOLD,
-                        ),
-                        bgcolor=t.VERDE_PRIMARIO,
-                        radius=14,
-                    ),
-                    ft.Text(
-                        f"{dados.get('autor_nome', '')} · {dados.get('tempo_publicacao', '')}",
-                        size=12,
-                        color=t.TEXTO_SECUNDARIO,
+                    avatar({"nome": dados.get("autor_nome")}, 30, com_sombra=False),
+                    t.meta(
+                        f"{dados.get('autor_nome', '')} · {dados.get('tempo_publicacao', '')}"
                     ),
                 ],
                 spacing=8,
@@ -197,11 +204,12 @@ def construir(app: App) -> ft.Control:
             t.cartao(
                 ft.Column(
                     [
-                        ft.Text(
-                            "Descrição",
-                            size=14,
-                            weight=ft.FontWeight.BOLD,
-                            color=t.AZUL_INSTITUCIONAL,
+                        ft.Row(
+                            [
+                                ft.Icon(t.ICONES["descricao"], size=16, color=t.VERDE_PRIMARIO),
+                                t.titulo("Descrição", 14),
+                            ],
+                            spacing=6,
                         ),
                         ft.Text(
                             dados.get("descricao") or "Sem descrição adicional.",
@@ -218,11 +226,8 @@ def construir(app: App) -> ft.Control:
                         ft.Icon(t.ICONES["local"], color=t.VERDE_PRIMARIO),
                         ft.Column(
                             [
-                                ft.Text(
-                                    dados.get("endereco") or "Endereço não informado",
-                                    size=13,
-                                    weight=ft.FontWeight.W_600,
-                                    color=t.AZUL_INSTITUCIONAL,
+                                t.titulo_cartao(
+                                    dados.get("endereco") or "Endereço não informado"
                                 ),
                                 ft.Text(
                                     f"A {dados.get('distancia_formatada', '--')} de você · "
@@ -261,7 +266,7 @@ def construir(app: App) -> ft.Control:
                 [
                     ft.IconButton(
                         t.ICONES["compartilhar"],
-                        icon_color=t.AZUL_INSTITUCIONAL,
+                        icon_color=t.TEXTO_FORTE,
                         on_click=compartilhar,
                         tooltip="Compartilhar",
                     )

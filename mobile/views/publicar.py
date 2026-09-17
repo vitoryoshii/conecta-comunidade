@@ -1,4 +1,8 @@
-"""Aba Publicar — o botão central "+" da navegação inferior."""
+"""Tela Publicar — aberta pelo FAB, o botão flutuante do canto inferior direito.
+
+Deixou de ser aba quando o "+" saiu da barra de navegação: hoje ela empilha
+como qualquer outra tela, e por isso tem botão de voltar.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +11,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components.comuns import cabecalho
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -30,7 +35,7 @@ def _opcao(
                 ft.Column(
                     [
                         ft.Text(
-                            titulo, size=16, weight=ft.FontWeight.BOLD, color=t.AZUL_INSTITUCIONAL
+                            titulo, size=16, weight=ft.FontWeight.BOLD, color=t.TEXTO_FORTE
                         ),
                         ft.Text(descricao, size=12, color=t.TEXTO_SECUNDARIO),
                     ],
@@ -52,12 +57,9 @@ def _opcao(
 
 def construir(app: App) -> ft.Control:
     """Tela de escolha do que publicar."""
-    return ft.Container(
+    corpo = ft.Container(
         content=ft.Column(
             [
-                t.titulo("O que você quer publicar?", 21),
-                t.subtitulo("Escolha abaixo. Leva menos de um minuto."),
-                ft.Container(height=12),
                 _opcao(
                     "Preciso de ajuda",
                     "Publique o que está faltando para você ou sua comunidade.",
@@ -83,7 +85,7 @@ def construir(app: App) -> ft.Control:
                                         "Modo emergência",
                                         size=13,
                                         weight=ft.FontWeight.BOLD,
-                                        color=t.AZUL_INSTITUCIONAL,
+                                        color=t.TEXTO_FORTE,
                                     ),
                                     ft.Text(
                                         "Ao publicar um pedido você pode marcá-lo como "
@@ -110,4 +112,17 @@ def construir(app: App) -> ft.Control:
         padding=ft.Padding.symmetric(horizontal=16, vertical=18),
         expand=True,
         bgcolor=t.FUNDO_CLARO,
+    )
+
+    return ft.Column(
+        [
+            cabecalho(
+                "O que você quer publicar?",
+                ao_voltar=app.voltar,
+                subtitulo="Escolha abaixo. Leva menos de um minuto.",
+            ),
+            corpo,
+        ],
+        spacing=0,
+        expand=True,
     )

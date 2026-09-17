@@ -15,10 +15,17 @@ import flet as ft
 TEAL = "#2FD3C0"                # acento tecnológico da identidade v2
 VERDE_PRIMARIO = "#1FA96C"      # ações principais, identidade da marca
 VERDE_ESCURO = "#0E6B42"        # estados pressionados, gradientes
-AZUL_INSTITUCIONAL = "#0E2A47"  # títulos e textos de destaque
-FUNDO_CLARO = "#F5F7F6"         # fundo das telas
+VERDE_PROFUNDO = "#0B5A3A"      # fim do gradiente do banner e do FAB
+VERDE_BANNER = "#127C58"        # início do gradiente do banner
+AZUL_INSTITUCIONAL = "#0E2A47"  # navy da marca: pin de ONG, avatar institucional
+FUNDO_CLARO = "#FBFCFB"         # fundo das telas
 URGENCIA = "#E23B3B"            # alertas, urgência alta, modo emergência
-TEXTO_SECUNDARIO = "#6B7B72"    # legendas, metadados, textos de apoio
+# Par de texto do padrão premium. `TEXTO_FORTE` é um quase-preto esverdeado, e
+# não o navy: sobre o fundo levemente verde das telas ele assenta, enquanto o
+# azul vibra. O navy continua existindo, mas como acento institucional.
+TEXTO_FORTE = "#122C1E"         # títulos e textos de destaque
+TEXTO_SECUNDARIO = "#9AA5A0"    # legendas, metadados, textos de apoio
+TEXTO_INATIVO = "#B0BAB5"       # itens não selecionados da navegação
 
 # Tons derivados, criados a partir da paleta para dar profundidade à interface.
 BRANCO = "#FFFFFF"
@@ -171,9 +178,34 @@ LOGO_APP = "brand/logo/logo-icon.svg"
 # deve empilhar outra camada de cor por cima dela.
 FOTO_DE_FUNDO = "brand/img/login-bg.jpg"
 
+# --------------------------------------------------------------------------- #
+# Sombras
+# --------------------------------------------------------------------------- #
+# É a sombra — e não o traço — que separa as superfícies no padrão premium.
+# Uma borda cinza de 1px recorta o cartão e "achata" a tela; a sombra curta e
+# clara levanta a superfície sem sujar o fundo. Por isso `cartao()` não desenha
+# mais borda: quem precisa marcar um estado (uma emergência) passa `borda`.
+#
+# São dataclasses do Flet, não controles, então a MESMA instância pode ser
+# reaproveitada por quantos containers precisarem.
+SOMBRA_CARD = ft.BoxShadow(blur_radius=16, color="#0D000000", offset=ft.Offset(0, 3))
+SOMBRA_FLUTUANTE = ft.BoxShadow(blur_radius=22, color="#470B5A3A", offset=ft.Offset(0, 8))
+# Offset negativo: a nav bar projeta a sombra para CIMA, sobre o conteúdo.
+SOMBRA_NAV = ft.BoxShadow(blur_radius=16, color="#0D000000", offset=ft.Offset(0, -2))
+
 # Raio padrão de arredondamento e espaçamento base das telas.
-RAIO = 16
+RAIO_CARD = 18        # cartões e superfícies grandes
+RAIO_BOTAO = 14       # botões, campos e quadradinhos de ícone
+RAIO_CATEGORIA = 18   # quadrados das categorias
+RAIO = RAIO_CARD      # nome antigo, mantido para as telas ainda não redesenhadas
 ESPACO = 16
+
+# --------------------------------------------------------------------------- #
+# Tipografia
+# --------------------------------------------------------------------------- #
+TAMANHO_TITULO_SECAO = 16.5
+TAMANHO_TITULO_CARD = 15
+TAMANHO_META = 11.5
 
 # Largura útil do formulário nas telas sobre foto: a janela de demonstração
 # tem 430px e a tela reserva 36px de padding de cada lado.
@@ -183,16 +215,33 @@ LARGURA_FORMULARIO = 358
 LADO_DO_DISCO = 140
 PROPORCAO_DO_LOGO = 0.74
 
-# Cores auxiliares para categorias, usadas em ícones e fundos suaves.
-CORES_CATEGORIAS = [
-    (VERDE_PRIMARIO, VERDE_SUAVE),
-    ("#0E2A47", "#E7EEF4"),
-    ("#E23B3B", "#FCEAEA"),
-    (AMARELO_ATENCAO, "#FFF4DC"),
-    (TEAL, "#E4FBF8"),
-    (MENTA, "#EDFBF2"),
-    ("#7C3AED", "#F1EAFF"),
-]
+# --------------------------------------------------------------------------- #
+# Cores por categoria (tom sobre tom)
+# --------------------------------------------------------------------------- #
+# Cada categoria tem um par (cor do ícone, fundo bem claro da MESMA cor) — é o
+# tom sobre tom que dá o ar premium à grade e aos cartões.
+#
+# A chave é o nome do ícone vindo da API (`categoria["icone"]`, e
+# `solicitacao["categoria_icone"]` nos cartões), e não a posição na lista: assim
+# "Água" é azul na Home e no cartão da solicitação, mesmo que a API devolva as
+# categorias em outra ordem. Categoria nova cai em `COR_CATEGORIA_PADRAO`.
+CATEGORIA_CORES = {
+    "water_drop": ("#2F9BD3", "#E6F4FB"),       # Água
+    "restaurant": ("#D8712F", "#FDEEE6"),       # Alimentos
+    "checkroom": ("#1FA96C", "#E4F7EE"),        # Roupas
+    "home": ("#2F6FD3", "#EAF1FB"),             # Abrigo
+    "medical_services": ("#E23B3B", "#FDECEC"), # Medicamentos
+    "school": ("#7A5AD8", "#F0ECFB"),           # Material Escolar
+    "chair": ("#1FA96C", "#E4F7EE"),            # Móveis
+    "category": ("#6B7B72", "#EEF1EF"),         # Outros
+}
+
+COR_CATEGORIA_PADRAO = ("#6B7B72", "#EEF1EF")
+
+
+def cores_da_categoria(icone: str | None) -> tuple[str, str]:
+    """Par (cor do ícone, cor de fundo) da categoria, pelo nome do ícone."""
+    return CATEGORIA_CORES.get(icone or "", COR_CATEGORIA_PADRAO)
 
 
 # --------------------------------------------------------------------------- #
@@ -215,9 +264,42 @@ def tema_do_app() -> ft.Theme:
 # --------------------------------------------------------------------------- #
 # Textos
 # --------------------------------------------------------------------------- #
-def titulo(texto: str, tamanho: int = 22, cor: str = AZUL_INSTITUCIONAL) -> ft.Text:
-    """Título de tela ou de seção."""
-    return ft.Text(texto, size=tamanho, weight=ft.FontWeight.BOLD, color=cor)
+def titulo(texto: str, tamanho: int = 22, cor: str = TEXTO_FORTE) -> ft.Text:
+    """Título de tela ou de seção.
+
+    O `letter_spacing` levemente negativo é o que faz um título bold parecer
+    desenhado, e não apenas "engrossado": as letras fecham entre si e o bloco de
+    texto ganha peso sem precisar de mais tamanho.
+    """
+    return ft.Text(
+        texto,
+        size=tamanho,
+        weight=ft.FontWeight.BOLD,
+        color=cor,
+        style=ft.TextStyle(letter_spacing=-0.4),
+    )
+
+
+def titulo_secao(texto: str, cor: str = TEXTO_FORTE) -> ft.Text:
+    """Título das seções internas ("Categorias", "Meu impacto"...)."""
+    return titulo(texto, TAMANHO_TITULO_SECAO, cor)
+
+
+def titulo_cartao(texto: str, cor: str = TEXTO_FORTE, **kwargs) -> ft.Text:
+    """Título de um item de lista, dentro de um cartão."""
+    return ft.Text(
+        texto,
+        size=TAMANHO_TITULO_CARD,
+        weight=ft.FontWeight.W_700,
+        color=cor,
+        style=ft.TextStyle(letter_spacing=-0.2),
+        **kwargs,
+    )
+
+
+def meta(texto: str, cor: str = TEXTO_SECUNDARIO, **kwargs) -> ft.Text:
+    """Metadado de cartão: distância, tempo, contagem."""
+    return ft.Text(texto, size=TAMANHO_META, color=cor, **kwargs)
 
 
 def subtitulo(texto: str, tamanho: int = 13, cor: str = TEXTO_SECUNDARIO) -> ft.Text:
@@ -225,7 +307,7 @@ def subtitulo(texto: str, tamanho: int = 13, cor: str = TEXTO_SECUNDARIO) -> ft.
     return ft.Text(texto, size=tamanho, color=cor)
 
 
-def corpo(texto: str, tamanho: int = 14, cor: str = AZUL_INSTITUCIONAL, **kwargs) -> ft.Text:
+def corpo(texto: str, tamanho: int = 14, cor: str = TEXTO_FORTE, **kwargs) -> ft.Text:
     """Texto corrido padrão."""
     return ft.Text(texto, size=tamanho, color=cor, **kwargs)
 
@@ -254,7 +336,13 @@ def botao_primario(
         color=cor_texto,
         width=largura,
         height=50,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=14)),
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=RAIO_BOTAO),
+            # A elevação é o equivalente da `SOMBRA_FLUTUANTE` em um botão do
+            # Material: o verde principal passa a flutuar sobre a tela.
+            elevation=6,
+            shadow_color=VERDE_PROFUNDO,
+        ),
     )
 
 
@@ -273,7 +361,7 @@ def botao_secundario(
         width=largura,
         height=50,
         style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=14),
+            shape=ft.RoundedRectangleBorder(radius=RAIO_BOTAO),
             color=cor,
             side=ft.BorderSide(width=1.4, color=cor),
         ),
@@ -313,7 +401,7 @@ def campo(
         border_radius=12,
         border_color=BORDA,
         focused_border_color=VERDE_PRIMARIO,
-        color=AZUL_INSTITUCIONAL,
+        color=TEXTO_FORTE,
         label_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
     )
 
@@ -493,7 +581,7 @@ def campo_claro(
         border_radius=12,
         border_color=TRANSPARENTE,
         focused_border_color=VERDE_PRIMARIO,
-        color=AZUL_INSTITUCIONAL,
+        color=TEXTO_FORTE,
         cursor_color=VERDE_PRIMARIO,
         hint_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
         content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
@@ -578,8 +666,8 @@ def dropdown_claro(
         border_radius=12,
         border_color=TRANSPARENTE,
         focused_border_color=VERDE_PRIMARIO,
-        color=AZUL_INSTITUCIONAL,
-        text_style=ft.TextStyle(size=13, color=AZUL_INSTITUCIONAL),
+        color=TEXTO_FORTE,
+        text_style=ft.TextStyle(size=13, color=TEXTO_FORTE),
         content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
     )
 
@@ -614,17 +702,22 @@ def cartao(
     cor: str = BRANCO,
     borda: str | None = None,
 ) -> ft.Container:
-    """Superfície branca arredondada usada em toda a interface."""
+    """Superfície branca arredondada usada em toda a interface.
+
+    Sem borda por padrão: a separação vem de `SOMBRA_CARD`. O parâmetro `borda`
+    deixou de ser o contorno cinza de todo cartão e passou a marcar exceção —
+    hoje só a emergência, que recebe o contorno vermelho.
+    """
     return ft.Container(
         content=conteudo,
         padding=padding,
         bgcolor=cor,
-        border_radius=RAIO,
-        border=ft.Border.all(1, borda or BORDA),
+        border_radius=RAIO_CARD,
+        border=ft.Border.all(1.4, borda) if borda else None,
         on_click=on_click,
         ink=on_click is not None,
         ink_color="#142E9E5B" if on_click is not None else None,
-        shadow=ft.BoxShadow(blur_radius=10, color="#120E2A47", offset=ft.Offset(0, 3)),
+        shadow=SOMBRA_CARD,
     )
 
 

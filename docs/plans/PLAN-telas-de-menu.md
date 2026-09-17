@@ -113,3 +113,8 @@ API de pé, a tabela `favorito` nasceu pelo `create_all` **antes** da migration,
 `usuario` (que `create_all` não acrescenta a tabela existente) continuavam faltando. Resolvido
 apagando a tabela vazia e aplicando a 0005. Vale decidir, em algum momento, se `init_db`
 continua criando esquema fora do Alembic: os dois juntos vão brigar de novo no próximo modelo.
+
+> **Resolvido em 17/09/2026:** `init_db()` foi removido. O `create_all` não roda
+> mais em lugar nenhum da aplicação (nem no startup da API, nem no seed) — o
+> schema passou a vir só de `alembic upgrade head`. O seed agora checa o schema
+> antes e falha com instrução em vez de erro cru. Ver `docs/decisoes.md`.

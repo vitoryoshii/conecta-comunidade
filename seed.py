@@ -1,8 +1,9 @@
 """
 Popula o banco do Conecta Comunidade com dados de demonstração.
 
-Uso:
+O schema precisa existir antes — ele vem do Alembic, não deste script:
 
+    alembic upgrade head      # cria/atualiza as tabelas
     python seed.py            # popula apenas se o banco estiver vazio
     python seed.py --forcar   # apaga tudo e popula novamente
 
@@ -29,7 +30,12 @@ def main() -> int:
     )
     argumentos = parser.parse_args()
 
-    resumo = popular(forcar=argumentos.forcar)
+    try:
+        resumo = popular(forcar=argumentos.forcar)
+    except RuntimeError as erro:
+        # Schema ausente: a mensagem já diz qual comando resolve.
+        print(erro)
+        return 1
 
     if resumo.get("ignorado"):
         print("O banco já possui dados. Rode 'python seed.py --forcar' para recriar.")

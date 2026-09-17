@@ -201,4 +201,28 @@ transporte HTTP do `ApiClient` pelo `TestClient` — sem rede e sem Uvicorn.
 
 ---
 
+## `11` Alembic como fonte única do schema
+
+**Decisão.** Nenhuma parte da aplicação chama `SQLModel.metadata.create_all`. O
+`init_db()` foi removido do `backend/database.py`, o startup da API não tem mais
+`lifespan`, e o seed apenas *confere* se as tabelas existem — quem cria e
+versiona o schema é `alembic upgrade head`.
+
+**Motivo.** As duas fontes brigavam. Com a API no ar, o `create_all` criava a
+tabela de um modelo novo *antes* da migration correspondente, e o
+`alembic upgrade` seguinte quebrava com `table ... already exists`; ao mesmo
+tempo, colunas adicionadas a uma tabela já existente nunca apareciam, porque o
+`create_all` não altera tabela que já está lá. O resultado era um schema
+parcialmente aplicado e difícil de diagnosticar.
+
+**Consequência.** Subir o projeto ganhou um passo obrigatório
+(`alembic upgrade head`, antes do `seed.py`), e em troca o schema passou a ter
+um histórico único e reproduzível. Rodar o seed sem migration agora falha com
+uma mensagem que diz o comando a executar, em vez de um `no such table`. Os
+testes continuam usando `create_all` no `conftest.py`: ali o banco é um
+`sqlite://` descartável por teste, sem histórico para preservar e sem migration
+para colidir (ver `10`).
+
+---
+
 `Construído por` **VyteTech** — *Tecnologia para negócios.*

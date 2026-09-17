@@ -15,6 +15,17 @@ roteamento por URL do Flet. Cada tela é uma função `construir(app)` que devol
 um controle; ao navegar, a pilha muda e a árvore é redesenhada. A vantagem é
 que o botão "voltar" funciona em qualquer profundidade e a navegação inferior
 continua sendo apenas uma troca de rota-raiz.
+
+------------------------------------------------------------------------------
+Largura no desktop
+------------------------------------------------------------------------------
+As telas são desenhadas para largura de celular. Para que a janela do desktop
+não estique o conteúdo, a árvore inteira do app (conteúdo + FAB + barra
+inferior) é montada dentro de uma `ColunaCentral`
+(`mobile/components/layout.py`): acima de 440px ela vira uma coluna fixa e
+centralizada, abaixo disso ocupa a largura toda, como num celular. Por estar
+aqui — no ponto único onde a árvore é montada — nenhuma view precisa saber
+disso.
 """
 
 import sys
@@ -33,6 +44,7 @@ if str(RAIZ_DO_PROJETO) not in sys.path:
 from mobile import theme as t  # noqa: E402
 from mobile.api_client import ApiClient, ErroApi  # noqa: E402
 from mobile.components.fab import botao_flutuante  # noqa: E402
+from mobile.components.layout import ColunaCentral  # noqa: E402
 from mobile.components.nav_bar import barra_de_navegacao  # noqa: E402
 from mobile.state import AppState  # noqa: E402
 from mobile.views import (  # noqa: E402
@@ -144,6 +156,10 @@ class App:
         self._fab.visible = False
         self._camada = ft.Stack([self._area, self._fab], expand=True)
         self._raiz = ft.Column([self._camada, self._barra], spacing=0, expand=True)
+        # Limite de largura no desktop. Envolve TUDO — inclusive o FAB e a
+        # barra inferior, que por estarem dentro do `_raiz` ficam alinhados à
+        # coluna em vez de grudarem nas bordas da janela.
+        self._coluna_central = ColunaCentral(self._raiz)
 
     # ------------------------------------------------------------------ #
     # Ciclo de vida
@@ -152,7 +168,9 @@ class App:
         """Configura a página e desenha a primeira tela."""
         self.page.title = "Conecta Comunidade"
         self.page.window.icon = APP_ICON
-        self.page.bgcolor = t.FUNDO_CLARO
+        # Fundo que aparece nas laterais da coluna central quando a janela é
+        # mais larga que ela. No celular a coluna ocupa tudo e ele nunca é visto.
+        self.page.bgcolor = t.FUNDO_MOLDURA
         self.page.padding = 0
         self.page.spacing = 0
         self.page.theme = t.tema_do_app()
@@ -161,10 +179,19 @@ class App:
         self.page.window.width = 430
         self.page.window.height = 900
         self.page.on_view_pop = lambda _: self.voltar()
+        self.page.on_resize = self._ao_redimensionar
 
-        self.page.add(ft.SafeArea(content=self._raiz, expand=True))
+        self._coluna_central.ajustar(getattr(self.page, "width", None))
+        self.page.add(ft.SafeArea(content=self._coluna_central.raiz, expand=True))
         self.state.reiniciar("splash")
         self.renderizar()
+
+    def _ao_redimensionar(self, evento: Any) -> None:
+        """Reavalia o limite de largura quando a janela muda de tamanho."""
+        # `ajustar` só devolve True quando o estado virou, então arrastar a
+        # janela não gera um `update()` por pixel.
+        if self._coluna_central.ajustar(getattr(evento, "width", None)):
+            self.page.update()
 
     # ------------------------------------------------------------------ #
     # Navegação

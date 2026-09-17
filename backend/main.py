@@ -5,17 +5,18 @@ Sobe com:
 
     uvicorn backend.main:app --reload
 
+O schema do banco vem exclusivamente do Alembic — rode `alembic upgrade head`
+antes de subir a API pela primeira vez (e depois de cada `git pull` que traga
+migrations novas).
+
 Documentação interativa em http://127.0.0.1:8000/docs (Swagger UI) e
 http://127.0.0.1:8000/redoc (ReDoc).
 """
-
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
-from backend.database import init_db
 from backend.routers import (
     auth,
     categorias,
@@ -67,17 +68,6 @@ TAGS_METADATA = [
 ]
 
 
-@asynccontextmanager
-async def ciclo_de_vida(app: FastAPI):
-    """Cria as tabelas na subida da aplicação.
-
-    Em um cenário real o schema viria exclusivamente do Alembic; aqui o
-    `init_db` garante que o projeto rode logo após o clone, sem passos extras.
-    """
-    init_db()
-    yield
-
-
 app = FastAPI(
     title=settings.app_nome,
     version=settings.app_versao,
@@ -85,7 +75,6 @@ app = FastAPI(
     openapi_tags=TAGS_METADATA,
     contact={"name": "VyteTech", "url": "https://vytetech.com"},
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
-    lifespan=ciclo_de_vida,
 )
 
 # O app Flet roda em outra origem (desktop/web), então o CORS precisa liberá-la.

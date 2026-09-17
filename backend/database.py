@@ -1,14 +1,19 @@
 """
 Camada de acesso ao banco de dados.
 
-Centraliza a criação do engine SQLAlchemy/SQLModel, a fábrica de sessões e a
-rotina de criação das tabelas (`init_db`). O mesmo módulo atende SQLite (dev) e
-PostgreSQL (produção), bastando trocar a variável `DATABASE_URL`.
+Centraliza a criação do engine SQLAlchemy/SQLModel e a fábrica de sessões. O
+mesmo módulo atende SQLite (dev) e PostgreSQL (produção), bastando trocar a
+variável `DATABASE_URL`.
+
+O schema **não** é criado aqui: quem cria e versiona as tabelas é o Alembic
+(`alembic upgrade head`). Manter uma segunda fonte de verdade (`create_all`)
+fazia tabelas nascerem fora do controle das migrations e colidirem com elas na
+próxima `alembic upgrade`.
 """
 
 from collections.abc import Generator
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
 from backend.config import settings
 
@@ -22,19 +27,6 @@ engine = create_engine(
     echo=False,          # ligue para ver o SQL gerado durante a depuração
     connect_args=connect_args,
 )
-
-
-def init_db() -> None:
-    """Cria todas as tabelas mapeadas pelos modelos SQLModel.
-
-    Em produção o versionamento do schema é feito pelo Alembic; esta função
-    existe para facilitar o desenvolvimento e a demonstração acadêmica.
-    """
-    # O import garante que todos os modelos estejam registrados no metadata
-    # antes do `create_all`.
-    import backend.models  # noqa: F401  (efeito colateral proposital)
-
-    SQLModel.metadata.create_all(engine)
 
 
 def get_session() -> Generator[Session, None, None]:

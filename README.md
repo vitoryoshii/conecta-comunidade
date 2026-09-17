@@ -108,7 +108,7 @@ Cada escolha e por que ela está aqui. O detalhamento está em
 
 - **Python 3.12+** (validado em 3.14)
 - `pip` e `venv` (já vêm com o Python)
-- Nenhum banco externo: o SQLite é criado sozinho
+- Nenhum banco externo: o arquivo SQLite nasce do `alembic upgrade head`
 
 ### Passo a passo
 
@@ -129,12 +129,18 @@ $ pip install -r requirements.txt
 $ copy .env.example .env          # Windows
 $ cp .env.example .env            # Linux / macOS
 
-# 5. criar o schema (migrations)
+# 5. criar o schema (migrations) — passo obrigatório
 $ alembic upgrade head
 
 # 6. popular com dados de demonstração
 $ python seed.py
 ```
+
+> **O schema vem só do Alembic.** A API não cria tabela nenhuma ao subir: se
+> você pular o passo 5, o `seed.py` avisa e as rotas falham por falta de
+> tabela. O mesmo vale depois de um `git pull` que traga migrations novas —
+> rode `alembic upgrade head` de novo (é idempotente: num banco já atualizado
+> ele não faz nada).
 
 Agora **dois terminais**, ambos com o `.venv` ativo:
 
@@ -218,7 +224,7 @@ conecta-comunidade/
 ├── backend/                    # API FastAPI
 │   ├── main.py                 # instância, CORS, routers, metadados do Swagger
 │   ├── config.py               # settings via Pydantic Settings (.env)
-│   ├── database.py             # engine, sessão e init_db
+│   ├── database.py             # engine e sessão (schema fica no Alembic)
 │   ├── deps.py                 # get_session, UsuarioAtual, UsuarioOpcional
 │   ├── models/                 # SQLModel: usuario, categoria, solicitacao,
 │   │                           #   oferta, ong, mensagem, entrega, enums
@@ -245,7 +251,7 @@ conecta-comunidade/
 │   ├── api.md                  # referência dos endpoints
 │   ├── decisoes.md             # registro de decisões técnicas
 │   └── assets/                 # logos e capturas de tela
-├── alembic/                    # migrations
+├── alembic/                    # migrations (fonte única do schema)
 ├── seed.py                     # carga de dados de exemplo
 ├── requirements.txt            # versões fixadas
 ├── .env.example

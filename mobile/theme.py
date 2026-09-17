@@ -19,6 +19,10 @@ VERDE_PROFUNDO = "#0B5A3A"      # fim do gradiente do banner e do FAB
 VERDE_BANNER = "#127C58"        # início do gradiente do banner
 AZUL_INSTITUCIONAL = "#0E2A47"  # navy da marca: pin de ONG, avatar institucional
 FUNDO_CLARO = "#FBFCFB"         # fundo das telas
+FUNDO_MOLDURA = "#E4EAE7"       # laterais vazias da janela larga no desktop:
+                                # um degrau abaixo do FUNDO_CLARO, só o
+                                # suficiente para a coluna central se ler como
+                                # o app. Invisível no celular.
 URGENCIA = "#E23B3B"            # alertas, urgência alta, modo emergência
 # Par de texto do padrão premium. `TEXTO_FORTE` é um quase-preto esverdeado, e
 # não o navy: sobre o fundo levemente verde das telas ele assenta, enquanto o

@@ -10,9 +10,10 @@ Todos os usuários de exemplo usam a mesma senha: **senha123**.
 
 from datetime import date, datetime, timedelta, timezone
 
-from sqlmodel import Session, func, select
+from sqlalchemy import inspect
+from sqlmodel import SQLModel, Session, func, select
 
-from backend.database import engine, init_db
+from backend.database import engine
 from backend.models import (
     ONG,
     Categoria,
@@ -452,16 +453,37 @@ def _criar_conversa_e_entrega(
     session.commit()
 
 
+def exigir_schema() -> None:
+    """Falha cedo, e com instrução, se as tabelas ainda não existirem.
+
+    O seed não cria schema: quem cria é o Alembic. Sem esta checagem o erro que
+    apareceria seria um `no such table` cru, que não diz o que fazer.
+    """
+    existentes = set(inspect(engine).get_table_names())
+    faltando = sorted(set(SQLModel.metadata.tables) - existentes)
+    if faltando:
+        raise RuntimeError(
+            "O banco ainda não tem o schema (faltam as tabelas: "
+            + ", ".join(faltando)
+            + "). Rode 'alembic upgrade head' antes do seed."
+        )
+
+
 def popular(forcar: bool = False) -> dict[str, int]:
     """Executa a carga completa.
+
+    Exige que o schema já exista (`alembic upgrade head`).
 
     Args:
         forcar: quando `True`, apaga os dados existentes antes de popular.
 
     Returns:
         Um resumo com a contagem de registros criados por entidade.
+
+    Raises:
+        RuntimeError: se as migrations ainda não tiverem sido aplicadas.
     """
-    init_db()
+    exigir_schema()
 
     with Session(engine) as session:
         if not banco_vazio(session) and not forcar:

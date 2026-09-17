@@ -225,4 +225,40 @@ para colidir (ver `10`).
 
 ---
 
+## `12` Um componente só para os campos de formulário
+
+**Decisão.** Todo campo de entrada do app nasce em
+`mobile/components/campos.py` — `campo_texto`, `campo_area_texto`,
+`campo_dropdown`, `campo_travado` — e as medidas (altura, raio, respiro) vivem
+em tokens do `theme.py`. As fábricas antigas (`theme.campo`,
+`theme.campo_claro`, `theme.dropdown_claro`, `theme.campo_rotulado`) foram
+removidas: duas formas de fazer a mesma coisa é o que produziu a disparidade.
+
+**Motivo.** Havia duas famílias de campo convivendo, e o desencontro tinha três
+causas independentes, todas invisíveis no código de cada tela:
+
+1. **Rótulo dentro da moldura** (`label=`) muda a altura do campo conforme ele
+   esteja vazio ou preenchido — o rótulo encolhe e sobe. Em *Nova solicitação*,
+   "Quantidade" e "Quantas pessoas" tinham alturas diferentes só por isso.
+2. **`TextField` em `Column` alinhada em `START`** recebe restrição frouxa e
+   assume a largura natural. Era por isso que os campos terminavam antes do
+   botão, mesmo sem ninguém ter definido largura.
+3. **`Dropdown` não estica sozinho** dentro de uma `Column`, ao contrário do
+   `TextField`. A correção antiga foi uma largura fixa (`LARGURA_FORMULARIO`),
+   que resolvia numa tela e desalinhava na seguinte.
+
+**Consequência.** O rótulo é sempre acima do campo; a única variação é a cor,
+branca nas telas sobre foto (`sobre_foto=True`), onde o `TEXTO_FORTE` não se
+leria. `com_rotulo` e `formulario` alinham em `STRETCH`, e `com_rotulo` embrulha
+todo seletor em uma `Row` com `expand` — é o que faz seletor e campo de texto
+medirem igual em qualquer coluna, sem largura fixa em lugar nenhum. Os testes
+percorrem as oito telas com formulário e conferem altura, raio, fundo e ausência
+de rótulo flutuante, campo a campo.
+
+Ficam **fora** do padrão, de propósito: a busca do Explorar e das ONGs e o
+compositor de mensagens do chat. Não são campos de formulário — são barra de
+busca e caixa de mensagem, com desenho e comportamento próprios.
+
+---
+
 `Construído por` **VyteTech** — *Tecnologia para negócios.*

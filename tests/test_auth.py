@@ -268,3 +268,88 @@ def test_trocar_senha_exige_sessao(client: TestClient) -> None:
     )
 
     assert resposta.status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# Troca de e-mail
+# --------------------------------------------------------------------------- #
+def test_trocar_email_por_um_livre_persiste(client: TestClient, usuario_ana: Usuario) -> None:
+    """E-mail novo e não usado: grava, e é por ele que o login passa a valer."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me", json={"email": "ana.ribeiro@teste.com"}, headers=headers
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["email"] == "ana.ribeiro@teste.com"
+    # Persistiu de verdade, e não só na resposta do PATCH.
+    assert client.get("/auth/me", headers=headers).json()["email"] == "ana.ribeiro@teste.com"
+    # O endereço novo entra; o antigo deixa de existir.
+    assert client.post(
+        "/auth/login", json={"email": "ana.ribeiro@teste.com", "senha": "senha123"}
+    ).status_code == 200
+    assert client.post(
+        "/auth/login", json={"email": "ana@teste.com", "senha": "senha123"}
+    ).status_code == 401
+
+
+def test_trocar_email_para_um_de_outra_conta_e_recusado(
+    client: TestClient, usuario_ana: Usuario, usuario_carlos: Usuario
+) -> None:
+    """Dois cadastros não podem terminar com o mesmo e-mail."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me", json={"email": usuario_carlos.email}, headers=headers
+    )
+
+    assert resposta.status_code == 409, resposta.text
+    assert "já está em uso" in resposta.json()["detail"]
+    # E o e-mail de Ana continua o que era — a recusa não deixou rastro.
+    assert client.get("/auth/me", headers=headers).json()["email"] == "ana@teste.com"
+
+
+def test_trocar_email_normaliza_caixa_e_espacos(
+    client: TestClient, usuario_ana: Usuario
+) -> None:
+    """Gravar "Ana@Teste.com" criaria uma conta que nunca conseguiria entrar."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me", json={"email": "  Ana.Nova@TESTE.com  "}, headers=headers
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["email"] == "ana.nova@teste.com"
+    assert client.post(
+        "/auth/login", json={"email": "ana.nova@teste.com", "senha": "senha123"}
+    ).status_code == 200
+
+
+def test_reenviar_o_proprio_email_nao_e_conflito(
+    client: TestClient, usuario_ana: Usuario
+) -> None:
+    """O patch parcial manda a tela inteira: o próprio e-mail não pode dar 409."""
+    headers = cabecalho_autenticado(client, usuario_ana.email)
+
+    resposta = client.patch(
+        "/usuarios/me",
+        json={"email": usuario_ana.email.upper(), "nome": "Ana Ribeiro da Silva"},
+        headers=headers,
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["email"] == "ana@teste.com"
+    assert resposta.json()["nome"] == "Ana Ribeiro da Silva"
+
+
+def test_trocar_email_recusa_formato_invalido(client: TestClient, usuario_ana: Usuario) -> None:
+    """Sem arroba não é e-mail — o schema barra antes de chegar ao banco."""
+    resposta = client.patch(
+        "/usuarios/me",
+        json={"email": "ana-sem-arroba"},
+        headers=cabecalho_autenticado(client, usuario_ana.email),
+    )
+
+    assert resposta.status_code == 422

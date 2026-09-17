@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 from mobile.components.comuns import cabecalho
 from mobile.views.quero_ajudar import OPCOES, _cartao_opcao
 
@@ -18,23 +19,18 @@ def construir(app: App) -> ft.Control:
     """Monta o formulário de publicação de uma oferta avulsa."""
     categorias = app.categorias()
 
-    campo_titulo = t.campo("O que você está oferecendo?", icone=t.ICONES["titulo"])
-    campo_descricao = t.campo(
-        "Detalhes",
-        multilinha=True,
-        dica="Ex.: 30 litros de água mineral, retirada das 8h às 20h.",
+    campo_titulo = campos.campo_texto(
+        "Ex.: água mineral e cestas básicas", icone=t.ICONES["titulo"]
     )
-    campo_endereco = t.campo("Endereço ou região", icone=t.ICONES["local"])
+    campo_descricao = campos.campo_area_texto(
+        "Ex.: 30 litros de água mineral, retirada das 8h às 20h."
+    )
+    campo_endereco = campos.campo_texto("Rua, bairro ou região", icone=t.ICONES["local"])
 
-    seletor_categoria = ft.Dropdown(
-        label="Categoria",
-        value=str(categorias[0]["id"]) if categorias else None,
-        options=[ft.DropdownOption(key=str(c["id"]), text=c["nome"]) for c in categorias],
-        filled=True,
-        fill_color=t.BRANCO,
-        border_radius=12,
-        border_color=t.BORDA,
-        color=t.TEXTO_FORTE,
+    seletor_categoria = campos.campo_dropdown(
+        [ft.DropdownOption(key=str(c["id"]), text=c["nome"]) for c in categorias],
+        valor=str(categorias[0]["id"]) if categorias else None,
+        icone=t.ICONES["categoria"],
     )
 
     escolhido = ["tenho_item"]
@@ -86,16 +82,16 @@ def construir(app: App) -> ft.Control:
         [
             cabecalho("Quero ajudar / Doar", app.voltar),
             ft.Container(
-                content=ft.Column(
+                content=campos.formulario(
                     [
                         t.subtitulo("Sua oferta aparece na busca e no mapa da comunidade."),
-                        campo_titulo,
-                        seletor_categoria,
-                        campo_descricao,
-                        campo_endereco,
+                        campos.com_rotulo("O que você está oferecendo?", campo_titulo),
+                        campos.com_rotulo("Categoria", seletor_categoria),
+                        campos.com_rotulo("Detalhes", campo_descricao),
+                        campos.com_rotulo("Endereço ou região", campo_endereco),
                         ft.Text(
                             "Como você pode ajudar?",
-                            size=13,
+                            size=12,
                             weight=ft.FontWeight.W_600,
                             color=t.TEXTO_FORTE,
                         ),
@@ -104,11 +100,10 @@ def construir(app: App) -> ft.Control:
                         t.botao_primario("Publicar oferta", publicar, t.ICONES["enviar"], 400),
                         ft.Container(height=16),
                     ],
-                    spacing=12,
                     scroll=ft.ScrollMode.AUTO,
                     expand=True,
                 ),
-                padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+                padding=ft.Padding.symmetric(horizontal=20, vertical=16),
                 expand=True,
                 bgcolor=t.FUNDO_CLARO,
             ),

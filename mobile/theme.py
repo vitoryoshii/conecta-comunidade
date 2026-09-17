@@ -44,6 +44,26 @@ AMBAR_CLARO = "#FFDC8C"         # links de destaque sobre fundo escuro/foto
 VERDE_CONFIRMA = "#7BE8A5"      # confirmação ("as senhas coincidem") sobre foto
 VERMELHO_CLARO = "#FFB4AB"      # erro sobre fundo escuro/foto — o URGENCIA
                                 # some na foto, escuro demais para esse fundo
+VERMELHO_SUAVE = "#FDECEC"      # fundo do ícone de ação destrutiva (par do URGENCIA,
+                                # como o VERDE_SUAVE é par do VERDE_PRIMARIO)
+
+# --------------------------------------------------------------------------- #
+# Ícones de menu (linhas do Perfil)
+# --------------------------------------------------------------------------- #
+# Um padrão só para todas as linhas. Antes cada item escolhia a própria cor e a
+# tela virava um mostruário da paleta — com sete cores, nenhuma informa nada.
+# Verde é a cor da marca e serve de neutro aqui; a exceção é a ação destrutiva,
+# onde o vermelho é o próprio aviso.
+#
+# Os pares são opacos de propósito. O código antigo derivava o fundo com
+# `f"{cor}1A"`, o que produz oito dígitos — e o Flutter lê oito dígitos como
+# AARRGGBB, não RRGGBBAA. Era isso que transformava `#1FA96C` em `#A96C1A`
+# (bege) e `#E23B3B` em `#3B3B1A` (verde-oliva): a disparidade de cores do menu
+# não era escolha de paleta, era o formato errado.
+MENU_ICONE = VERDE_PRIMARIO
+MENU_ICONE_FUNDO = VERDE_SUAVE
+MENU_ICONE_SAIDA = URGENCIA
+MENU_ICONE_FUNDO_SAIDA = VERMELHO_SUAVE
 
 # Cores por nível de urgência, usadas nos badges dos cartões.
 CORES_URGENCIA = {
@@ -203,6 +223,17 @@ RAIO_BOTAO = 14       # botões, campos e quadradinhos de ícone
 RAIO_CATEGORIA = 18   # quadrados das categorias
 RAIO = RAIO_CARD      # nome antigo, mantido para as telas ainda não redesenhadas
 ESPACO = 16
+
+# --------------------------------------------------------------------------- #
+# Campos de formulário
+# --------------------------------------------------------------------------- #
+# Medidas únicas de TODO campo de entrada do app — texto, seletor, área de texto
+# e campo travado. Quem constrói campo não escolhe altura nem raio: usa
+# `mobile/components/campos.py`, que lê daqui.
+ALTURA_CAMPO = 56           # a mesma para texto, seletor e campo travado
+RAIO_CAMPO = RAIO_BOTAO     # 14, o raio do padrão premium
+ESPACO_CAMPOS = 16          # respiro vertical entre um campo e o seguinte
+LINHAS_AREA_TEXTO = 4       # altura padrão das áreas de texto (multiline)
 
 # --------------------------------------------------------------------------- #
 # Tipografia
@@ -375,41 +406,6 @@ def botao_secundario(
 # --------------------------------------------------------------------------- #
 # Campos de formulário
 # --------------------------------------------------------------------------- #
-def campo(
-    rotulo: str,
-    valor: str = "",
-    senha: bool = False,
-    multilinha: bool = False,
-    icone: ft.IconData | None = None,
-    dica: str | None = None,
-    tipo_teclado: ft.KeyboardType = ft.KeyboardType.TEXT,
-) -> ft.TextField:
-    """Campo de texto no estilo do app (preenchido, sem borda dura)."""
-    return ft.TextField(
-        label=rotulo,
-        value=valor,
-        hint_text=dica,
-        password=senha,
-        can_reveal_password=senha,
-        multiline=multilinha,
-        min_lines=3 if multilinha else None,
-        max_lines=5 if multilinha else 1,
-        prefix_icon=icone,
-        # Todo ícone de campo no mesmo tamanho, em qualquer tela.
-        prefix_icon_size_constraints=ft.BoxConstraints(
-            min_width=ICONE_CAMPO, min_height=ICONE_CAMPO
-        ),
-        keyboard_type=tipo_teclado,
-        filled=True,
-        fill_color=BRANCO,
-        border_radius=12,
-        border_color=BORDA,
-        focused_border_color=VERDE_PRIMARIO,
-        color=TEXTO_FORTE,
-        label_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
-    )
-
-
 # --------------------------------------------------------------------------- #
 # Telas sobre foto (login e recuperação de senha)
 # --------------------------------------------------------------------------- #
@@ -542,65 +538,6 @@ def logo_circular(tamanho: int = LADO_DO_DISCO) -> ft.Container:
     )
 
 
-def rotulo_claro(texto: str) -> ft.Text:
-    """Rótulo branco exibido acima de um campo, sobre a foto."""
-    return ft.Text(texto, size=12, weight=ft.FontWeight.W_600, color=BRANCO)
-
-
-def campo_claro(
-    dica: str = "",
-    senha: bool = False,
-    icone: ft.IconData | None = None,
-    tipo_teclado: ft.KeyboardType = ft.KeyboardType.TEXT,
-    maximo: int | None = None,
-    somente_numeros: bool = False,
-    ao_mudar=None,
-    ao_sair=None,
-    ao_clicar=None,
-    somente_leitura: bool = False,
-    sufixo: ft.Control | None = None,
-) -> ft.TextField:
-    """Campo branco arredondado, sem rótulo interno (ele fica acima, em branco).
-
-    Quando `senha=True`, o Flet já desenha o ícone de olho que mostra e oculta
-    o texto digitado.
-
-    `ao_clicar` precisa ficar **no próprio campo**, e não em um `Container` em
-    volta: o `TextField` consome o clique do mouse, então um handler externo
-    nunca dispara no desktop. É o que faz um campo somente-leitura abrir um
-    seletor (o caso da data de nascimento).
-    """
-    return ft.TextField(
-        hint_text=dica,
-        password=senha,
-        can_reveal_password=senha,
-        prefix_icon=icone,
-        # Todo ícone de campo no mesmo tamanho, em qualquer tela.
-        prefix_icon_size_constraints=ft.BoxConstraints(
-            min_width=ICONE_CAMPO, min_height=ICONE_CAMPO
-        ),
-        keyboard_type=tipo_teclado,
-        filled=True,
-        fill_color=BRANCO,
-        border_radius=12,
-        border_color=TRANSPARENTE,
-        focused_border_color=VERDE_PRIMARIO,
-        color=TEXTO_FORTE,
-        cursor_color=VERDE_PRIMARIO,
-        hint_style=ft.TextStyle(color=TEXTO_SECUNDARIO, size=13),
-        content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
-        max_length=maximo,
-        # Filtrar na origem evita que a máscara receba letra e se perca.
-        input_filter=ft.NumbersOnlyInputFilter() if somente_numeros else None,
-        on_change=ao_mudar,
-        on_blur=ao_sair,
-        on_click=ao_clicar,
-        read_only=somente_leitura,
-        suffix=sufixo,
-        error_style=ft.TextStyle(color=URGENCIA, size=11),
-    )
-
-
 def status_claro(texto: str, ok: bool, visivel: bool = True) -> ft.Row:
     """Linha de confirmação (verde) ou de erro (vermelho) sob um campo, sobre a foto.
 
@@ -619,60 +556,6 @@ def status_claro(texto: str, ok: bool, visivel: bool = True) -> ft.Row:
         ],
         spacing=6,
         visible=visivel,
-    )
-
-
-def campo_rotulado(rotulo: str, campo: ft.Control) -> ft.Column:
-    """Rótulo branco acima do campo branco — o par usado em todos os formulários
-    sobre foto."""
-    return ft.Column(
-        [rotulo_claro(rotulo), campo],
-        spacing=6,
-        horizontal_alignment=ft.CrossAxisAlignment.START,
-    )
-
-
-def dropdown_claro(
-    opcoes: list[ft.DropdownOption],
-    valor: str | None = None,
-    dica: str | None = None,
-    desabilitado: bool = False,
-    icone: ft.IconData | None = None,
-    filtravel: bool = False,
-    ao_selecionar=None,
-) -> ft.Dropdown:
-    """Seletor branco arredondado, no mesmo desenho de `campo_claro`.
-
-    Sem rótulo interno: quem chama coloca o rótulo branco acima, via
-    `campo_rotulado`.
-
-    Com `filtravel=True` o campo vira editável e filtra a lista conforme se
-    digita — é o que torna utilizável um seletor com centenas de municípios.
-    """
-    return ft.Dropdown(
-        value=valor,
-        options=opcoes,
-        hint_text=dica,
-        leading_icon=icone,
-        disabled=desabilitado,
-        editable=filtravel,
-        enable_filter=filtravel,
-        # No Flet 0.86 o evento de escolha do Dropdown é `on_select`.
-        on_select=ao_selecionar,
-        # Sem teto o menu de 645 cidades cobriria a tela inteira.
-        menu_height=280,
-        hint_style=ft.TextStyle(size=13, color=TEXTO_SECUNDARIO),
-        # Ao contrário do TextField, o Dropdown não estica sozinho na coluna:
-        # sem a largura explícita ele fica mais estreito que os campos vizinhos.
-        width=LARGURA_FORMULARIO,
-        filled=True,
-        fill_color=BRANCO,
-        border_radius=12,
-        border_color=TRANSPARENTE,
-        focused_border_color=VERDE_PRIMARIO,
-        color=TEXTO_FORTE,
-        text_style=ft.TextStyle(size=13, color=TEXTO_FORTE),
-        content_padding=ft.Padding.symmetric(horizontal=16, vertical=14),
     )
 
 

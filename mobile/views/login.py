@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -25,10 +26,10 @@ CONTAS_DEMO = [
 
 def construir(app: App) -> ft.Control:
     """Formulário de acesso, com atalhos para as contas de demonstração."""
-    campo_email = t.campo_claro(
+    campo_email = campos.campo_texto(
         "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
     )
-    campo_senha = t.campo_claro("Sua senha", senha=True, icone=t.ICONES["senha"])
+    campo_senha = campos.campo_texto("Sua senha", senha=True, icone=t.ICONES["senha"])
 
     def entrar(_: ft.ControlEvent) -> None:
         """Valida os campos, autentica e guarda o token no estado."""
@@ -62,8 +63,8 @@ def construir(app: App) -> ft.Control:
 
     return t.tela_de_autenticacao(
         [
-            t.campo_rotulado("E-mail", campo_email),
-            t.campo_rotulado("Senha", campo_senha),
+            campos.com_rotulo("E-mail", campo_email, sobre_foto=True),
+            campos.com_rotulo("Senha", campo_senha, sobre_foto=True),
             # Alinhado à direita, logo abaixo do campo de senha.
             ft.Row(
                 [t.link_claro("Esqueceu a senha?", lambda _: app.navegar("recuperar_senha"))],

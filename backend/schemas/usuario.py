@@ -133,6 +133,10 @@ class UsuarioAtualizar(BaseModel):
     """Campos editáveis do perfil (`PATCH /usuarios/me`)."""
 
     nome: str | None = Field(default=None, min_length=2, max_length=120)
+    # `EmailStr` já recusa formato inválido com 422; o router ainda confere se
+    # o endereço não pertence a outra conta (409). O CPF continua fora daqui:
+    # documento não se troca pela tela de perfil.
+    email: EmailStr | None = None
     # Aceito com ou sem máscara; o router normaliza e valida DDD e tamanho.
     telefone: str | None = Field(default=None, min_length=10, max_length=15)
     estado: str | None = Field(default=None, max_length=2)

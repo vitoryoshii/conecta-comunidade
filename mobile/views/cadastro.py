@@ -26,6 +26,7 @@ import flet as ft
 
 from mobile import mascaras
 from mobile import theme as t
+from mobile.components import campos
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -64,10 +65,10 @@ def construir(app: App) -> ft.Control:
     # --------------------------------------------------------------------- #
     # Todo campo avisa a cada tecla: é o que mantém o botão "Criar conta"
     # acompanhando o estado real do formulário, e não só o do checkbox.
-    campo_nome = t.campo_claro(
+    campo_nome = campos.campo_texto(
         "Seu nome completo", icone=t.ICONES["nome"], ao_mudar=lambda _: atualizar_botao()
     )
-    campo_email = t.campo_claro(
+    campo_email = campos.campo_texto(
         "seu@email.com",
         icone=t.ICONES["email"],
         tipo_teclado=ft.KeyboardType.EMAIL,
@@ -80,14 +81,14 @@ def construir(app: App) -> ft.Control:
         campo.error = None
         atualizar_botao()
 
-    campo_cpf = t.campo_claro(
+    campo_cpf = campos.campo_texto(
         "000.000.000-00",
         icone=t.ICONES["cpf"],
         tipo_teclado=ft.KeyboardType.NUMBER,
         maximo=14,
         ao_mudar=lambda _: formatar(campo_cpf, mascaras.cpf),
     )
-    campo_telefone = t.campo_claro(
+    campo_telefone = campos.campo_texto(
         "(00) 00000-0000",
         icone=t.ICONES["telefone"],
         tipo_teclado=ft.KeyboardType.PHONE,
@@ -113,7 +114,7 @@ def construir(app: App) -> ft.Control:
         """Abre o seletor de data (no Flet 0.86, via `page.show_dialog`)."""
         app.page.show_dialog(seletor_data)
 
-    campo_nascimento = t.campo_claro(
+    campo_nascimento = campos.campo_texto(
         "dd/mm/aaaa",
         icone=t.ICONES["nascimento"],
         somente_leitura=True,
@@ -182,13 +183,13 @@ def construir(app: App) -> ft.Control:
 
         atualizar_botao()
 
-    campo_senha = t.campo_claro(
+    campo_senha = campos.campo_texto(
         "Mínimo 6 caracteres",
         senha=True,
         icone=t.ICONES["senha"],
         ao_mudar=conferir_senhas,
     )
-    campo_confirmacao = t.campo_claro(
+    campo_confirmacao = campos.campo_texto(
         "Repita a senha",
         senha=True,
         icone=t.ICONES["confirmar_senha"],
@@ -198,7 +199,7 @@ def construir(app: App) -> ft.Control:
     # --------------------------------------------------------------------- #
     # Participação e região
     # --------------------------------------------------------------------- #
-    seletor_tipo = t.dropdown_claro(
+    seletor_tipo = campos.campo_dropdown(
         [
             ft.DropdownOption(key=chave, text=rotulo, leading_icon=icone)
             for chave, rotulo, icone in TIPOS
@@ -209,7 +210,7 @@ def construir(app: App) -> ft.Control:
 
     # A cidade só abre depois do estado: são 5.571 municípios no país, e a lista
     # de um estado só faz sentido depois de saber qual é.
-    seletor_cidade = t.dropdown_claro(
+    seletor_cidade = campos.campo_dropdown(
         [],
         dica="Escolha o estado primeiro",
         icone=t.ICONES["cidade"],
@@ -249,7 +250,7 @@ def construir(app: App) -> ft.Control:
     # Se a API estiver fora, o erro sobe para `App.renderizar`, que troca a tela
     # pelo aviso de "sem conexão" — melhor do que um seletor vazio sem explicação.
     estados = app.api.listar_estados()
-    seletor_estado = t.dropdown_claro(
+    seletor_estado = campos.campo_dropdown(
         [ft.DropdownOption(key=e["sigla"], text=e["nome"]) for e in estados],
         dica="Selecione seu estado",
         icone=t.ICONES["estado"],
@@ -460,17 +461,17 @@ def construir(app: App) -> ft.Control:
 
     return t.tela_de_autenticacao(
         [
-            t.campo_rotulado("Nome completo", campo_nome),
-            t.campo_rotulado("CPF", campo_cpf),
-            t.campo_rotulado("Data de nascimento", campo_nascimento),
-            t.campo_rotulado("E-mail", campo_email),
-            t.campo_rotulado("Telefone / WhatsApp", campo_telefone),
-            t.campo_rotulado("Senha", campo_senha),
-            t.campo_rotulado("Confirmar senha", campo_confirmacao),
+            campos.com_rotulo("Nome completo", campo_nome, sobre_foto=True),
+            campos.com_rotulo("CPF", campo_cpf, sobre_foto=True),
+            campos.com_rotulo("Data de nascimento", campo_nascimento, sobre_foto=True),
+            campos.com_rotulo("E-mail", campo_email, sobre_foto=True),
+            campos.com_rotulo("Telefone / WhatsApp", campo_telefone, sobre_foto=True),
+            campos.com_rotulo("Senha", campo_senha, sobre_foto=True),
+            campos.com_rotulo("Confirmar senha", campo_confirmacao, sobre_foto=True),
             status_da_senha,
-            t.campo_rotulado("Como você quer participar?", seletor_tipo),
-            t.campo_rotulado("Estado", seletor_estado),
-            t.campo_rotulado("Cidade", seletor_cidade),
+            campos.com_rotulo("Como você quer participar?", seletor_tipo, sobre_foto=True),
+            campos.com_rotulo("Estado", seletor_estado, sobre_foto=True),
+            campos.com_rotulo("Cidade", seletor_cidade, sobre_foto=True),
             t.ajuda_clara("Usamos sua região apenas para mostrar pedidos próximos."),
             t.ajuda_clara(FINALIDADE_DO_CPF, icone=t.ICONES["privacidade"]),
             ft.Container(height=6),

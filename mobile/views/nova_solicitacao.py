@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 from mobile.components.comuns import cabecalho
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -19,32 +20,28 @@ def construir(app: App) -> ft.Control:
     """Monta o formulário de publicação de um pedido de ajuda."""
     categorias = app.categorias()
 
-    campo_titulo = t.campo("O que você precisa?", icone=t.ICONES["titulo"])
-    campo_descricao = t.campo(
-        "Conte um pouco mais",
-        multilinha=True,
-        dica="Explique a situação para quem for ajudar.",
+    campo_titulo = campos.campo_texto(
+        "Ex.: cestas básicas para 7 famílias", icone=t.ICONES["titulo"]
     )
-    campo_quantidade = t.campo("Quantidade", dica="Ex.: 50 litros, 7 cestas", icone=t.ICONES["quantidade"])
-    campo_pessoas = t.campo(
-        "Quantas pessoas serão beneficiadas?",
+    campo_descricao = campos.campo_area_texto(
+        "Explique a situação para quem for ajudar."
+    )
+    campo_quantidade = campos.campo_texto(
+        "Ex.: 50 litros, 7 cestas", icone=t.ICONES["quantidade"]
+    )
+    campo_pessoas = campos.campo_texto(
         valor="1",
         icone=t.ICONES["pessoas"],
         tipo_teclado=ft.KeyboardType.NUMBER,
     )
-    campo_endereco = t.campo("Endereço ou ponto de referência", icone=t.ICONES["local"])
+    campo_endereco = campos.campo_texto(
+        "Rua, número e bairro", icone=t.ICONES["local"]
+    )
 
-    seletor_categoria = ft.Dropdown(
-        label="Categoria",
-        value=str(categorias[0]["id"]) if categorias else None,
-        options=[
-            ft.DropdownOption(key=str(c["id"]), text=c["nome"]) for c in categorias
-        ],
-        filled=True,
-        fill_color=t.BRANCO,
-        border_radius=12,
-        border_color=t.BORDA,
-        color=t.TEXTO_FORTE,
+    seletor_categoria = campos.campo_dropdown(
+        [ft.DropdownOption(key=str(c["id"]), text=c["nome"]) for c in categorias],
+        valor=str(categorias[0]["id"]) if categorias else None,
+        icone=t.ICONES["categoria"],
     )
 
     urgencia = ["media"]
@@ -128,18 +125,22 @@ def construir(app: App) -> ft.Control:
         [
             cabecalho("Nova solicitação", app.voltar),
             ft.Container(
-                content=ft.Column(
+                content=campos.formulario(
                     [
                         t.subtitulo("Quanto mais claro o pedido, mais rápido alguém responde."),
-                        campo_titulo,
-                        seletor_categoria,
-                        campo_descricao,
-                        campo_quantidade,
-                        campo_pessoas,
-                        campo_endereco,
+                        campos.com_rotulo("O que você precisa?", campo_titulo),
+                        campos.com_rotulo("Categoria", seletor_categoria),
+                        campos.com_rotulo("Conte um pouco mais", campo_descricao),
+                        campos.com_rotulo("Quantidade", campo_quantidade),
+                        campos.com_rotulo(
+                            "Quantas pessoas serão beneficiadas?", campo_pessoas
+                        ),
+                        campos.com_rotulo(
+                            "Endereço ou ponto de referência", campo_endereco
+                        ),
                         ft.Text(
                             "Nível de urgência",
-                            size=13,
+                            size=12,
                             weight=ft.FontWeight.W_600,
                             color=t.TEXTO_FORTE,
                         ),
@@ -170,11 +171,10 @@ def construir(app: App) -> ft.Control:
                         t.botao_primario("Publicar solicitação", publicar, t.ICONES["enviar"], 400),
                         ft.Container(height=16),
                     ],
-                    spacing=12,
                     scroll=ft.ScrollMode.AUTO,
                     expand=True,
                 ),
-                padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+                padding=ft.Padding.symmetric(horizontal=20, vertical=16),
                 expand=True,
                 bgcolor=t.FUNDO_CLARO,
             ),

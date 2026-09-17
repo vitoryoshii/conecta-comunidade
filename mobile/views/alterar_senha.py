@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 from mobile.api_client import ErroApi
 from mobile.components.comuns import cabecalho
 
@@ -22,17 +23,6 @@ MINIMO_DE_SENHA = 6
 
 SENHAS_IGUAIS = "As senhas coincidem"
 SENHAS_DIFERENTES = "As senhas não coincidem"
-
-
-def _campo(rotulo: str, campo: ft.Control) -> ft.Column:
-    """Rótulo escuro acima do campo branco."""
-    return ft.Column(
-        [
-            ft.Text(rotulo, size=12, weight=ft.FontWeight.W_600, color=t.TEXTO_FORTE),
-            campo,
-        ],
-        spacing=5,
-    )
 
 
 def construir(app: App) -> ft.Control:
@@ -62,16 +52,16 @@ def construir(app: App) -> ft.Control:
         )
         app.page.update()
 
-    campo_atual = t.campo_claro(
+    campo_atual = campos.campo_texto(
         "Sua senha de hoje", senha=True, icone=t.ICONES["senha"], ao_mudar=conferir
     )
-    campo_nova = t.campo_claro(
+    campo_nova = campos.campo_texto(
         "Mínimo 6 caracteres",
         senha=True,
         icone=t.ICONES["confirmar_senha"],
         ao_mudar=conferir,
     )
-    campo_confirmacao = t.campo_claro(
+    campo_confirmacao = campos.campo_texto(
         "Repita a senha nova",
         senha=True,
         icone=t.ICONES["confirmar_senha"],
@@ -138,9 +128,9 @@ def construir(app: App) -> ft.Control:
                     padding=12,
                 ),
                 ft.Container(height=2),
-                _campo("Senha atual", campo_atual),
-                _campo("Nova senha", campo_nova),
-                _campo("Confirmar nova senha", campo_confirmacao),
+                campos.com_rotulo("Senha atual", campo_atual),
+                campos.com_rotulo("Nova senha", campo_nova),
+                campos.com_rotulo("Confirmar nova senha", campo_confirmacao),
                 status,
                 ft.Container(height=8),
                 botao,

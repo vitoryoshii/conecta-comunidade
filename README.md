@@ -240,10 +240,16 @@ conecta-comunidade/
 ├── mobile/                     # aplicativo Flet
 │   ├── main.py                 # App, pilha de rotas, navegação inferior
 │   ├── api_client.py           # cliente httpx da API
-│   ├── theme.py                # paleta e primitivas visuais
+│   ├── theme.py                # paleta, tokens de medida e primitivas visuais
 │   ├── state.py                # token, usuário e pilha de navegação
-│   ├── components/comuns.py    # cabeçalho, bottom nav e cartões
-│   └── views/                  # uma tela por arquivo (17 rotas)
+│   ├── components/
+│   │   ├── campos.py           # campos de formulário (o padrão único)
+│   │   ├── comuns.py           # cabeçalho e cartões
+│   │   ├── layout.py           # coluna central (largura máxima no desktop)
+│   │   ├── nav_bar.py          # navegação inferior
+│   │   ├── fab.py              # botão flutuante de publicar
+│   │   └── avatar.py           # foto ou inicial do usuário
+│   └── views/                  # uma tela por arquivo (24 rotas)
 │
 ├── tests/                      # pytest (API + renderização das telas)
 ├── docs/

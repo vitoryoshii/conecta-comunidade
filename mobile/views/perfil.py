@@ -65,10 +65,19 @@ def _item_menu(
     icone: ft.IconData,
     rotulo: str,
     on_click,
-    cor: str = t.VERDE_PRIMARIO,
-    cor_texto: str = t.TEXTO_FORTE,
+    destrutivo: bool = False,
 ) -> ft.Container:
-    """Linha do menu: ícone em quadradinho suave, rótulo e chevron."""
+    """Linha do menu: ícone em quadradinho suave, rótulo e chevron.
+
+    Todas as linhas usam o mesmo par de cores (`t.MENU_ICONE` sobre
+    `t.MENU_ICONE_FUNDO`). A única exceção é `destrutivo`, o Sair: ali o
+    vermelho tem função — é o que faz a saída saltar da lista em vez de ser
+    mais um item igual aos outros.
+    """
+    cor = t.MENU_ICONE_SAIDA if destrutivo else t.MENU_ICONE
+    fundo = t.MENU_ICONE_FUNDO_SAIDA if destrutivo else t.MENU_ICONE_FUNDO
+    cor_texto = t.URGENCIA if destrutivo else t.TEXTO_FORTE
+
     return ft.Container(
         content=ft.Row(
             [
@@ -76,7 +85,7 @@ def _item_menu(
                     content=ft.Icon(icone, size=17, color=cor),
                     width=34,
                     height=34,
-                    bgcolor=f"{cor}1A" if cor.startswith("#") else t.VERDE_SUAVE,
+                    bgcolor=fundo,
                     border_radius=11,
                     alignment=ft.Alignment.CENTER,
                 ),
@@ -206,21 +215,15 @@ def construir(app: App) -> ft.Control:
         app.aviso("Você saiu da sua conta.")
         app.reiniciar("splash")
 
+    # Só (ícone, rótulo, ação): a cor não é mais escolha de cada item.
     menu = [
-        (ft.Icons.EDIT_OUTLINED, "Editar perfil", lambda _: app.navegar("editar_perfil"),
-         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
-        (t.ICONES["pedido"], "Minhas solicitações", lambda _: app.navegar("minhas_solicitacoes"),
-         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
-        (t.ICONES["doar"], "Minhas doações", lambda _: app.navegar("explorar", aba="ofertas"),
-         t.VERDE_PRIMARIO, t.TEXTO_FORTE),
-        (ft.Icons.FAVORITE_BORDER_ROUNDED, "Favoritos", lambda _: app.navegar("favoritos"),
-         t.URGENCIA, t.TEXTO_FORTE),
-        (ft.Icons.STAR_OUTLINE_ROUNDED, "Avaliações", lambda _: app.navegar("ongs"),
-         t.AMARELO_ATENCAO, t.TEXTO_FORTE),
-        (t.ICONES["configuracoes"], "Configurações", lambda _: app.navegar("configuracoes"),
-         t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
-        (t.ICONES["ajuda"], "Ajuda e suporte", lambda _: app.navegar("ajuda"),
-         t.AZUL_INSTITUCIONAL, t.TEXTO_FORTE),
+        (ft.Icons.EDIT_OUTLINED, "Editar perfil", lambda _: app.navegar("editar_perfil")),
+        (t.ICONES["pedido"], "Minhas solicitações", lambda _: app.navegar("minhas_solicitacoes")),
+        (t.ICONES["doar"], "Minhas doações", lambda _: app.navegar("explorar", aba="ofertas")),
+        (ft.Icons.FAVORITE_BORDER_ROUNDED, "Favoritos", lambda _: app.navegar("favoritos")),
+        (ft.Icons.STAR_OUTLINE_ROUNDED, "Avaliações", lambda _: app.navegar("ongs")),
+        (t.ICONES["configuracoes"], "Configurações", lambda _: app.navegar("configuracoes")),
+        (t.ICONES["ajuda"], "Ajuda e suporte", lambda _: app.navegar("ajuda")),
     ]
 
     return ft.Container(
@@ -279,7 +282,7 @@ def construir(app: App) -> ft.Control:
                 # Sair fica em um cartão à parte: é a única ação destrutiva da
                 # tela, e separá-la evita o toque errado no fim da lista.
                 t.cartao(
-                    _item_menu(t.ICONES["sair"], "Sair", sair, t.URGENCIA, t.URGENCIA),
+                    _item_menu(t.ICONES["sair"], "Sair", sair, destrutivo=True),
                     padding=4,
                 ),
                 ft.Container(height=6),

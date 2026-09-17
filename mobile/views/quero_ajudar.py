@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 from mobile.components.comuns import cabecalho
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -42,10 +43,8 @@ def construir(app: App) -> ft.Control:
     # O tipo escolhido vive em uma lista mutável para ser lido dentro do handler.
     escolhido = ["tenho_item"]
 
-    campo_mensagem = t.campo(
-        "Mensagem para quem pediu (opcional)",
-        multilinha=True,
-        dica="Ex.: consigo levar hoje à tarde, por volta das 15h.",
+    campo_mensagem = campos.campo_area_texto(
+        "Ex.: consigo levar hoje à tarde, por volta das 15h."
     )
 
     opcoes_coluna = ft.Column(spacing=10)
@@ -137,7 +136,9 @@ def construir(app: App) -> ft.Control:
                         ),
                         opcoes_coluna,
                         ft.Container(height=4),
-                        campo_mensagem,
+                        campos.com_rotulo(
+                            "Mensagem para quem pediu (opcional)", campo_mensagem
+                        ),
                         ft.Container(height=6),
                         t.botao_primario("Enviar proposta", enviar, t.ICONES["enviar"], 400),
                         ft.Row(
@@ -159,7 +160,7 @@ def construir(app: App) -> ft.Control:
                     scroll=ft.ScrollMode.AUTO,
                     expand=True,
                 ),
-                padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+                padding=ft.Padding.symmetric(horizontal=20, vertical=16),
                 expand=True,
                 bgcolor=t.FUNDO_CLARO,
             ),

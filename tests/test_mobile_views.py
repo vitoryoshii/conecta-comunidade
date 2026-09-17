@@ -132,6 +132,96 @@ def test_todas_as_telas_sao_construidas(app_mobile: App, nome_da_rota: str) -> N
     assert isinstance(controle, ft.Control)
 
 
+# --------------------------------------------------------------------------- #
+# Padrão dos campos de formulário
+# --------------------------------------------------------------------------- #
+# Toda tela do app que tem campo de entrada. A busca do Explorar, a das ONGs e o
+# compositor do chat ficam de fora de propósito: não são campos de formulário,
+# e sim barra de busca e caixa de mensagem, com desenho próprio.
+TELAS_COM_FORMULARIO = [
+    "login",
+    "cadastro",
+    "recuperar_senha",
+    "editar_perfil",
+    "alterar_senha",
+    "nova_solicitacao",
+    "nova_oferta",
+    "quero_ajudar",
+]
+
+
+def _campos_da_tela(tela: ft.Control) -> list[ft.Control]:
+    """Campos de entrada de uma tela montada (texto, área de texto e seletor)."""
+    return [
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, (ft.TextField, ft.Dropdown))
+    ]
+
+
+@pytest.mark.parametrize("nome_da_rota", TELAS_COM_FORMULARIO)
+def test_campos_tem_a_mesma_altura_raio_e_fundo(app_mobile: App, nome_da_rota: str) -> None:
+    """Um desenho só para todo campo de entrada, em qualquer tela.
+
+    As medidas vivem no `theme.py` e chegam aqui pelos componentes de
+    `components/campos.py`. O que este teste impede é uma tela voltar a montar
+    campo na mão, com altura e raio próprios — foi assim que o app terminou com
+    duas famílias de campo convivendo na mesma coluna.
+    """
+    app_mobile.state.reiniciar(
+        nome_da_rota, **_parametros_da_rota(nome_da_rota, app_mobile)
+    )
+    tela = ROTAS[nome_da_rota][0](app_mobile)
+
+    encontrados = _campos_da_tela(tela)
+    assert encontrados, f"{nome_da_rota} não tem campo nenhum"
+
+    for campo in encontrados:
+        assert campo.border_radius == t.RAIO_CAMPO, f"{nome_da_rota}: raio fora do padrão"
+        assert campo.fill_color == t.BRANCO, f"{nome_da_rota}: campo com fundo não-branco"
+        # A área de texto é a única exceção de altura: ela cresce com as linhas.
+        if isinstance(campo, ft.TextField) and campo.multiline:
+            continue
+        assert campo.height == t.ALTURA_CAMPO, f"{nome_da_rota}: altura fora do padrão"
+
+
+@pytest.mark.parametrize("nome_da_rota", TELAS_COM_FORMULARIO)
+def test_nenhum_campo_usa_rotulo_flutuante(app_mobile: App, nome_da_rota: str) -> None:
+    """Um padrão só de rótulo: acima do campo, nunca dentro da moldura.
+
+    O `label` de dentro era a origem da altura instável — o campo media uma
+    coisa vazio e outra preenchido, porque o rótulo encolhia e subia.
+    """
+    app_mobile.state.reiniciar(
+        nome_da_rota, **_parametros_da_rota(nome_da_rota, app_mobile)
+    )
+    tela = ROTAS[nome_da_rota][0](app_mobile)
+
+    for campo in _campos_da_tela(tela):
+        assert not getattr(campo, "label", None), (
+            f"{nome_da_rota}: campo com rótulo flutuante dentro da moldura"
+        )
+
+
+def test_campo_travado_mantem_a_medida_dos_editaveis(app_mobile: App) -> None:
+    """O CPF não se digita, mas mede igual: mesma altura e mesmo raio."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    travado = next(
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.Container) and c.height == t.ALTURA_CAMPO
+    )
+    assert travado.border_radius == t.RAIO_CAMPO
+    # Fundo acinzentado e cadeado são o que dizem "isto não se digita".
+    assert travado.bgcolor == t.CINZA_CLARO
+    assert any(
+        isinstance(c, ft.Icon) and c.icon == ft.Icons.LOCK_OUTLINE_ROUNDED
+        for c in _descendentes(travado)
+    )
+
+
 def test_navegacao_empilha_e_volta(app_mobile: App) -> None:
     """A pilha de rotas precisa suportar abrir e voltar telas."""
     app_mobile.state.reiniciar("home")
@@ -739,13 +829,73 @@ def test_menu_do_perfil_abre_cada_tela(app_mobile: App) -> None:
         assert isinstance(ROTAS[rota][0](app_mobile), ft.Control)
 
 
-def test_editar_perfil_mostra_email_e_cpf_travados(app_mobile: App) -> None:
-    """E-mail e CPF aparecem, mas não em campo editável — e o CPF vem mascarado."""
+def _icone_da_linha(linha: ft.Control) -> tuple[str | None, str | None]:
+    """(cor de fundo do quadradinho, cor do ícone) de uma linha do menu."""
+    for controle in _descendentes(linha):
+        if not isinstance(controle, ft.Container) or controle.width != 34:
+            continue
+        icone = next(
+            (c for c in _descendentes(controle) if isinstance(c, ft.Icon)), None
+        )
+        return controle.bgcolor, (icone.color if icone else None)
+    raise AssertionError("a linha do menu não tem quadradinho de ícone")
+
+
+def test_icones_do_menu_do_perfil_seguem_um_padrao(app_mobile: App) -> None:
+    """Um par de cores para todas as linhas; só Sair escapa, e de propósito.
+
+    O menu chegou a exibir sete cores diferentes, o que não distinguia nada —
+    e as cores nem eram as da paleta: o fundo saía de `f"{cor}1A"`, e oito
+    dígitos são lidos como AARRGGBB, não RRGGBBAA. Este teste fixa o padrão.
+    """
+    app_mobile.state.reiniciar("perfil")
+    tela = ROTAS["perfil"][0](app_mobile)
+    linhas = _linhas_do_menu(tela)
+
+    navegacao = [
+        "Editar perfil",
+        "Minhas solicitações",
+        "Minhas doações",
+        "Favoritos",
+        "Avaliações",
+        "Configurações",
+        "Ajuda e suporte",
+    ]
+    for rotulo in navegacao:
+        assert rotulo in linhas, f"{rotulo} sumiu do menu"
+        assert _icone_da_linha(linhas[rotulo]) == (t.MENU_ICONE_FUNDO, t.MENU_ICONE), (
+            f"{rotulo} está fora do padrão do menu"
+        )
+
+    # Sair é a exceção: vermelho porque a cor carrega a informação.
+    assert _icone_da_linha(linhas["Sair"]) == (t.MENU_ICONE_FUNDO_SAIDA, t.MENU_ICONE_SAIDA)
+
+    # E nenhuma cor do menu pode ser hex de 8 dígitos: é a forma do bug antigo.
+    for rotulo, linha in linhas.items():
+        for cor in _icone_da_linha(linha):
+            assert not (cor or "").startswith("#") or len(cor) == 7, (
+                f"{rotulo} usa cor com alfa embutido ({cor})"
+            )
+
+
+def test_rotulo_do_sair_continua_vermelho(app_mobile: App) -> None:
+    """A padronização não pode ter apagado o vermelho do texto "Sair"."""
+    app_mobile.state.reiniciar("perfil")
+    tela = ROTAS["perfil"][0](app_mobile)
+
+    sair = _linhas_do_menu(tela)["Sair"]
+    rotulo = next(
+        c for c in _descendentes(sair) if isinstance(c, ft.Text) and c.value == "Sair"
+    )
+    assert rotulo.color == t.URGENCIA
+
+
+def test_editar_perfil_mantem_o_cpf_travado(app_mobile: App) -> None:
+    """O CPF aparece, mascarado e fora de campo editável — documento não se troca."""
     app_mobile.state.reiniciar("editar_perfil")
     tela = ROTAS["editar_perfil"][0](app_mobile)
 
     textos = [c.value for c in _descendentes(tela) if isinstance(c, ft.Text) and c.value]
-    assert app_mobile.state.usuario["email"] in textos
 
     # O CPF exibido é exatamente o que a API devolve — que já vem mascarado — ou
     # um traço, para quem se cadastrou antes de o campo existir.
@@ -754,10 +904,69 @@ def test_editar_perfil_mostra_email_e_cpf_travados(app_mobile: App) -> None:
     if da_api:
         assert da_api.startswith("***"), "a tela não pode mostrar o CPF inteiro"
 
-    # Nenhum campo digitável carrega e-mail ou CPF.
+    # Nenhum campo digitável carrega o CPF.
     editaveis = [c.value for c in _descendentes(tela) if isinstance(c, ft.TextField)]
-    assert app_mobile.state.usuario["email"] not in editaveis
     assert da_api not in editaveis
+
+
+def test_editar_perfil_traz_o_email_em_campo_editavel(app_mobile: App) -> None:
+    """O e-mail deixou de ser travado: vem preenchido, num campo digitável."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    campo = _por_dica(tela, "seu@email.com")
+    assert isinstance(campo, ft.TextField)
+    assert campo.read_only is not True
+    assert campo.value == app_mobile.state.usuario["email"]
+
+
+def test_editar_perfil_troca_o_email(app_mobile: App) -> None:
+    """E-mail novo e livre: salva, persiste e passa a ser o da sessão."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    _digitar(tela, "seu@email.com", "ana.nova@teste.com")
+    # A tela só salva com o formulário todo válido, e a Ana da fixture não tem
+    # telefone gravado.
+    _digitar(tela, "(00) 00000-0000", "(11) 98888-7777")
+    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+
+    assert app_mobile.state.usuario["email"] == "ana.nova@teste.com"
+    assert app_mobile.api.eu()["email"] == "ana.nova@teste.com"
+
+
+def test_editar_perfil_marca_o_campo_quando_o_email_ja_existe(
+    app_mobile: App, usuario_carlos: Usuario
+) -> None:
+    """E-mail de outra conta: o erro fica NO campo, não some num aviso de rodapé."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    campo = _digitar(tela, "seu@email.com", usuario_carlos.email)
+    _digitar(tela, "(00) 00000-0000", "(11) 98888-7777")
+    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+
+    assert campo.error and "já está em uso" in campo.error
+    # Nada foi gravado, e a tela não navegou para longe do erro.
+    assert app_mobile.api.eu()["email"] == "ana@teste.com"
+    assert app_mobile.state.rota_atual.nome == "editar_perfil"
+
+    # Ao corrigir, o recado sai: manter o erro sob um endereço já trocado seria
+    # a tela mentindo.
+    campo.on_change(SimpleNamespace(control=campo))
+    assert campo.error is None
+
+
+def test_editar_perfil_recusa_email_sem_arroba(app_mobile: App) -> None:
+    """O erro de formato aparece no campo, sem ida ao servidor."""
+    app_mobile.state.reiniciar("editar_perfil")
+    tela = ROTAS["editar_perfil"][0](app_mobile)
+
+    campo = _digitar(tela, "seu@email.com", "ana-sem-arroba")
+    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+
+    assert campo.error == "Informe um e-mail válido."
+    assert app_mobile.api.eu()["email"] == "ana@teste.com"
 
 
 def test_editar_perfil_salva_nome_e_telefone(app_mobile: App) -> None:

@@ -32,9 +32,10 @@ def obter_usuario(usuario_id: int, session: SessionDep) -> Usuario:
     response_model=UsuarioLer,
     summary="Editar meu perfil",
     description=(
-        "Atualiza nome, estado/cidade, coordenadas ou avatar do usuário logado. "
-        "Ao mexer na região, envie `estado` e `cidade` juntos: a cidade é "
-        "validada contra a base do IBGE (422 quando não pertence à UF)."
+        "Atualiza nome, e-mail, estado/cidade, coordenadas ou avatar do usuário "
+        "logado. Ao mexer na região, envie `estado` e `cidade` juntos: a cidade "
+        "é validada contra a base do IBGE (422 quando não pertence à UF). O "
+        "e-mail precisa ser válido (422) e não pertencer a outra conta (409)."
     ),
 )
 def atualizar_meu_perfil(
@@ -42,6 +43,36 @@ def atualizar_meu_perfil(
 ) -> Usuario:
     """Aplica apenas os campos enviados (patch parcial)."""
     enviados = dados.model_dump(exclude_unset=True)
+
+    # O e-mail identifica a conta, então a troca passa por unicidade. O formato
+    # já foi recusado pelo `EmailStr` do schema; aqui resta garantir que o
+    # endereço não é de outra pessoa. Normalizamos igual ao cadastro e ao login
+    # (sem espaços, minúsculo) — senão "Ana@x.com" criaria uma conta paralela
+    # que nunca conseguiria entrar.
+    #
+    # TODO: em produção, confirmar o novo endereço por link antes de efetivar a
+    # troca. Do jeito atual, um engano de digitação (ou um token vazado) troca o
+    # e-mail de contato sem que o dono do endereço antigo seja avisado. Ficou
+    # fora desta rodada porque depende de um serviço de envio de e-mail.
+    if "email" in enviados:
+        email_normalizado = str(enviados["email"]).strip().lower()
+
+        if email_normalizado == usuario.email:
+            # Não mudou: sai do patch para não gerar escrita à toa.
+            enviados.pop("email")
+        else:
+            ja_existe = session.exec(
+                select(Usuario).where(Usuario.email == email_normalizado)
+            ).first()
+            if ja_existe:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Este e-mail já está em uso.",
+                )
+            enviados["email"] = email_normalizado
+
+    # O JWT carrega o `id` no `sub`, não o e-mail: trocar o endereço não
+    # derruba a sessão nem invalida o token que está na mão do app.
 
     # O telefone chega com máscara da tela e é gravado só com dígitos, pelas
     # mesmas regras do cadastro (DDD existente, 10 ou 11 dígitos).

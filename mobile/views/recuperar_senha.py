@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 
 if TYPE_CHECKING:  # pragma: no cover
     from mobile.main import App
@@ -26,7 +27,7 @@ CONFIRMACAO_PADRAO = "Se o e-mail existir, enviamos um link para redefinir a sen
 
 def construir(app: App) -> ft.Control:
     """Formulário de um campo só: e-mail para receber o link de redefinição."""
-    campo_email = t.campo_claro(
+    campo_email = campos.campo_texto(
         "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
     )
 
@@ -46,7 +47,7 @@ def construir(app: App) -> ft.Control:
 
     return t.tela_de_autenticacao(
         [
-            t.campo_rotulado("E-mail", campo_email),
+            campos.com_rotulo("E-mail", campo_email, sobre_foto=True),
             ft.Container(height=6),
             t.botao_primario(
                 "Enviar link",

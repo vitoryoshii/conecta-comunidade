@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 import flet as ft
 
 from mobile import theme as t
+from mobile.components import campos
 from mobile.components.comuns import cabecalho
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -160,14 +161,25 @@ def _card_entrega(app: App, entrega: dict[str, Any]) -> ft.Container:
 def _dialogo_agendamento(app: App, solicitacao_id: int) -> None:
     """Abre o formulário de agendamento de entrega."""
     amanha = (datetime.now() + timedelta(days=1)).strftime("%d/%m/%Y")
-    campo_data = t.campo("Data", valor=amanha, icone=t.ICONES["data"])
-    campo_hora = t.campo("Hora", valor="14:00", icone=t.ICONES["horario"])
-    campo_local = t.campo("Local do encontro", icone=t.ICONES["local"])
+    campo_data = campos.campo_texto(valor=amanha, icone=t.ICONES["data"])
+    campo_hora = campos.campo_texto(valor="14:00", icone=t.ICONES["horario"])
+    campo_local = campos.campo_texto(
+        "Onde vocês vão se encontrar", icone=t.ICONES["local"]
+    )
 
     dialogo = ft.AlertDialog(
         modal=True,
         title=ft.Text("Agendar entrega", color=t.TEXTO_FORTE),
-        content=ft.Column([campo_data, campo_hora, campo_local], spacing=10, height=230),
+        content=campos.formulario(
+            [
+                campos.com_rotulo("Data", campo_data),
+                campos.com_rotulo("Hora", campo_hora),
+                campos.com_rotulo("Local do encontro", campo_local),
+            ],
+            # O diálogo não tem altura própria: sem isto a coluna colapsa.
+            height=290,
+            width=t.LARGURA_FORMULARIO,
+        ),
     )
 
     def fechar(_: ft.ControlEvent) -> None:

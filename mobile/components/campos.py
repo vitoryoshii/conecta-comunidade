@@ -63,6 +63,7 @@ def campo_texto(
     ao_mudar: Callable[..., Any] | None = None,
     ao_sair: Callable[..., Any] | None = None,
     ao_clicar: Callable[..., Any] | None = None,
+    ao_enviar: Callable[..., Any] | None = None,
     somente_leitura: bool = False,
     sufixo: ft.Control | None = None,
 ) -> ft.TextField:
@@ -103,6 +104,7 @@ def campo_texto(
         on_change=ao_mudar,
         on_blur=ao_sair,
         on_click=ao_clicar,
+        on_submit=ao_enviar,
         read_only=somente_leitura,
         suffix=sufixo,
         error_style=ft.TextStyle(color=t.URGENCIA, size=11),

@@ -381,6 +381,48 @@ def botao_primario(
     )
 
 
+def conteudo_de_botao_carregando(
+    texto: str, cor: str, reduzir_movimento: bool = False
+) -> ft.Row:
+    """Conteúdo compacto para ações em andamento, sem alterar o botão externo.
+
+    O botão continua com a largura e altura originais; somente o conteúdo troca
+    para o indicador. Com redução de movimento, o anel fica estático.
+    """
+    return ft.Row(
+        [
+            ft.ProgressRing(
+                width=16,
+                height=16,
+                stroke_width=2,
+                color=cor,
+                value=1 if reduzir_movimento else None,
+            ),
+            ft.Text(texto, size=14, weight=ft.FontWeight.W_600),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=8,
+        tight=True,
+    )
+
+
+def status_de_processamento(texto: str = "") -> ft.Semantics:
+    """Região de status anunciada por tecnologias assistivas.
+
+    Em Flet, `Semantics(live_region=True)` é a representação multiplataforma
+    da região ARIA ao vivo. O rótulo expõe o estado ocupado de forma equivalente
+    a `aria-busy`, inclusive fora do navegador.
+    """
+    return ft.Semantics(
+        live_region=True,
+        container=True,
+        label=texto or "Pronto para enviar",
+        value="ocupado" if texto else "disponível",
+        content=ft.Container(width=0, height=0),
+    )
+
+
 def botao_secundario(
     texto: str,
     on_click,
@@ -722,4 +764,34 @@ def carregando(mensagem: str = "Carregando...") -> ft.Container:
         ),
         padding=40,
         alignment=ft.Alignment.CENTER,
+    )
+
+
+def esqueleto_da_home() -> ft.Container:
+    """Estrutura estática da Home enquanto os dados secundários chegam."""
+    def bloco(altura: int, largura: int | None = None) -> ft.Container:
+        return ft.Container(
+            height=altura,
+            width=largura,
+            bgcolor=CINZA_CLARO,
+            border_radius=RAIO_BOTAO,
+        )
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row([bloco(42, 42), ft.Column([bloco(12, 95), bloco(18, 150)], spacing=7)], spacing=12),
+                bloco(168),
+                ft.Row([bloco(152), bloco(152)], spacing=12),
+                bloco(16, 110),
+                ft.Row([bloco(56, 56), bloco(56, 56), bloco(56, 56), bloco(56, 56)], spacing=10),
+                bloco(16, 150),
+                bloco(112),
+                bloco(112),
+            ],
+            spacing=16,
+        ),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=16),
+        expand=True,
+        bgcolor=FUNDO_CLARO,
     )

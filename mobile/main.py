@@ -28,6 +28,7 @@ aqui — no ponto único onde a árvore é montada — nenhuma view precisa sabe
 disso.
 """
 
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -141,6 +142,7 @@ class App:
         self.page = page
         self.state = AppState()
         self.api = ApiClient(API_BASE_URL)
+        self.reduzir_movimento = False
 
         # Área onde a tela atual é desenhada.
         self._area = ft.Container(
@@ -183,8 +185,19 @@ class App:
 
         self._coluna_central.ajustar(getattr(self.page, "width", None))
         self.page.add(ft.SafeArea(content=self._coluna_central.raiz, expand=True))
+        self.page.run_task(self._detectar_preferencias_de_acessibilidade)
         self.state.reiniciar("splash")
         self.renderizar()
+
+    async def _detectar_preferencias_de_acessibilidade(self) -> None:
+        """Lê a preferência do sistema sem impedir a abertura do aplicativo."""
+        try:
+            recursos = await ft.SemanticsService().get_accessibility_features()
+            self.reduzir_movimento = bool(recursos.reduce_motion)
+        except Exception:
+            # Algumas plataformas não expõem esse serviço; o app continua com o
+            # indicador padrão em vez de falhar na inicialização.
+            self.reduzir_movimento = False
 
     def _ao_redimensionar(self, evento: Any) -> None:
         """Reavalia o limite de largura quando a janela muda de tamanho."""
@@ -232,7 +245,9 @@ class App:
 
         try:
             if rota.nome in ROTAS_COM_DADOS:
-                self._area.content = t.carregando("Carregando dados...")
+                self._area.content = (
+                    t.esqueleto_da_home() if rota.nome == "home" else t.carregando("Carregando dados...")
+                )
                 self.page.update()
             conteudo = construtor(self)
         except ErroApi as erro:
@@ -343,6 +358,50 @@ class App:
         if mensagem_sucesso:
             self.aviso(mensagem_sucesso)
         return resultado
+
+    async def executar_assincrono(self, acao: Callable[[], Any]) -> Any:
+        """Executa I/O síncrono sem bloquear o loop que atualiza o Flet."""
+        try:
+            return await asyncio.to_thread(acao)
+        except ErroApi as erro:
+            self.aviso(erro.mensagem, erro=True)
+            return None
+
+    def _mostrar_preparacao_de_acesso(self) -> None:
+        """Mantém uma superfície útil na transição entre autenticação e Home."""
+        self._area.content = ft.Semantics(
+            live_region=True,
+            container=True,
+            label="Preparando seu acesso. Aguarde.",
+            value="ocupado",
+            content=t.carregando("Preparando seu acesso…"),
+        )
+        self._barra.visible = False
+        self._fab.visible = False
+        self.page.update()
+
+    async def concluir_autenticacao(self, token: str) -> bool:
+        """Confirma a sessão e prepara os dados indispensáveis antes da Home.
+
+        A resposta de login/cadastro só é considerada uma sessão válida após a
+        confirmação em `/auth/me`. As categorias são pré-carregadas na mesma
+        transição, evitando uma tela inicial parcialmente pronta.
+        """
+        self.api.definir_token(token)
+        usuario = await self.executar_assincrono(self.api.eu)
+        if usuario is None:
+            self.api.definir_token(None)
+            return False
+
+        self.state.entrar(token, usuario)
+        self._mostrar_preparacao_de_acesso()
+        categorias = await self.executar_assincrono(self.api.listar_categorias)
+        # Categorias não impedem o acesso; a Home já tem estado de ausência para
+        # esse dado secundário. Ainda assim, aguardamos a solicitação real antes
+        # de trocar de tela para não haver redirecionamento prematuro.
+        self.state.categorias = categorias or []
+        self.reiniciar("home")
+        return True
 
     def _tela_de_erro(self, mensagem: str) -> ft.Control:
         """Tela de fallback quando a API não responde durante a montagem."""

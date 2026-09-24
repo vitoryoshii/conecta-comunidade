@@ -76,11 +76,16 @@ class ApiClient:
             resposta = self._http.request(
                 metodo, caminho, params=params, json=json, headers=self._headers()
             )
-        except httpx.RequestError as erro:
+        except httpx.TimeoutException as erro:
             raise ErroApi(
-                "Não foi possível falar com o servidor. "
-                "Confira se a API está no ar em " + self.base_url
+                "A solicitação demorou mais que o esperado. Verifique sua conexão e tente novamente."
             ) from erro
+        except httpx.NetworkError as erro:
+            raise ErroApi(
+                "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+            ) from erro
+        except httpx.RequestError as erro:
+            raise ErroApi("Não foi possível concluir a solicitação. Tente novamente.") from erro
 
         if resposta.status_code >= 400:
             raise ErroApi(self._mensagem_de_erro(resposta), resposta.status_code)

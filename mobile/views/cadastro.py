@@ -59,6 +59,9 @@ SENHAS_DIFERENTES = "As senhas não coincidem"
 def construir(app: App) -> ft.Control:
     """Formulário de criação de conta."""
     rascunho: dict[str, Any] = dict(app.state.rascunho_cadastro)
+    enviando = False
+    token_de_cadastro_criado: str | None = None
+    status_de_envio = t.status_de_processamento()
 
     # --------------------------------------------------------------------- #
     # Campos
@@ -312,7 +315,7 @@ def construir(app: App) -> ft.Control:
 
     def atualizar_botao(_: ft.ControlEvent | None = None) -> None:
         """Liga o botão só quando o formulário inteiro fecha."""
-        botao_criar.disabled = not formulario_completo()
+        botao_criar.disabled = enviando or not formulario_completo()
         app.page.update()
 
     def validar(campo: ft.TextField, condicao: bool, mensagem: str) -> bool:
@@ -320,8 +323,42 @@ def construir(app: App) -> ft.Control:
         campo.error = None if condicao else mensagem
         return condicao
 
-    def cadastrar(_: ft.ControlEvent) -> None:
-        """Valida o formulário e cria a conta na API."""
+    def atualizar_envio(ativo: bool) -> None:
+        """Impede reenvios enquanto a requisição atual não terminar."""
+        nonlocal enviando
+        enviando = ativo
+        botao_criar.disabled = ativo or not formulario_completo()
+        botao_criar.content = (
+            t.conteudo_de_botao_carregando(
+                "Criando conta…", t.VERDE_ESCURO, app.reduzir_movimento
+            )
+            if ativo
+            else "Criar conta"
+        )
+        status_de_envio.label = "Criando conta. Aguarde." if ativo else "Pronto para criar conta"
+        status_de_envio.value = "ocupado" if ativo else "disponível"
+        app.page.update()
+
+    async def cadastrar(_: ft.ControlEvent) -> None:
+        """Valida o formulário e cria a conta sem bloquear o Flet."""
+        nonlocal token_de_cadastro_criado
+        if enviando:
+            return
+
+        # Se o POST já criou a conta, mas a confirmação de sessão falhou por
+        # rede, uma nova tentativa confirma o token recebido — nunca repete o
+        # cadastro e, portanto, não cria conflito de e-mail/CPF.
+        if token_de_cadastro_criado:
+            atualizar_envio(True)
+            try:
+                if await app.concluir_autenticacao(token_de_cadastro_criado):
+                    app.state.limpar_rascunho()
+                    app.aviso("Conta criada! Bem-vindo(a) ao Conecta Comunidade.")
+            finally:
+                if app.state.rota_atual.nome == "cadastro":
+                    atualizar_envio(False)
+            return
+
         nome = (campo_nome.value or "").strip()
         email = (campo_email.value or "").strip()
         senha = campo_senha.value or ""
@@ -363,33 +400,44 @@ def construir(app: App) -> ft.Control:
             return
 
         latitude, longitude = coordenadas.get(seletor_cidade.value, (0.0, 0.0))
-        resposta = app.executar(
-            lambda: app.api.registrar(
-                {
-                    "nome": nome,
-                    "email": email,
-                    "senha": senha,
-                    # Só dígitos: a máscara é coisa da tela.
-                    "cpf": cpf,
-                    "telefone": telefone,
-                    "data_nascimento": campo_nascimento.data.isoformat(),
-                    "aceite_termos": True,
-                    "tipo": seletor_tipo.value,
-                    "estado": seletor_estado.value,
-                    "cidade": seletor_cidade.value,
-                    "latitude": latitude,
-                    "longitude": longitude,
-                }
+        atualizar_envio(True)
+        try:
+            resposta = await app.executar_assincrono(
+                lambda: app.api.registrar(
+                    {
+                        "nome": nome,
+                        "email": email,
+                        "senha": senha,
+                        # Só dígitos: a máscara é coisa da tela.
+                        "cpf": cpf,
+                        "telefone": telefone,
+                        "data_nascimento": campo_nascimento.data.isoformat(),
+                        "aceite_termos": True,
+                        "tipo": seletor_tipo.value,
+                        "estado": seletor_estado.value,
+                        "cidade": seletor_cidade.value,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                    }
+                )
             )
-        )
-        if resposta is None:
-            return
-
-        app.api.definir_token(resposta["access_token"])
-        app.state.entrar(resposta["access_token"], resposta["usuario"])
-        app.state.limpar_rascunho()
-        app.aviso("Conta criada! Bem-vindo(a) ao Conecta Comunidade.")
-        app.reiniciar("home")
+            if resposta is None:
+                return
+            token_de_cadastro_criado = resposta.get("access_token")
+            if not token_de_cadastro_criado:
+                # Compatibilidade segura com um eventual fluxo de confirmação:
+                # sem token não há sessão; a orientação vem da própria API.
+                app.aviso(
+                    resposta.get("mensagem", "Confira seu e-mail para confirmar a conta."),
+                )
+                return
+            if await app.concluir_autenticacao(token_de_cadastro_criado):
+                app.state.limpar_rascunho()
+                app.aviso("Conta criada! Bem-vindo(a) ao Conecta Comunidade.")
+        finally:
+            # Falhas não repetem o POST e devolvem o formulário intacto.
+            if app.state.rota_atual.nome == "cadastro":
+                atualizar_envio(False)
 
     botao_criar = t.botao_primario(
         "Criar conta",
@@ -400,6 +448,7 @@ def construir(app: App) -> ft.Control:
     )
     # Sem consentimento (e sem o resto do formulário) não há cadastro.
     botao_criar.disabled = True
+    campo_confirmacao.on_submit = cadastrar
 
     def link_do_documento(texto: str, chave: str) -> ft.TextSpan:
         """Trecho clicável do consentimento que abre um documento legal."""
@@ -478,6 +527,7 @@ def construir(app: App) -> ft.Control:
             consentimento,
             ft.Container(height=2),
             botao_criar,
+            status_de_envio,
             ft.Row(
                 [
                     ft.Text("Já tem conta?", size=12, color=t.MENTA_CLARA),

@@ -26,13 +26,30 @@ CONTAS_DEMO = [
 
 def construir(app: App) -> ft.Control:
     """Formulário de acesso, com atalhos para as contas de demonstração."""
-    campo_email = campos.campo_texto(
-        "seu@email.com", icone=t.ICONES["email"], tipo_teclado=ft.KeyboardType.EMAIL
-    )
-    campo_senha = campos.campo_texto("Sua senha", senha=True, icone=t.ICONES["senha"])
+    enviando = False
+    status = t.status_de_processamento()
 
-    def entrar(_: ft.ControlEvent) -> None:
-        """Valida os campos, autentica e guarda o token no estado."""
+    def atualizar_envio(ativo: bool) -> None:
+        """Espelha o estado real da operação no botão e na região acessível."""
+        nonlocal enviando
+        enviando = ativo
+        botao_entrar.disabled = ativo
+        botao_entrar.content = (
+            t.conteudo_de_botao_carregando(
+                "Entrando…", t.VERDE_ESCURO, app.reduzir_movimento
+            )
+            if ativo
+            else "Entrar"
+        )
+        status.label = "Entrando. Aguarde." if ativo else "Pronto para entrar"
+        status.value = "ocupado" if ativo else "disponível"
+        status.content = ft.Container(width=0, height=0)
+        app.page.update()
+
+    async def entrar(_: ft.ControlEvent) -> None:
+        """Valida e autentica sem bloquear a atualização da interface."""
+        if enviando:
+            return
         email = campo_email.value.strip()
         senha = campo_senha.value
 
@@ -40,14 +57,18 @@ def construir(app: App) -> ft.Control:
             app.aviso("Preencha e-mail e senha.", erro=True)
             return
 
-        resposta = app.executar(lambda: app.api.login(email, senha))
-        if resposta is None:
-            return
-
-        app.api.definir_token(resposta["access_token"])
-        app.state.entrar(resposta["access_token"], resposta["usuario"])
-        app.aviso(f"Bem-vindo(a), {app.state.nome}!")
-        app.reiniciar("home")
+        atualizar_envio(True)
+        try:
+            resposta = await app.executar_assincrono(lambda: app.api.login(email, senha))
+            if resposta is None:
+                return
+            if await app.concluir_autenticacao(resposta["access_token"]):
+                app.aviso(f"Bem-vindo(a), {app.state.nome}!")
+        finally:
+            # Em sucesso a tela foi substituída; em falha devolvemos a mesma
+            # instância, com os valores digitados intactos, para nova tentativa.
+            if app.state.rota_atual.nome == "login":
+                atualizar_envio(False)
 
     def continuar_como_visitante(_: ft.ControlEvent) -> None:
         """Modo somente-leitura: dá para explorar, mas não publicar."""
@@ -61,6 +82,23 @@ def construir(app: App) -> ft.Control:
         campo_senha.value = "senha123"
         app.page.update()
 
+    campo_email = campos.campo_texto(
+        "seu@email.com",
+        icone=t.ICONES["email"],
+        tipo_teclado=ft.KeyboardType.EMAIL,
+        ao_enviar=entrar,
+    )
+    campo_senha = campos.campo_texto(
+        "Sua senha", senha=True, icone=t.ICONES["senha"], ao_enviar=entrar
+    )
+    botao_entrar = t.botao_primario(
+        "Entrar",
+        entrar,
+        largura=t.LARGURA_FORMULARIO,
+        cor=t.BRANCO,
+        cor_texto=t.VERDE_ESCURO,
+    )
+
     return t.tela_de_autenticacao(
         [
             campos.com_rotulo("E-mail", campo_email, sobre_foto=True),
@@ -71,13 +109,8 @@ def construir(app: App) -> ft.Control:
                 alignment=ft.MainAxisAlignment.END,
             ),
             ft.Container(height=2),
-            t.botao_primario(
-                "Entrar",
-                entrar,
-                largura=t.LARGURA_FORMULARIO,
-                cor=t.BRANCO,
-                cor_texto=t.VERDE_ESCURO,
-            ),
+            botao_entrar,
+            status,
             t.botao_secundario(
                 "Criar conta",
                 lambda _: app.substituir("cadastro"),

@@ -13,6 +13,7 @@ python-multipart==0.0.32          # leitura de formulários multipart no FastAPI
 sqlmodel==0.0.42                  # SQLModel = SQLAlchemy + Pydantic
 SQLAlchemy==2.0.52
 alembic==1.19.2                   # migrations
+psycopg2-binary==2.9.11
 
 # --- Validação e configuração ------------------------------------------------
 pydantic==2.13.5

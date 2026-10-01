@@ -410,7 +410,15 @@ class App:
             self.api.definir_token(None)
             return False
 
-        self.state.entrar(token, usuario)
+        # `/auth/me` inclui dados privados para telas específicas. O estado
+        # global segue o contrato público para não replicar CPF, telefone ou
+        # nascimento por toda a árvore de views.
+        campos_privados = {
+            "cpf", "telefone", "data_nascimento", "aceite_termos", "data_aceite",
+            "notificar_solicitacoes", "notificar_mensagens", "notificar_atualizacoes",
+        }
+        usuario_publico = {chave: valor for chave, valor in usuario.items() if chave not in campos_privados}
+        self.state.entrar(token, usuario_publico)
         await self.preferencias.set(CHAVE_TOKEN, token)
         self._mostrar_preparacao_de_acesso()
         categorias = await self.executar_assincrono(self.api.listar_categorias)

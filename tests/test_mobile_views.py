@@ -7,6 +7,8 @@ construído ou por um campo que a API deixou de devolver — a falha aparece aqu
 e não durante a apresentação.
 """
 
+import asyncio
+import inspect
 from collections.abc import Generator
 from datetime import date, datetime
 from pathlib import Path
@@ -45,6 +47,23 @@ class PaginaFalsa(SimpleNamespace):
         """Fecha o diálogo aberto."""
 
 
+class PreferenciasFalsas:
+    """Armazenamento assíncrono mínimo para handlers que restauram sessão."""
+
+    def __init__(self) -> None:
+        self.valores: dict[str, str] = {}
+
+    async def set(self, chave: str, valor: str) -> bool:
+        self.valores[chave] = valor
+        return True
+
+    async def get(self, chave: str) -> str | None:
+        return self.valores.get(chave)
+
+    async def remove(self, chave: str) -> bool:
+        return self.valores.pop(chave, None) is not None
+
+
 @pytest.fixture(name="app_mobile")
 def fixture_app_mobile(
     session: Session,
@@ -60,6 +79,7 @@ def fixture_app_mobile(
     api_fastapi.dependency_overrides[get_session] = obter_sessao_de_teste
 
     aplicacao = App(PaginaFalsa())
+    aplicacao.preferencias = PreferenciasFalsas()
     # O TestClient do FastAPI é um `httpx.Client` que fala direto com o app,
     # sem rede: trocando o transporte do ApiClient por ele, as telas rodam
     # contra a API de verdade sem precisar subir o Uvicorn.
@@ -116,6 +136,13 @@ def _id_da_primeira_ong(app_mobile: App) -> int | None:
     """Id da primeira ONG cadastrada, ou `None` quando não houver nenhuma."""
     ongs = app_mobile.api.listar_ongs()
     return ongs[0]["id"] if ongs else None
+
+
+def _acionar(handler: Any) -> None:
+    """Executa handlers Flet síncronos ou assíncronos nos testes de view."""
+    resultado = handler(None)
+    if inspect.isawaitable(resultado):
+        asyncio.run(resultado)
 
 
 @pytest.mark.parametrize("nome_da_rota", sorted(ROTAS))
@@ -456,7 +483,7 @@ def test_cadastro_nao_envia_com_confirmacao_diferente(app_mobile: App) -> None:
     _preencher_cadastro(
         tela, app_mobile, email="divergente@teste.com", confirmacao="outra-senha"
     )
-    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+    _acionar(next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click)
 
     assert _por_dica(tela, "Repita a senha").error == "As senhas não coincidem"
     # Nada de sessão nova: o cadastro não foi enviado.
@@ -540,7 +567,7 @@ def test_cadastro_envia_as_coordenadas_da_cidade(app_mobile: App) -> None:
     _preencher_cadastro(tela, app_mobile)
 
     botao = next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton))
-    botao.on_click(None)
+    _acionar(botao.on_click)
 
     usuario = app_mobile.state.usuario
     assert usuario["estado"] == "BA"
@@ -561,7 +588,7 @@ def test_cadastro_acusa_campos_invalidos_antes_de_enviar(app_mobile: App) -> Non
     caixa.value = True
     caixa.on_change(SimpleNamespace(control=caixa))
 
-    next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click(None)
+    _acionar(next(c for c in _descendentes(tela) if isinstance(c, ft.FilledButton)).on_click)
 
     # Todos de uma vez, e não um por envio.
     for dica in ("Seu nome completo", "000.000.000-00", "seu@email.com", "(00) 00000-0000"):

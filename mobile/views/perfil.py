@@ -208,12 +208,13 @@ def construir(app: App) -> ft.Control:
     usuario: dict[str, Any] = app.state.usuario or {}
     impacto = app.executar(lambda: app.api.impacto()) or {}
 
-    def sair(_: ft.ControlEvent) -> None:
+    async def sair(_: ft.ControlEvent) -> None:
         """Encerra a sessão e volta à tela de abertura."""
         app.state.sair()
         app.api.definir_token(None)
+        await app._remover_token_persistido()
         app.aviso("Você saiu da sua conta.")
-        app.reiniciar("splash")
+        app.reiniciar("login")
 
     # Só (ícone, rótulo, ação): a cor não é mais escolha de cada item.
     menu = [

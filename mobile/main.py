@@ -37,13 +37,14 @@ import flet as ft
 
 # Permite rodar tanto `flet run mobile/main.py` quanto `python mobile/main.py`:
 # em ambos os casos a raiz do projeto precisa estar no sys.path para que os
-# imports `from mobile...` e `from backend...` funcionem.
+# imports do pacote `mobile` funcionem.
 RAIZ_DO_PROJETO = Path(__file__).resolve().parent.parent
 if str(RAIZ_DO_PROJETO) not in sys.path:
     sys.path.insert(0, str(RAIZ_DO_PROJETO))
 
 from mobile import theme as t  # noqa: E402
 from mobile.api_client import ApiClient, ErroApi  # noqa: E402
+from mobile.config import obter_configuracao  # noqa: E402
 from mobile.components.fab import botao_flutuante  # noqa: E402
 from mobile.components.layout import ColunaCentral  # noqa: E402
 from mobile.components.nav_bar import barra_de_navegacao  # noqa: E402
@@ -75,10 +76,9 @@ from mobile.views import (  # noqa: E402
     splash,
 )
 
-# URL da API. Pode ser sobrescrita pela variável de ambiente API_BASE_URL.
-API_BASE_URL = "http://127.0.0.1:8000"
 ASSETS_DIR = RAIZ_DO_PROJETO / "mobile" / "assets"
 APP_ICON = "brand/logo/app-icon-256.png"
+CHAVE_TOKEN = "br.edu.conectacomunidade.app.access_token"
 
 # Registro de rotas: nome -> (função construtora, exibe navegação inferior?).
 ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {
@@ -141,7 +141,9 @@ class App:
     def __init__(self, page: ft.Page) -> None:
         self.page = page
         self.state = AppState()
-        self.api = ApiClient(API_BASE_URL)
+        self.api = ApiClient(obter_configuracao().api_base_url)
+        self.api.ao_sessao_invalida = self._sessao_invalida
+        self.preferencias = ft.SharedPreferences()
         self.reduzir_movimento = False
 
         # Área onde a tela atual é desenhada.
@@ -188,6 +190,7 @@ class App:
         self.page.run_task(self._detectar_preferencias_de_acessibilidade)
         self.state.reiniciar("splash")
         self.renderizar()
+        self.page.run_task(self._restaurar_sessao)
 
     async def _detectar_preferencias_de_acessibilidade(self) -> None:
         """Lê a preferência do sistema sem impedir a abertura do aplicativo."""
@@ -352,7 +355,7 @@ class App:
         try:
             resultado = acao()
         except ErroApi as erro:
-            self.aviso(erro.mensagem, erro=True)
+            self._tratar_erro_api(erro)
             return None
 
         if mensagem_sucesso:
@@ -364,7 +367,7 @@ class App:
         try:
             return await asyncio.to_thread(acao)
         except ErroApi as erro:
-            self.aviso(erro.mensagem, erro=True)
+            self._tratar_erro_api(erro)
             return None
 
     def _mostrar_preparacao_de_acesso(self) -> None:
@@ -380,6 +383,20 @@ class App:
         self._fab.visible = False
         self.page.update()
 
+    async def _remover_token_persistido(self) -> None:
+        await self.preferencias.remove(CHAVE_TOKEN)
+
+    def _sessao_invalida(self) -> None:
+        self.state.sair()
+        self.api.definir_token(None)
+        self.page.run_task(self._remover_token_persistido)
+
+    def _tratar_erro_api(self, erro: ErroApi) -> None:
+        if erro.status == 401:
+            self._sessao_invalida()
+            self.reiniciar("login")
+        self.aviso(erro.mensagem, erro=True)
+
     async def concluir_autenticacao(self, token: str) -> bool:
         """Confirma a sessão e prepara os dados indispensáveis antes da Home.
 
@@ -394,6 +411,7 @@ class App:
             return False
 
         self.state.entrar(token, usuario)
+        await self.preferencias.set(CHAVE_TOKEN, token)
         self._mostrar_preparacao_de_acesso()
         categorias = await self.executar_assincrono(self.api.listar_categorias)
         # Categorias não impedem o acesso; a Home já tem estado de ausência para
@@ -402,6 +420,16 @@ class App:
         self.state.categorias = categorias or []
         self.reiniciar("home")
         return True
+
+    async def _restaurar_sessao(self) -> None:
+        token = await self.preferencias.get(CHAVE_TOKEN)
+        if not isinstance(token, str) or not token:
+            return
+        if await self.concluir_autenticacao(token):
+            return
+        await self._remover_token_persistido()
+        self.state.sair()
+        self.reiniciar("login")
 
     def _tela_de_erro(self, mensagem: str) -> ft.Control:
         """Tela de fallback quando a API não responde durante a montagem."""

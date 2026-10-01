@@ -13,6 +13,8 @@ from typing import Any
 
 import httpx
 
+from mobile.config import obter_configuracao
+
 # Timeout curto: se a API não responder, é melhor mostrar o erro na tela do que
 # deixar o app travado esperando.
 TIMEOUT_SEGUNDOS = 15.0
@@ -30,10 +32,11 @@ class ErroApi(Exception):
 class ApiClient:
     """Fachada síncrona sobre a API REST."""
 
-    def __init__(self, base_url: str = "http://127.0.0.1:8000") -> None:
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, base_url: str | None = None) -> None:
+        self.base_url = (base_url or obter_configuracao().api_base_url).rstrip("/")
         self.token: str | None = None
         self._cliente: httpx.Client | None = None
+        self.ao_sessao_invalida: Any = None
 
     # A conexão é criada sob demanda: instanciar um `httpx.Client` monta um
     # contexto SSL, o que custa cerca de um segundo. Criar só na primeira
@@ -87,6 +90,21 @@ class ApiClient:
         except httpx.RequestError as erro:
             raise ErroApi("Não foi possível concluir a solicitação. Tente novamente.") from erro
 
+        if resposta.status_code == 401:
+            self.definir_token(None)
+            if self.ao_sessao_invalida:
+                self.ao_sessao_invalida()
+            raise ErroApi("Sua sessão expirou. Entre novamente.", 401)
+        if resposta.status_code == 403:
+            raise ErroApi("Você não tem permissão para realizar esta ação.", 403)
+        if resposta.status_code == 404:
+            raise ErroApi("O recurso solicitado não foi encontrado.", 404)
+        if resposta.status_code == 409:
+            raise ErroApi(self._mensagem_de_erro(resposta, "Este dado conflita com uma regra."), 409)
+        if resposta.status_code == 422:
+            raise ErroApi(self._mensagem_de_erro(resposta, "Dados inválidos. Confira os campos."), 422)
+        if resposta.status_code >= 500:
+            raise ErroApi("O servidor está indisponível no momento. Tente novamente mais tarde.", resposta.status_code)
         if resposta.status_code >= 400:
             raise ErroApi(self._mensagem_de_erro(resposta), resposta.status_code)
 
@@ -95,12 +113,12 @@ class ApiClient:
         return resposta.json()
 
     @staticmethod
-    def _mensagem_de_erro(resposta: httpx.Response) -> str:
+    def _mensagem_de_erro(resposta: httpx.Response, padrao: str | None = None) -> str:
         """Extrai o `detail` do FastAPI, cobrindo também os erros de validação."""
         try:
             corpo = resposta.json()
         except ValueError:
-            return f"Erro {resposta.status_code} ao falar com o servidor."
+            return padrao or f"Erro {resposta.status_code} ao falar com o servidor."
 
         detalhe = corpo.get("detail") if isinstance(corpo, dict) else None
         if isinstance(detalhe, str):
@@ -110,7 +128,7 @@ class ApiClient:
             primeiro = detalhe[0]
             campo = ".".join(str(p) for p in primeiro.get("loc", [])[1:]) or "campo"
             return f"{campo}: {primeiro.get('msg', 'valor inválido')}"
-        return f"Erro {resposta.status_code} ao falar com o servidor."
+        return padrao or f"Erro {resposta.status_code} ao falar com o servidor."
 
     def fechar(self) -> None:
         """Encerra a conexão HTTP (chamado quando o app fecha)."""

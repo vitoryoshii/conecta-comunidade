@@ -104,6 +104,25 @@ Cada escolha e por que ela está aqui. O detalhamento está em
 
 ## `~/como-rodar`
 
+### Ambientes do mobile
+
+O app mobile fala exclusivamente com a API FastAPI; ele nunca recebe URL de
+banco, credenciais Neon ou segredo JWT. O APK usa a API de produção por padrão:
+`https://conecta-comunidade-wheat.vercel.app`.
+
+Para desenvolvimento local, defina o ambiente antes de iniciar o Flet:
+
+```powershell
+$env:CONECTA_MOBILE_ENV = "development"
+flet run mobile/main.py
+```
+
+Para voltar ao comportamento de produção no terminal atual:
+
+```powershell
+$env:CONECTA_MOBILE_ENV = "production"
+```
+
 ### Pré-requisitos
 
 - **Python 3.12+** (validado em 3.14)
@@ -199,6 +218,39 @@ $ pytest --cov=backend --cov=mobile --cov-report=term-missing
 # relatório navegável em htmlcov/index.html
 $ pytest --cov=backend --cov=mobile --cov-report=html
 ```
+
+## Android
+
+O empacotamento está configurado em `pyproject.toml` com o nome **Conecta
+Comunidade**, versão `1.0.0` e bundle ID `br.edu.conectacomunidade.app`. O
+arquivo raiz `requirements.txt` permanece compatível com a Vercel; os arquivos
+`requirements-backend.txt`, `requirements-mobile.txt` e `requirements-dev.txt`
+servem para instalações separadas locais.
+
+Pré-requisitos: Python 3.12–3.14, JDK 17 e Android SDK. O Flet pode instalar
+as ferramentas ausentes no primeiro build. Valide o ambiente com:
+
+```bash
+flet doctor
+```
+
+Gere um APK de apresentação a partir da raiz:
+
+```bash
+flet build apk --output build/apk --yes
+```
+
+O APK será criado sob `build/apk/`. Copie-o para o dispositivo Android e abra o
+arquivo para instalar, autorizando instalação de fontes desconhecidas quando o
+sistema solicitar. Para um futuro envio à Play Store, use `flet build aab` e
+configure uma keystore fora do repositório por variáveis `FLET_ANDROID_*`.
+
+## Segurança de produção
+
+Na Vercel, `DATABASE_URL`, `SECRET_KEY` e `CORS_ORIGINS` são variáveis
+exclusivas do backend. `SECRET_KEY` deve ser aleatória e real em produção; o
+valor de fallback existe somente para desenvolvimento e testes. Não versione
+`.env`, credenciais Neon, chaves JWT ou keystores Android.
 
 **61 testes**, rodando em ~5 s, com **75% de cobertura** sobre `backend/` +
 `mobile/` — e o núcleo de regra de negócio bem coberto: `geo_service` 100%,

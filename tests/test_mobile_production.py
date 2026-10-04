@@ -84,4 +84,7 @@ def test_entrada_do_flet_mantem_o_pacote_mobile_no_bundle() -> None:
 
     app = configuracao["tool"]["flet"]["app"]
     assert app["path"] == "."
-    assert app["module"] == "mobile.main"
+    assert app["module"] == "main"
+    assert Path("main.py").read_text(encoding="utf-8").strip().endswith(
+        "from mobile.main import main"
+    )

@@ -18,8 +18,20 @@ splash_dark_color = "#0E2A47"
 # O app é empacotado pela raiz do repositório para preservar `mobile/` como
 # pacote Python e permitir os imports absolutos `from mobile ...` no Android.
 path = "."
-module = "mobile.main"
-exclude = ["alembic", "backend", "docs", "tests", ".env.example", "seed.py", "conecta.db"]
+module = "main"
+exclude = [
+    ".git",
+    ".pytest_cache",
+    ".venv",
+    "__pycache__",
+    "alembic",
+    "backend",
+    "docs",
+    "tests",
+    ".env.example",
+    "seed.py",
+    "conecta.db",
+]
 
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true

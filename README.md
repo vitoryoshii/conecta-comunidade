@@ -234,10 +234,12 @@ as ferramentas ausentes no primeiro build. Valide o ambiente com:
 flet doctor
 ```
 
-Gere um APK de apresentação a partir da raiz:
+Gere um APK de apresentação a partir da raiz. O empacotador usa essa raiz como
+`python_app_path` e `mobile.main` como entrada, preservando `mobile/` como
+pacote para que os imports internos funcionem no Android:
 
 ```bash
-flet build apk --output build/apk --yes
+flet build apk . --module-name mobile.main --output build/apk --yes
 ```
 
 O APK será criado sob `build/apk/`. Copie-o para o dispositivo Android e abra o

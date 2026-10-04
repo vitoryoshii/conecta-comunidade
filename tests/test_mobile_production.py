@@ -1,6 +1,7 @@
 """Regressões da configuração e do transporte do aplicativo mobile."""
 
 from pathlib import Path
+import tomllib
 
 import httpx
 import pytest
@@ -75,3 +76,12 @@ def test_mobile_nao_contem_segredos_ou_imports_backend() -> None:
     assert "SECRET_KEY" not in fontes
     assert "from backend" not in fontes
     assert "import backend" not in fontes
+
+
+def test_entrada_do_flet_mantem_o_pacote_mobile_no_bundle() -> None:
+    """A raiz do app mantém `mobile` disponível para os imports absolutos."""
+    configuracao = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+
+    app = configuracao["tool"]["flet"]["app"]
+    assert app["path"] == "."
+    assert app["module"] == "mobile.main"

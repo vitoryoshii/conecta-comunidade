@@ -7,8 +7,10 @@ nenhum segredo precise ser versionado no repositório.
 """
 
 from functools import lru_cache
+from os import getenv
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Raiz do projeto (diretório que contém `backend/`, `mobile/`, `.env` ...)
@@ -46,6 +48,19 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def validar_segredo_de_producao(self) -> "Settings":
+        """Recusa o segredo padrão ou fraco no runtime de produção da Vercel."""
+        ambiente_vercel = getenv("VERCEL_ENV", "").strip().lower()
+        segredo_padrao = "troque-esta-chave-em-producao-conecta-comunidade"
+        if ambiente_vercel == "production" and (
+            self.secret_key == segredo_padrao or len(self.secret_key.strip()) < 32
+        ):
+            raise ValueError(
+                "SECRET_KEY deve estar configurada e ter ao menos 32 caracteres em Production."
+            )
+        return self
 
     @property
     def lista_cors_origins(self) -> list[str]:

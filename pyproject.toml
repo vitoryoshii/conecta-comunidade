@@ -4,7 +4,23 @@ version = "1.0.0"
 description = "Aplicativo que conecta pessoas, doadores, voluntários e ONGs."
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
-dependencies = ["flet==0.86.5", "httpx==0.28.1"]
+# O manifesto da raiz é resolvido pelo serviço FastAPI na Vercel. As
+# dependências exclusivas do APK são geradas no staging por
+# scripts/prepare_mobile_distribution.py.
+dependencies = [
+    "fastapi==0.141.1",
+    "sqlmodel==0.0.42",
+    "pydantic-settings==2.15.0",
+    "email-validator==2.3.0",
+    "python-dotenv==1.2.3",
+    "python-jose[cryptography]==3.5.0",
+    "passlib==1.7.4",
+    "bcrypt==4.0.1",
+    "geopy==2.5.0",
+    "psycopg2-binary==2.9.11",
+    "flet==0.86.5",
+    "httpx==0.28.1",
+]
 
 [tool.flet]
 product = "Conecta Comunidade"

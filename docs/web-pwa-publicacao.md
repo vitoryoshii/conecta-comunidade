@@ -30,10 +30,16 @@ o fallback é adicional e não depende da API.
 
 ## CORS e segurança
 
-No estado atual a API aceita CORS `*`, suficiente para Bearer token sem cookies.
-Antes de expor um domínio definitivo, por autorização separada, restrinja
-`CORS_ORIGINS` da API à origem HTTPS exata da PWA. Não altere essa configuração
-no projeto frontend.
+Antes de publicar, a API precisa receber em `CORS_ORIGINS` as origens HTTPS
+exatas da PWA, separadas por vírgula. Exemplo:
+
+```text
+CORS_ORIGINS=https://conecta-web-preview.exemplo.vercel.app,https://conecta.exemplo.com
+```
+
+A API não usa cookie de sessão: o JWT viaja no header `Authorization`. Por
+isso CORS opera com `allow_credentials=False`; não use wildcard. Essa mudança
+é da API e requer autorização/deploy separado do frontend.
 
 No navegador o JWT fica apenas em memória. Reabrir/recarregar a aba pede login,
 evitando token persistido em aparelho compartilhado. Apps instalados preservam

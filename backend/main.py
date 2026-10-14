@@ -14,9 +14,8 @@ http://127.0.0.1:8000/redoc (ReDoc).
 """
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 from backend.config import settings
+from backend.cors import configurar_cors
 from backend.routers import (
     auth,
     categorias,
@@ -77,14 +76,10 @@ app = FastAPI(
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
 
-# O app Flet roda em outra origem (desktop/web), então o CORS precisa liberá-la.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.lista_cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Android/desktop chamam a API diretamente; somente clientes no navegador usam
+# CORS. O JWT é enviado em Authorization, sem cookie, portanto credenciais de
+# origem cruzada não são necessárias.
+configurar_cors(app, settings.lista_cors_origins)
 
 # --- Registro dos routers --------------------------------------------------
 app.include_router(auth.router)

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import shutil
+import time
 from pathlib import Path
+from uuid import uuid4
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,13 +72,35 @@ def _validar(staging: Path) -> None:
         raise RuntimeError("staging contém arquivos proibidos: " + ", ".join(sorted(violacoes)))
 
 
+def _remover_staging(destino: Path) -> None:
+    """Isola o staging anterior antes de removê-lo no Windows."""
+    # A etapa anterior do Flutter pode ainda estar liberando subdiretórios no
+    # momento em que a próxima homologação começa. Renomear a raiz é atômico
+    # no mesmo volume, permitindo recriar o staging limpo mesmo se o Gradle
+    # ainda estiver liberando arquivos do build anterior.
+    anterior = destino.with_name(f"{destino.name}-stale-{uuid4().hex}")
+    destino.replace(anterior)
+
+    # Limpeza é apenas de artefato regenerável. Se um antivírus/Gradle ainda
+    # prender um arquivo, o diretório permanece ignorado e será tentado de
+    # novo em uma próxima execução, sem bloquear a homologação atual.
+    for tentativa in range(5):
+        try:
+            shutil.rmtree(anterior)
+            return
+        except OSError:
+            if tentativa == 4:
+                return
+            time.sleep(0.25 * (tentativa + 1))
+
+
 def preparar_staging(destino: Path = STAGING_PADRAO) -> Path:
     """Reconstrói o staging exclusivamente a partir da allowlist pública."""
     destino = destino.resolve()
     if destino != STAGING_PADRAO.resolve() and STAGING_PADRAO.resolve() in destino.parents:
         raise ValueError("destino de staging inválido")
     if destino.exists():
-        shutil.rmtree(destino)
+        _remover_staging(destino)
     destino.mkdir(parents=True)
 
     for nome in ARQUIVOS_RAIZ:

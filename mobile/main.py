@@ -76,9 +76,18 @@ from mobile.views import (  # noqa: E402
     splash,
 )
 
-ASSETS_DIR = RAIZ_DO_PROJETO / "mobile" / "assets"
+# No código-fonte os assets permanecem em ``mobile/assets``. No staging de
+# distribuição eles ficam na raiz ``assets/``, que é o caminho que o runtime
+# Android do Flet 0.86 extrai e serve como ``files/flet/app/assets``.
+_ASSETS_DE_DISTRIBUICAO = RAIZ_DO_PROJETO / "assets"
+ASSETS_DIR = (
+    _ASSETS_DE_DISTRIBUICAO
+    if _ASSETS_DE_DISTRIBUICAO.is_dir()
+    else RAIZ_DO_PROJETO / "mobile" / "assets"
+)
 APP_ICON = "brand/logo/app-icon-256.png"
 CHAVE_TOKEN = "br.edu.conectacomunidade.app.access_token"
+
 
 # Registro de rotas: nome -> (função construtora, exibe navegação inferior?).
 ROTAS: dict[str, tuple[Callable[["App"], ft.Control], bool]] = {

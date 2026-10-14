@@ -31,22 +31,43 @@ splash_color = "#F5F7F6"
 splash_dark_color = "#0E2A47"
 
 [tool.flet.app]
-# O app é empacotado pela raiz do repositório para preservar `mobile/` como
-# pacote Python e permitir os imports absolutos `from mobile ...` no Android.
-path = "."
+# O staging é gerado por scripts/prepare_mobile_distribution.py a partir de uma
+# allowlist. Isso impede que arquivos locais do repositório alcancem o APK.
+path = "build/distribution-app"
 module = "main"
 exclude = [
     ".git",
     ".pytest_cache",
     ".venv",
     "__pycache__",
+    ".env",
+    ".env.*",
     "alembic",
     "backend",
     "docs",
     "tests",
-    ".env.example",
+    "README.md",
+    "PLAN.md",
+    "pytest.ini",
+    "requirements.txt",
+    "requirements-backend.txt",
+    "requirements-dev.txt",
+    "requirements-mobile.txt",
+    "vercel.json",
+    "alembic.ini",
     "seed.py",
     "conecta.db",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.jks",
+    ".coverage",
+    "htmlcov",
+    "mobile/assets/avatars",
 ]
 
 [tool.flet.android.permission]

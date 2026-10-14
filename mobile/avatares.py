@@ -19,9 +19,20 @@ from __future__ import annotations
 
 import shutil
 import time
+from os import getenv
 from pathlib import Path
 
-PASTA = Path(__file__).resolve().parent / "assets" / "avatars"
+
+def _pasta_de_avatares() -> Path:
+    """Devolve armazenamento gravável, fora do bundle somente-leitura."""
+    diretorio_dados = getenv("FLET_APP_STORAGE_DATA")
+    if diretorio_dados:
+        return Path(diretorio_dados) / "avatars"
+    # Mantém o comportamento local em desenvolvimento fora do runtime Flet.
+    return Path(__file__).resolve().parent / "assets" / "avatars"
+
+
+PASTA = _pasta_de_avatares()
 
 # Extensões aceitas. Qualquer outra coisa (um .pdf renomeado, por exemplo) é
 # recusada antes de virar um arquivo dentro dos assets.

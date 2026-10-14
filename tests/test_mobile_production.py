@@ -133,6 +133,17 @@ def test_entrada_do_flet_usa_staging_allowlist_com_pacote_mobile() -> None:
     assert "ft.run(main, assets_dir=str(ASSETS_DIR))" in entrypoint
 
 
+def test_staging_configura_pwa_estatica_autonoma() -> None:
+    """A web build embute seus runtimes e funciona em host estático."""
+    from scripts.prepare_mobile_distribution import PYPROJECT_MOBILE
+
+    configuracao = tomllib.loads(PYPROJECT_MOBILE)
+    web = configuracao["tool"]["flet"]["web"]
+    assert web["route_url_strategy"] == "hash"
+    assert web["cdn"] is False
+    assert web["pwa_theme_color"] == "#1F3A5F"
+
+
 def test_configuracao_do_flet_exclui_dados_locais_e_credenciais() -> None:
     """Impede que arquivos locais voltem ao staging do Flet."""
     configuracao = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))

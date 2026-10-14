@@ -42,6 +42,16 @@ splash_dark_color = "#0E2A47"
 path = "."
 module = "main"
 
+[tool.flet.web]
+# URLs com hash funcionam em host estático sem envolver a API em roteamento.
+route_url_strategy = "hash"
+renderer = "canvaskit"
+# Empacota Pyodide, fontes e CanvasKit no artefato; não depende de CDN externo.
+cdn = false
+pwa_background_color = "#F4F7FA"
+pwa_theme_color = "#1F3A5F"
+pwa_short_name = "Conecta"
+
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true
 '''

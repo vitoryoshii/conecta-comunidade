@@ -395,6 +395,17 @@ class App:
     async def _remover_token_persistido(self) -> None:
         await self.preferencias.remove(CHAVE_TOKEN)
 
+    async def _persistir_token(self, token: str) -> None:
+        """Persiste sessão apenas nos apps instalados.
+
+        No navegador, SharedPreferences usa armazenamento do cliente. A PWA
+        mantém o bearer token somente em memória e pede login após reabrir.
+        """
+        if bool(getattr(self.page, "web", False)):
+            await self._remover_token_persistido()
+            return
+        await self.preferencias.set(CHAVE_TOKEN, token)
+
     def _sessao_invalida(self) -> None:
         self.state.sair()
         self.api.definir_token(None)
@@ -428,7 +439,7 @@ class App:
         }
         usuario_publico = {chave: valor for chave, valor in usuario.items() if chave not in campos_privados}
         self.state.entrar(token, usuario_publico)
-        await self.preferencias.set(CHAVE_TOKEN, token)
+        await self._persistir_token(token)
         self._mostrar_preparacao_de_acesso()
         categorias = await self.executar_assincrono(self.api.listar_categorias)
         # Categorias não impedem o acesso; a Home já tem estado de ausência para
@@ -439,6 +450,10 @@ class App:
         return True
 
     async def _restaurar_sessao(self) -> None:
+        if bool(getattr(self.page, "web", False)):
+            # Remove eventual token deixado por versão anterior da PWA.
+            await self._remover_token_persistido()
+            return
         token = await self.preferencias.get(CHAVE_TOKEN)
         if not isinstance(token, str) or not token:
             return

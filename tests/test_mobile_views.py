@@ -30,7 +30,7 @@ from mobile import mapa_tiles
 from mobile import theme as t
 from mobile.views import mapa as mapa_view
 from mobile.components.nav_bar import DESTINOS
-from mobile.main import ABAS_PRINCIPAIS, ROTAS, App
+from mobile.main import ABAS_PRINCIPAIS, CHAVE_TOKEN, ROTAS, App
 
 
 class PaginaFalsa(SimpleNamespace):
@@ -278,6 +278,14 @@ def test_sair_limpa_a_sessao(app_mobile: App) -> None:
     assert app_mobile.state.autenticado is False
     assert app_mobile.state.token is None
     assert app_mobile.state.pilha == []
+
+
+def test_web_nao_persiste_jwt_no_armazenamento_do_cliente(app_mobile: App) -> None:
+    """A PWA não deve guardar bearer token no armazenamento do navegador."""
+    app_mobile.page.web = True
+    asyncio.run(app_mobile._persistir_token("jwt-somente-em-memoria"))
+
+    assert CHAVE_TOKEN not in app_mobile.preferencias.valores
 
 def _descendentes(controle: ft.Control):
     """Percorre a árvore de controles de uma tela montada."""

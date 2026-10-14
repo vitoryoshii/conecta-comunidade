@@ -19,6 +19,25 @@ if ($LASTEXITCODE -ne 0) {
     throw "Falha ao gerar a PWA estática."
 }
 
+# O template atual do Flet 0.86.5 inclui Pyodide local com ``cdn = false``,
+# mas ainda preenche uma URL jsDelivr no index. `python.js` usa essa URL antes
+# do fallback local; anulá-la faz o worker carregar `pyodide/pyodide.mjs`.
+$IndexPath = Join-Path $OutputDir "index.html"
+$Index = Get-Content -Raw $IndexPath
+$IndexAjustado = $Index -replace 'pyodideUrl: "https://[^"]+",', 'pyodideUrl: null,'
+if ($IndexAjustado -eq $Index) {
+    throw "Não foi possível remover a URL CDN do runtime Pyodide."
+}
+Set-Content -Path $IndexPath -Value $IndexAjustado -Encoding utf8NoBOM
+
+# Flet aplica as cores PWA, mas 0.86.5 não propaga pwa_short_name para este
+# template. Corrigimos o manifest gerado sem introduzir dependências.
+$ManifestPath = Join-Path $OutputDir "manifest.json"
+$Manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json
+$Manifest.short_name = "Conecta"
+$Manifest.description = "Conecta pessoas, doadores, voluntários e ONGs."
+$Manifest | ConvertTo-Json -Depth 16 | Set-Content -Path $ManifestPath -Encoding utf8NoBOM
+
 # A configuração acompanha o artefato enviado com `vercel --cwd build/web`.
 Copy-Item deploy\web\vercel.json (Join-Path $OutputDir "vercel.json") -Force
 Write-Output "PWA pronta em $OutputDir"

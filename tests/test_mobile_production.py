@@ -144,6 +144,13 @@ def test_staging_configura_pwa_estatica_autonoma() -> None:
     assert web["pwa_theme_color"] == "#1F3A5F"
 
 
+def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> None:
+    """Evita regressão no workaround do template Flet 0.86.5."""
+    script = Path("scripts/build_web_pwa.ps1").read_text(encoding="utf-8")
+    assert "pyodideUrl: null" in script
+    assert '$Manifest.short_name = "Conecta"' in script
+
+
 def test_configuracao_do_flet_exclui_dados_locais_e_credenciais() -> None:
     """Impede que arquivos locais voltem ao staging do Flet."""
     configuracao = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))

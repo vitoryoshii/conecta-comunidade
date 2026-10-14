@@ -234,18 +234,20 @@ as ferramentas ausentes no primeiro build. Valide o ambiente com:
 flet doctor
 ```
 
-Gere um APK de apresentação a partir da raiz. O empacotador usa essa raiz como
-`python_app_path` e o wrapper `main.py` como entrada, preservando `mobile/` como
-pacote para que os imports internos funcionem no Android:
+Gere um APK de homologação a partir da raiz. O script cria antes um staging
+com allowlist do código e assets públicos do mobile; assim, `.env`, banco local,
+backend e avatares enviados por usuários nunca entram no APK:
 
-```bash
-flet build apk . --module-name main --output build/apk --yes
+```powershell
+.\scripts\build_mobile_homologation.ps1 -OutputDir build/apk
 ```
 
 O APK será criado sob `build/apk/`. Copie-o para o dispositivo Android e abra o
 arquivo para instalar, autorizando instalação de fontes desconhecidas quando o
 sistema solicitar. Para um futuro envio à Play Store, use `flet build aab` e
 configure uma keystore fora do repositório por variáveis `FLET_ANDROID_*`.
+As instruções de assinatura ficam em
+[`docs/android-release-signing.md`](docs/android-release-signing.md).
 
 ## Segurança de produção
 

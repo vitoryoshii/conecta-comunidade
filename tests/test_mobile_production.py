@@ -146,8 +146,26 @@ def test_staging_configura_pwa_estatica_autonoma() -> None:
 
 
 def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> None:
-    """Evita regressão no workaround do template Flet 0.86.5."""
+    """Evita regressões no pipeline PWA e no workaround do Flet 0.86.5."""
     script = Path("scripts/build_web_pwa.ps1").read_text(encoding="utf-8")
+
+    # O diretório de saída precisa ser independente do CWD do staging/Flet,
+    # aguardar o processo real e só promover um artefato completo.
+    assert "$RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot \"..\")).Path" in script
+    assert "$TemporaryOutputDir" in script
+    assert "Start-Process -FilePath $FletExecutable" in script
+    assert "-Wait -PassThru -NoNewWindow" in script
+    assert "Flet exit code" in script
+    assert "Assert-WebArtifact $TemporaryOutputDir" in script
+    for artifact in (
+        "index.html",
+        "python.js",
+        "python-worker.js",
+        "pyodide/pyodide.mjs",
+        "assets/app/app.zip",
+    ):
+        assert artifact in script
+
     assert "pyodideUrl: null" in script
     assert 'new URL("pyodide/pyodide.mjs", _documentUrl).href' in script
     assert '$Manifest.short_name = "Conecta"' in script

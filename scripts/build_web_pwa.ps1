@@ -30,6 +30,18 @@ if ($IndexAjustado -eq $Index) {
 }
 Set-Content -Path $IndexPath -Value $IndexAjustado -Encoding utf8NoBOM
 
+# `python.js` cria um Module Worker. Um specifier como
+# "pyodide/pyodide.mjs" é *bare* nesse contexto e o navegador não o resolve
+# em relação ao worker. Passe uma URL absoluta, calculada a partir da página,
+# para preservar o runtime Pyodide local em qualquer host estático.
+$PythonLoaderPath = Join-Path $OutputDir "python.js"
+$PythonLoader = Get-Content -Raw $PythonLoaderPath
+$PythonLoaderAjustado = $PythonLoader -replace 'pyodideUrl: flet\.pyodideUrl \|\| "pyodide/pyodide\.mjs",', 'pyodideUrl: flet.pyodideUrl || new URL("pyodide/pyodide.mjs", _documentUrl).href,'
+if ($PythonLoaderAjustado -eq $PythonLoader) {
+    throw "Não foi possível normalizar a URL local do worker Pyodide."
+}
+Set-Content -Path $PythonLoaderPath -Value $PythonLoaderAjustado -Encoding utf8NoBOM
+
 # Flet aplica as cores PWA, mas 0.86.5 não propaga pwa_short_name para este
 # template. Corrigimos o manifest gerado sem introduzir dependências.
 $ManifestPath = Join-Path $OutputDir "manifest.json"

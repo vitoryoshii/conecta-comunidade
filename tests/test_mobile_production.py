@@ -1,6 +1,7 @@
 """Regressões da configuração, transporte e segurança do APK mobile."""
 
 import io
+import json
 from pathlib import Path
 import tomllib
 from typing import Iterator
@@ -148,7 +149,17 @@ def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> Non
     """Evita regressão no workaround do template Flet 0.86.5."""
     script = Path("scripts/build_web_pwa.ps1").read_text(encoding="utf-8")
     assert "pyodideUrl: null" in script
+    assert 'new URL("pyodide/pyodide.mjs", _documentUrl).href' in script
     assert '$Manifest.short_name = "Conecta"' in script
+
+
+def test_vercel_pwa_preserva_arquivos_estaticos_antes_do_fallback_spa() -> None:
+    """O fallback SPA não pode capturar módulos Pyodide nem o app.zip."""
+    configuracao = json.loads(Path("deploy/web/vercel.json").read_text(encoding="utf-8"))
+
+    assert configuracao["rewrites"] == [
+        {"source": "/(.*)", "destination": "/index.html"}
+    ]
 
 
 def test_configuracao_do_flet_exclui_dados_locais_e_credenciais() -> None:

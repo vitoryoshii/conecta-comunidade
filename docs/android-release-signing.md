@@ -1,5 +1,18 @@
 # Assinatura Android para distribuição
 
+## Homologação atual
+
+O pipeline de homologação é o único comando recomendado para gerar APK local:
+
+```powershell
+.\scripts\build_mobile_homologation.ps1 -OutputDir build\apk-homologacao
+```
+
+Ele cria um staging com allowlist, usa um único worker Gradle, limita memória,
+preserva as variáveis `SERIOUS_PYTHON_*` no fallback JNI e gera o ícone
+adaptativo oficial. O resultado deve ser tratado como APK de teste até a
+verificação de hash, scanner e certificado.
+
 O APK de homologação pode ser criado sem credenciais de release e será assinado
 com a chave de debug do Android. Ele não deve ser enviado à Play Store nem
 declarado como build de produção.
@@ -24,5 +37,15 @@ em `pyproject.toml`, `.env`, commits, logs ou arquivos do projeto.
 Valide que o APK de distribuição não usa certificado debug antes da publicação:
 
 ```powershell
-keytool -printcert -jarfile .\build\apk\conecta-comunidade.apk
+keytool -printcert -jarfile .\build\apk-homologacao\conecta-comunidade.apk
 ```
+
+Também valide a assinatura instalada:
+
+```powershell
+apksigner verify --print-certs .\build\apk-homologacao\conecta-comunidade.apk
+```
+
+Não apague ou desinstale uma instalação existente ao encontrar incompatibilidade
+de assinatura: isso pode remover dados locais. Confirme a estratégia de upgrade
+antes de qualquer desinstalação.

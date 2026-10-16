@@ -1,5 +1,17 @@
 # Web Mobile / PWA — publicação independente
 
+## Produção atual
+
+| Item | Valor |
+| --- | --- |
+| URL | <https://conecta-comunidade-web.vercel.app> |
+| Projeto | `conecta-comunidade-web` |
+| Escopo Vercel | `vitor-yoshii-s-projects` |
+| Deployment homologado | `dpl_GgdhJuaZ1muXTF5gu4gSoZaYfM6p` |
+
+O frontend é um projeto Vercel separado da API. Não publique a raiz deste
+repositório no projeto Web: ela contém a configuração do backend.
+
 ## Escopo
 
 Esta PWA é estática: Flet e Python/Pyodide executam no navegador e consomem a
@@ -21,8 +33,15 @@ do frontend no artefato. Não acrescente `.env`, chaves ou o repositório inteir
 2. Não defina Build Command nem Output Directory: o artefato já está pronto.
 3. No build local, configure `CONECTA_API_BASE_URL` para a URL HTTPS da API,
    sem barra final. Em produção ela é `https://conecta-comunidade-wheat.vercel.app`.
-4. Publique preview com `vercel --cwd build/web` e, após aprovação,
-   `vercel --cwd build/web --prod`.
+4. Confirme conta, escopo e Project ID antes do deploy. Com um perfil Vercel
+   isolado, publique somente o diretório do artefato:
+
+```powershell
+npx vercel deploy --cwd build\web --project <project-id> --scope <scope> --prod --yes
+```
+
+5. Registre o ID do deployment e valide o domínio definitivo antes de descartar
+   o artefato local. A Vercel preserva deployments anteriores para rollback.
 
 O `vercel.json` do artefato aplica cache longo aos recursos versionados, evita
 cache do HTML inicial e disponibiliza fallback SPA. A PWA usa rotas hash, então
@@ -30,8 +49,8 @@ o fallback é adicional e não depende da API.
 
 ## CORS e segurança
 
-Antes de publicar, a API precisa receber em `CORS_ORIGINS` as origens HTTPS
-exatas da PWA, separadas por vírgula. Exemplo:
+Antes de um domínio novo, a API precisa receber em `CORS_ORIGINS` as origens
+HTTPS exatas da PWA, separadas por vírgula. Exemplo:
 
 ```text
 CORS_ORIGINS=https://conecta-web-preview.exemplo.vercel.app,https://conecta.exemplo.com
@@ -39,7 +58,18 @@ CORS_ORIGINS=https://conecta-web-preview.exemplo.vercel.app,https://conecta.exem
 
 A API não usa cookie de sessão: o JWT viaja no header `Authorization`. Por
 isso CORS opera com `allow_credentials=False`; não use wildcard. Essa mudança
-é da API e requer autorização/deploy separado do frontend.
+é da API e requer autorização/deploy separado do frontend. Um build ou deploy
+Web não autoriza mudança de CORS, Neon, migrations ou variáveis da API.
+
+## Checklist de validação
+
+- `index.html`, manifest, favicon e todos os ícones respondem HTTP 200.
+- `python-worker.js`, `pyodide/pyodide.mjs` e `assets/app/app.zip` respondem HTTP 200.
+- O `app.zip` contém `assets/legal/termos-de-uso.md` e
+  `assets/legal/politica-de-privacidade.md`.
+- A tela de carregamento não mostra marca Flet e a Splash/Home do produto aparecem.
+- Teste cadastro, Termos, Política, retorno e navegação em sessão limpa.
+- Diferencie cache/service worker antigo de regressão no novo artefato.
 
 No navegador o JWT fica apenas em memória. Reabrir/recarregar a aba pede login,
 evitando token persistido em aparelho compartilhado. Apps instalados preservam

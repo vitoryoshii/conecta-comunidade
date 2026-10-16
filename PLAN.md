@@ -1,5 +1,11 @@
 # PLAN — Cadastro: data de nascimento no desktop, confirmação de senha e documentos legais
 
+> **Registro histórico.** Este plano foi concluído. A versão atual não mantém
+> senhas no rascunho de navegação e usa ações explícitas para abrir Termos e
+> Política, porque `TextSpan` dentro de `Checkbox` não recebe toques de forma
+> confiável em todas as plataformas. Para o estado operacional atual, consulte
+> `README.md`, `docs/homologacao-v1.0.0-rc.1.md` e os testes em `tests/`.
+
 **Projeto:** Conecta Comunidade (acadêmico — UNIBTA)
 **Data:** 2026-09-16
 **Status:** Concluído

@@ -17,6 +17,29 @@ Elas se comunicam **apenas por HTTP/JSON**. O app não conhece o banco, e o
 backend não conhece a interface — o contrato entre os dois é o OpenAPI gerado
 automaticamente pelo FastAPI em `/docs`.
 
+## `// distribuição Web e Android`
+
+O mesmo código Flet é empacotado por pipelines separados. O APK recebe um
+staging Android por allowlist. A PWA recebe outro staging e é publicada como
+artefato estático; o navegador executa o Worker Python e Pyodide localmente.
+
+```mermaid
+flowchart LR
+    M[mobile/] --> A[staging Android]
+    M --> W[staging Web]
+    A --> APK[APK de homologação]
+    W --> ZIP[assets/app/app.zip]
+    ZIP --> PWA[PWA estática na Vercel]
+    PWA --> API[API FastAPI HTTPS]
+    APK --> API
+```
+
+Os dois pipelines incluem `assets/legal/` no layout que o runtime consome. No
+Web, os Markdown também entram em `assets/app/app.zip`, pois o Pyodide os lê
+via filesystem. A PWA preserva o contrato do splash nativo do Flet para que
+`removeSplashFromWeb()` conclua após o primeiro frame, substituindo apenas sua
+aparência por carregamento neutro.
+
 ---
 
 ## `// fluxo de uma requisição`

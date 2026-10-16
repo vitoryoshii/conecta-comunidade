@@ -16,7 +16,9 @@ from mobile.config import AMBIENTE_DESENVOLVIMENTO, AMBIENTE_PRODUCAO, obter_con
 
 
 RAIZ = Path(__file__).resolve().parent.parent
-APK_DE_HOMOLOGACAO = RAIZ / "build" / "apk-homologacao-final" / "conecta-comunidade-homologacao.apk"
+# A limpeza local preserva somente a cópia de entrega verificada; o scanner
+# precisa seguir validando esse arquivo, não um caminho intermediário de build.
+APK_DE_HOMOLOGACAO = RAIZ / "build" / "delivery-homologacao-final" / "conecta-comunidade-homologacao.apk"
 
 # O APK é um ZIP que contém outros ZIPs (especialmente assets/app.zip). A
 # inspeção usa nomes e padrões de segredos, nunca valores reais, para impedir

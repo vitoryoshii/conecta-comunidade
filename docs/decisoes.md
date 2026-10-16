@@ -261,4 +261,28 @@ busca e caixa de mensagem, com desenho e comportamento próprios.
 
 ---
 
+## `13` Pipelines isolados para Web/PWA e Android
+
+**Contexto.** O projeto precisa distribuir a mesma interface Flet em Android e
+Web sem incluir backend, arquivos locais, segredos ou a marca padrão do Flet.
+
+**Decisão.** Os scripts de build criam staging por allowlist. O Android usa
+`prepare_mobile_distribution.py` e o Web gera seu próprio staging antes de
+produzir `build/web`. A PWA executa Pyodide e Worker locais; o caminho do módulo
+Pyodide é convertido em URL absoluta para o Worker.
+
+**Consequência.** Cada artefato contém somente código e assets necessários. Os
+documentos legais são copiados para `assets/legal/` no Android e também
+incorporados em `assets/app/app.zip` no Web. O pipeline Web mantém IDs e a
+função `removeSplashFromWeb()` esperados pelo Flet, mas substitui o conteúdo
+visual do splash por uma tela neutra, evitando tanto tela branca quanto a marca
+do framework.
+
+**Operação.** A Vercel recebe somente `build/web` no projeto separado
+`conecta-comunidade-web`; a API não é publicada por esse fluxo. O Android de
+homologação mantém ícone adaptativo oficial, Gradle com um worker e fallback
+JNI controlado.
+
+---
+
 `Construído por` **VyteTech** — *Tecnologia para negócios.*

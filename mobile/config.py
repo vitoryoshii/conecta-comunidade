@@ -19,9 +19,21 @@ _URLS_DA_API = {
 }
 
 
+def _url_publica_da_api(ambiente: str) -> str:
+    """Resolve a URL pública incorporada no build mobile/web.
+
+    O valor identifica a API e nunca contém credenciais. Isso permite que a
+    PWA declare a origem no momento do build sem mudar seu contrato.
+    """
+    url = getenv("CONECTA_API_BASE_URL", _URLS_DA_API[ambiente]).rstrip("/")
+    if ambiente == AMBIENTE_PRODUCAO and not url.startswith("https://"):
+        raise ValueError("A API de produção deve usar HTTPS.")
+    return url
+
+
 def obter_configuracao(ambiente: str | None = None) -> ConfiguracaoMobile:
     """Devolve uma configuração pública; o APK usa produção por padrão."""
     resolvido = (ambiente or getenv("CONECTA_MOBILE_ENV", AMBIENTE_PRODUCAO)).lower()
     if resolvido not in _URLS_DA_API:
         raise ValueError(f"Ambiente mobile inválido: {resolvido!r}.")
-    return ConfiguracaoMobile(resolvido, _URLS_DA_API[resolvido])
+    return ConfiguracaoMobile(resolvido, _url_publica_da_api(resolvido))

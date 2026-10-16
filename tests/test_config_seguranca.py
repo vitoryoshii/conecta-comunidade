@@ -20,6 +20,22 @@ def test_producao_aceita_secret_key_forte(monkeypatch: pytest.MonkeyPatch) -> No
         _env_file=None,
         secret_key="s" * 32,
         database_url="postgresql+psycopg2://usuario:senha@localhost:5432/conecta",
+        cors_origins="https://pwa-preview.exemplo.com,https://pwa.exemplo.com",
     )
 
     assert configuracao.secret_key == "s" * 32
+
+
+@pytest.mark.parametrize("origens", ["*", "http://pwa.exemplo.com", ""])
+def test_producao_recusa_cors_nao_explicito_ou_sem_https(
+    monkeypatch: pytest.MonkeyPatch, origens: str
+) -> None:
+    monkeypatch.setenv("VERCEL_ENV", "production")
+
+    with pytest.raises(ValidationError, match="CORS_ORIGINS"):
+        Settings(
+            _env_file=None,
+            secret_key="s" * 32,
+            database_url="postgresql+psycopg2://usuario:senha@localhost:5432/conecta",
+            cors_origins=origens,
+        )

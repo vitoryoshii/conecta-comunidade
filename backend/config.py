@@ -9,12 +9,17 @@ nenhum segredo precise ser versionado no repositório.
 from functools import lru_cache
 from os import getenv
 from pathlib import Path
+from urllib.parse import urlparse
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Raiz do projeto (diretório que contém `backend/`, `mobile/`, `.env` ...)
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+CORS_ORIGENS_DESENVOLVIMENTO = "http://localhost:8000,http://127.0.0.1:8000"
+CORS_METODOS = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+CORS_HEADERS = ["Authorization", "Content-Type", "Accept"]
 
 
 class Settings(BaseSettings):
@@ -36,8 +41,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 dias
 
     # --- CORS --------------------------------------------------------------
-    # "*" facilita a apresentação acadêmica; em produção liste os domínios.
-    cors_origins: str = "*"
+    # Origens separadas por vírgula. A produção exige HTTPS explícito e nunca
+    # usa wildcard: a PWA autentica por Bearer header, não por cookies.
+    cors_origins: str = CORS_ORIGENS_DESENVOLVIMENTO
 
     # --- Integração mobile -------------------------------------------------
     # URL que o app Flet usa para falar com a API.
@@ -50,8 +56,8 @@ class Settings(BaseSettings):
     )
 
     @model_validator(mode="after")
-    def validar_segredo_de_producao(self) -> "Settings":
-        """Recusa o segredo padrão ou fraco no runtime de produção da Vercel."""
+    def validar_configuracao_de_producao(self) -> "Settings":
+        """Recusa segredo fraco e CORS inseguro no runtime de produção."""
         ambiente_vercel = getenv("VERCEL_ENV", "").strip().lower()
         segredo_padrao = "troque-esta-chave-em-producao-conecta-comunidade"
         if ambiente_vercel == "production" and (
@@ -60,13 +66,20 @@ class Settings(BaseSettings):
             raise ValueError(
                 "SECRET_KEY deve estar configurada e ter ao menos 32 caracteres em Production."
             )
+        if ambiente_vercel == "production":
+            origens = self.lista_cors_origins
+            if not origens or "*" in origens or any(
+                urlparse(origem).scheme != "https" or not urlparse(origem).netloc
+                for origem in origens
+            ):
+                raise ValueError(
+                    "CORS_ORIGINS deve conter apenas origens HTTPS explícitas em Production."
+                )
         return self
 
     @property
     def lista_cors_origins(self) -> list[str]:
         """Converte a string de origens (separadas por vírgula) em lista."""
-        if self.cors_origins.strip() == "*":
-            return ["*"]
         return [origem.strip() for origem in self.cors_origins.split(",") if origem.strip()]
 
     @property

@@ -159,6 +159,9 @@ def _identificacao(app: App, usuario: dict[str, Any]) -> ft.Container:
         tooltip="Trocar foto",
         right=0,
         bottom=0,
+        # A API ainda não oferece upload autenticado/storage público. No web,
+        # esconder a ação evita prometer um envio que não pode ser persistido.
+        visible=not bool(getattr(app.page, "web", False)),
     )
 
     return ft.Container(

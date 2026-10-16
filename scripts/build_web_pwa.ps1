@@ -19,14 +19,27 @@ if ([System.IO.Path]::IsPathRooted($OutputDir)) {
 $OutputParent = Split-Path -Parent $OutputPath
 $TemporaryOutputDir = "$OutputPath.__building-$([guid]::NewGuid().ToString('N'))"
 
-function Assert-WebArtifact([string]$Directory) {
-    foreach ($RelativePath in @(
+function Assert-WebArtifact([string]$Directory, [switch]$IncludeBrandAssets) {
+    $RequiredPaths = @(
         "index.html",
         "python.js",
         "python-worker.js",
         "pyodide/pyodide.mjs",
         "assets/app/app.zip"
-    )) {
+    )
+    if ($IncludeBrandAssets) {
+        $RequiredPaths += @(
+        "favicon.ico",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "apple-touch-icon.png",
+        "icons/Icon-192.png",
+        "icons/Icon-512.png",
+        "icons/Icon-maskable-192.png",
+        "icons/Icon-maskable-512.png"
+        )
+    }
+    foreach ($RelativePath in $RequiredPaths) {
         $Candidate = Join-Path $Directory $RelativePath
         if (-not (Test-Path -LiteralPath $Candidate -PathType Leaf)) {
             throw "Artefato web obrigatório ausente: $Candidate"
@@ -90,9 +103,35 @@ $Manifest.short_name = "Conecta"
 $Manifest.description = "Conecta pessoas, doadores, voluntários e ONGs."
 $Manifest | ConvertTo-Json -Depth 16 | Set-Content -Path $ManifestPath -Encoding utf8NoBOM
 
+# Substitui somente os ícones padrão do template Flet por variantes oficiais
+# já versionadas. O script também produz favicon.ico determinístico, sem usar
+# assets de cache, CDN ou ferramentas de imagem globais.
+& $PythonExecutable (Join-Path $RepositoryRoot "scripts/prepare_web_icon_assets.py") $TemporaryOutputDir
+if ($LASTEXITCODE -ne 0) {
+    throw "Falha ao preparar os ícones oficiais Web/PWA."
+}
+
+# O template aponta para favicon.png genérico. Declare explicitamente os
+# tamanhos oficiais e o ícone Apple para evitar que navegadores reutilizem o
+# ícone do Flutter/Flet em cache.
+$Index = Get-Content -Raw $IndexPath
+$DefaultFavicon = '<link rel="icon" type="image/png" href="favicon.png">'
+$OfficialFavicons = @'
+<link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+'@
+if (-not $Index.Contains($DefaultFavicon)) {
+    throw "Não foi possível localizar o favicon padrão do template Flet."
+}
+$Index = $Index.Replace($DefaultFavicon, $OfficialFavicons.Trim())
+$Index = $Index.Replace('href="icons/apple-touch-icon-192.png"', 'href="apple-touch-icon.png"')
+Set-Content -Path $IndexPath -Value $Index -Encoding utf8NoBOM
+
 # A configuração acompanha o artefato enviado com `vercel --cwd build/web`.
 Copy-Item (Join-Path $RepositoryRoot "deploy/web/vercel.json") (Join-Path $TemporaryOutputDir "vercel.json") -Force
-Assert-WebArtifact $TemporaryOutputDir
+Assert-WebArtifact $TemporaryOutputDir -IncludeBrandAssets
 
 # Só promove uma saída completa. A anterior é preservada para diagnóstico e
 # rollback local, nunca confundida com a compilação recém-validada.

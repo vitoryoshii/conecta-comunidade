@@ -9,12 +9,31 @@ $OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 
+# O template Flutter do Flet pode gerar gradle.properties com heap de 8 GiB.
+# Para a homologação local, limite o Gradle por ambiente: não altera o
+# template gerado, evita builds paralelos e mantém o ajuste reproduzível.
+$GradleWorkers = 1
+$GradleHeapMb = 1536
+$GradleOptions = @(
+    "-Dorg.gradle.workers.max=$GradleWorkers",
+    "-Dorg.gradle.parallel=false",
+    "-Dkotlin.compiler.execution.strategy=in-process",
+    "-Dorg.gradle.jvmargs=-Xmx$($GradleHeapMb)m -XX:MaxMetaspaceSize=512m -XX:ReservedCodeCacheSize=256m"
+) -join " "
+if ([string]::IsNullOrWhiteSpace($env:GRADLE_OPTS)) {
+    $env:GRADLE_OPTS = $GradleOptions
+}
+else {
+    $env:GRADLE_OPTS = "$($env:GRADLE_OPTS) $GradleOptions"
+}
+
 & .\.venv\Scripts\python.exe scripts\prepare_mobile_distribution.py
 if ($LASTEXITCODE -ne 0) {
     throw "Falha ao preparar o staging do aplicativo mobile."
 }
 
-& .\.venv\Scripts\flet.exe build apk build\distribution-app --no-rich-output --yes -o $OutputDir
+& .\.venv\Scripts\flet.exe build apk build\distribution-app --no-rich-output --yes `
+    --android-adaptive-icon-background "#0E6B42" -o $OutputDir
 if ($LASTEXITCODE -eq 0) {
     exit 0
 }

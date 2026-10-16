@@ -3,6 +3,7 @@
 import io
 import json
 from pathlib import Path
+import struct
 import tomllib
 from typing import Iterator
 import zipfile
@@ -145,6 +146,53 @@ def test_staging_configura_pwa_estatica_autonoma() -> None:
     assert web["pwa_theme_color"] == "#1F3A5F"
 
 
+def _tamanho_png(arquivo: Path) -> tuple[int, int]:
+    """Lê o IHDR sem acrescentar Pillow à distribuição mobile."""
+    conteudo = arquivo.read_bytes()
+    assert conteudo.startswith(b"\x89PNG\r\n\x1a\n")
+    return struct.unpack(">II", conteudo[16:24])
+
+
+def test_identidade_oficial_configura_icones_web_pwa_e_android(tmp_path: Path) -> None:
+    """Web, PWA e launcher derivam exclusivamente dos assets oficiais."""
+    from scripts.prepare_web_icon_assets import LOGO_DIR, prepare_web_icon_assets
+
+    assert (LOGO_DIR / "app-icon-512.png").is_file()
+    assert _tamanho_png(LOGO_DIR / "app-icon-512.png") == (512, 512)
+    assert _tamanho_png(LOGO_DIR / "icon-192.png") == (192, 192)
+    assert _tamanho_png(LOGO_DIR / "icon-512.png") == (512, 512)
+
+    build = tmp_path / "web"
+    build.mkdir()
+    (build / "index.html").write_text("<!doctype html>", encoding="utf-8")
+    prepare_web_icon_assets(build)
+
+    for nome, tamanho in {
+        "favicon-16x16.png": (16, 16),
+        "favicon-32x32.png": (32, 32),
+        "apple-touch-icon.png": (180, 180),
+        "icons/Icon-192.png": (192, 192),
+        "icons/Icon-512.png": (512, 512),
+        "icons/Icon-maskable-192.png": (192, 192),
+        "icons/Icon-maskable-512.png": (512, 512),
+    }.items():
+        assert _tamanho_png(build / nome) == tamanho
+
+    ico = (build / "favicon.ico").read_bytes()
+    assert ico[:4] == b"\x00\x00\x01\x00"
+    assert int.from_bytes(ico[4:6], "little") == 3
+
+    configuracao = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    flet = configuracao["tool"]["flet"]
+    assert flet["icon"] == "mobile/assets/brand/logo/app-icon-512.png"
+    mobile_build = Path("scripts/build_mobile_homologation.ps1").read_text(encoding="utf-8")
+    assert '--android-adaptive-icon-background "#0E6B42"' in mobile_build
+    assert "$GradleWorkers = 1" in mobile_build
+    assert "$GradleHeapMb = 1536" in mobile_build
+    assert "-Dorg.gradle.parallel=false" in mobile_build
+    assert "-Dkotlin.compiler.execution.strategy=in-process" in mobile_build
+
+
 def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> None:
     """Evita regressões no pipeline PWA e no workaround do Flet 0.86.5."""
     script = Path("scripts/build_web_pwa.ps1").read_text(encoding="utf-8")
@@ -169,6 +217,9 @@ def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> Non
     assert "pyodideUrl: null" in script
     assert 'new URL("pyodide/pyodide.mjs", _documentUrl).href' in script
     assert '$Manifest.short_name = "Conecta"' in script
+    assert "prepare_web_icon_assets.py" in script
+    assert 'href="favicon.ico"' in script
+    assert 'href="apple-touch-icon.png"' in script
 
 
 def test_vercel_pwa_preserva_arquivos_estaticos_antes_do_fallback_spa() -> None:
@@ -178,6 +229,21 @@ def test_vercel_pwa_preserva_arquivos_estaticos_antes_do_fallback_spa() -> None:
     assert configuracao["rewrites"] == [
         {"source": "/(.*)", "destination": "/index.html"}
     ]
+    headers = {item["source"]: item["headers"] for item in configuracao["headers"]}
+    for origem in (
+        "/manifest.json",
+        "/favicon.ico",
+        "/favicon-:size.png",
+        "/favicon.svg",
+        "/apple-touch-icon.png",
+        "/icons/(.*)",
+    ):
+        cache_control = next(
+            header["value"]
+            for header in headers[origem]
+            if header["key"].lower() == "cache-control"
+        )
+        assert "no-cache" in cache_control
 
 
 def test_configuracao_do_flet_exclui_dados_locais_e_credenciais() -> None:

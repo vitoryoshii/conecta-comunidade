@@ -1,55 +1,26 @@
-# `~/docs/assets`
+# Ativos da documentação
 
-Ativos de marca e mídia da documentação.
+Este diretório guarda somente recursos visuais do Conecta Comunidade usados em
+documentação e apresentações acadêmicas.
 
-## Logos VyteTech — substituir pelos arquivos oficiais
+## Regras
 
-Os SVGs abaixo neste diretório são **placeholders** gerados para o README não
-ficar com imagem quebrada. Sobrescreva-os pelos arquivos oficiais mantendo
-exatamente os mesmos nomes — o README e os docs já apontam para eles:
+- Use apenas ativos do projeto ou capturas autorizadas.
+- Não inclua logos, cores, URLs ou materiais de empresas externas.
+- Não adicione dados pessoais, tokens, chaves, telas de usuários reais ou
+  informações de produção.
+- Preserve proporção dos ícones e contraste suficiente nas capturas.
 
-| Arquivo | Uso |
-| --- | --- |
-| `vytetech-symbol.svg` | Símbolo colorido (cabeçalho do README) |
-| `vytetech-symbol-white.svg` | Versão branca, obrigatória sobre fundo ciano |
+## Capturas sugeridas
 
-## Regras de uso do logo
+Quando houver imagens atualizadas, use nomes descritivos e consistentes:
 
-- O símbolo colorido **nunca** vai sobre fundo ciano — use a versão branca.
-- Não recolorir fora da paleta da marca.
-- Não distorcer: escalar sempre proporcionalmente.
-- Respiro mínimo de **1x** a largura do símbolo em volta dele.
-- Ao embutir o SVG colorido mais de uma vez no mesmo HTML, dar **id único** a
-  cada gradiente (`cyGrad1`, `cyGrad2`, ...), senão o segundo herda o primeiro.
-
-## Prints e GIFs do app
-
-Coloque aqui as capturas de tela citadas no README, com estes nomes:
-
-```
+```text
 tela-splash.png
 tela-home.png
-tela-explorar.png
-tela-detalhe.png
-tela-chat.png
-tela-mapa.png
-tela-ongs.png
-tela-perfil.png
-demo.gif
+tela-cadastro.png
+tela-termos.png
+tela-privacidade.png
 ```
 
-Para capturar: suba a API, rode `flet run mobile/main.py` e use a janela de
-430x900 que o app já abre — a proporção é de celular.
-
-## Paleta VyteTech (documentação)
-
-| Token | Hex |
-| --- | --- |
-| Cyan | `#21BCCE` |
-| Cyan Bright | `#35D2E4` |
-| Navy | `#22486C` |
-| Ink | `#0C1A22` |
-| Void | `#070C14` |
-| Signal Green | `#3DDC97` |
-| Mist | `#EAF7F9` |
-| Slate | `#4A6076` |
+As imagens não são necessárias para compilar, testar ou publicar o projeto.

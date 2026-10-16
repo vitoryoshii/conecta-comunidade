@@ -25,7 +25,7 @@ dependencies = [
 [tool.flet]
 product = "Conecta Comunidade"
 bundle_id = "br.edu.conectacomunidade.app"
-company = "VyteTech Solutions LTDA"
+company = "Conecta Comunidade — Projeto Acadêmico"
 icon = "mobile/assets/brand/logo/app-icon-512.png"
 splash_color = "#F5F7F6"
 splash_dark_color = "#0E2A47"

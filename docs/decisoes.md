@@ -1,6 +1,6 @@
 # Decisões técnicas
 
-`// por que cada escolha` · Conecta Comunidade · por **VyteTech**
+`// por que cada escolha` · Conecta Comunidade · projeto acadêmico
 
 Registro curto das decisões de engenharia, o contexto de cada uma e o que foi
 descartado no caminho.
@@ -285,4 +285,4 @@ JNI controlado.
 
 ---
 
-`Construído por` **VyteTech** — *Tecnologia para negócios.*
+`Conecta Comunidade` · projeto acadêmico

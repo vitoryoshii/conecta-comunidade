@@ -163,4 +163,4 @@ retenção, CPF, compartilhamento ou comunicações devem corresponder à implem
 | [Homologação RC](docs/homologacao-v1.0.0-rc.1.md) | Evidências da entrega final |
 | [Decisões](docs/decisoes.md) | Registro técnico |
 
-Construído pela VyteTech Solutions LTDA.
+Projeto acadêmico.

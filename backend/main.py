@@ -72,7 +72,7 @@ app = FastAPI(
     version=settings.app_versao,
     description=DESCRICAO,
     openapi_tags=TAGS_METADATA,
-    contact={"name": "VyteTech", "url": "https://vytetech.com"},
+    contact={"name": "Conecta Comunidade — Projeto Acadêmico"},
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
 )
 

@@ -1,6 +1,6 @@
 # Arquitetura
 
-`// visão geral do sistema` · Conecta Comunidade · por **VyteTech**
+`// visão geral do sistema` · Conecta Comunidade · projeto acadêmico
 
 ---
 
@@ -279,4 +279,4 @@ em qualquer profundidade.
 
 ---
 
-`Construído por` **VyteTech** — *Tecnologia para negócios.*
+`Conecta Comunidade` · projeto acadêmico

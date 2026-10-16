@@ -1,6 +1,6 @@
 # API
 
-`// referência dos endpoints` · Conecta Comunidade · por **VyteTech**
+`// referência dos endpoints` · Conecta Comunidade · projeto acadêmico
 
 A documentação **interativa** (a fonte da verdade) é gerada pelo próprio FastAPI:
 
@@ -175,4 +175,4 @@ Quando o usuário não tem coordenada, `distancia_km` volta `null` e
 
 ---
 
-`Construído por` **VyteTech** — *Tecnologia para negócios.*
+`Conecta Comunidade` · projeto acadêmico

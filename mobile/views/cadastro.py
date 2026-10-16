@@ -265,15 +265,17 @@ def construir(app: App) -> ft.Control:
     # Consentimento e envio
     # --------------------------------------------------------------------- #
     def guardar_rascunho() -> None:
-        """Salva o formulário antes de abrir outra tela."""
+        """Salva campos não secretos antes de abrir outra tela.
+
+        Senhas e tokens não entram no rascunho, mesmo em memória: ao voltar,
+        a pessoa os informa de novo antes de criar a conta.
+        """
         app.state.guardar_rascunho(
             {
                 "nome": campo_nome.value,
                 "cpf": campo_cpf.value,
                 "email": campo_email.value,
                 "telefone": campo_telefone.value,
-                "senha": campo_senha.value,
-                "confirmacao": campo_confirmacao.value,
                 "data_nascimento": campo_nascimento.data,
                 "tipo": seletor_tipo.value,
                 "estado": seletor_estado.value,
@@ -450,32 +452,10 @@ def construir(app: App) -> ft.Control:
     botao_criar.disabled = True
     campo_confirmacao.on_submit = cadastrar
 
-    def link_do_documento(texto: str, chave: str) -> ft.TextSpan:
-        """Trecho clicável do consentimento que abre um documento legal."""
-        return ft.TextSpan(
-            texto,
-            style=ft.TextStyle(
-                color=t.AMBAR_CLARO,
-                weight=ft.FontWeight.W_600,
-                decoration=ft.TextDecoration.UNDERLINE,
-                decoration_color=t.AMBAR_CLARO,
-            ),
-            on_click=lambda _, chave=chave: abrir_documento(chave),
-        )
-
     consentimento = ft.Checkbox(
-        # O rótulo é um `Text` com spans, e não uma string: é o que torna
-        # "Termos de Uso" e "Política de Privacidade" clicáveis dentro da frase.
-        label=ft.Text(
-            spans=[
-                ft.TextSpan("Li e aceito os "),
-                link_do_documento("Termos de Uso", "termos"),
-                ft.TextSpan(" e a "),
-                link_do_documento("Política de Privacidade", "privacidade"),
-            ],
-            size=12,
-            color=t.BRANCO,
-        ),
+        # O aceite é separado das ações de leitura: em Android e Web, spans
+        # dentro de Checkbox podem perder o toque para o próprio checkbox.
+        label="Li e aceito os Termos de Uso e a Política de Privacidade.",
         value=False,
         on_change=atualizar_botao,
         fill_color=t.BRANCO,
@@ -525,6 +505,19 @@ def construir(app: App) -> ft.Control:
             t.ajuda_clara(FINALIDADE_DO_CPF, icone=t.ICONES["privacidade"]),
             ft.Container(height=6),
             consentimento,
+            ft.Row(
+                [
+                    t.link_claro("Ler Termos de Uso", lambda _: abrir_documento("termos")),
+                    t.link_claro(
+                        "Ler Política de Privacidade",
+                        lambda _: abrir_documento("privacidade"),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                wrap=True,
+                spacing=0,
+                run_spacing=0,
+            ),
             ft.Container(height=2),
             botao_criar,
             status_de_envio,

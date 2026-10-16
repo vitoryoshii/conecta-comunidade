@@ -14,7 +14,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-PASTA = Path(__file__).resolve().parent / "assets" / "legal"
+# No repositório, os documentos vivem em ``mobile/assets/legal``. O staging
+# allowlist, porém, publica assets na raiz da aplicação para Android e Web:
+# ``assets/legal``. Não fixe um dos dois layouts; o módulo é empacotado em
+# ``mobile/`` e precisa encontrar a mesma fonte Markdown nos três ambientes.
+NOME_DIRETORIO = "legal"
 
 # chave da rota -> (título exibido, arquivo em assets/legal)
 DOCUMENTOS: dict[str, tuple[str, str]] = {
@@ -41,11 +45,33 @@ def titulo(chave: str) -> str:
     return nome
 
 
+def pastas_de_documentos() -> tuple[Path, ...]:
+    """Retorna layouts aceitos, na ordem do ambiente atual."""
+    modulo = Path(__file__).resolve()
+    candidatos = (
+        modulo.parent / "assets" / NOME_DIRETORIO,
+        modulo.parent.parent / "assets" / NOME_DIRETORIO,
+        Path.cwd() / "assets" / NOME_DIRETORIO,
+    )
+    return tuple(dict.fromkeys(candidatos))
+
+
+def caminho_do_documento(chave: str) -> Path | None:
+    """Localiza um documento nos layouts de desenvolvimento ou distribuição."""
+    _, arquivo = DOCUMENTOS.get(chave, DOCUMENTOS[PADRAO])
+    for pasta in pastas_de_documentos():
+        caminho = pasta / arquivo
+        if caminho.is_file():
+            return caminho
+    return None
+
+
 @lru_cache(maxsize=None)
 def texto(chave: str) -> str:
     """Conteúdo Markdown do documento, lido uma única vez por execução."""
-    _, arquivo = DOCUMENTOS.get(chave, DOCUMENTOS[PADRAO])
-    caminho = PASTA / arquivo
+    caminho = caminho_do_documento(chave)
+    if caminho is None:
+        return AVISO_DE_FALTA
     try:
         return caminho.read_text(encoding="utf-8")
     except OSError:

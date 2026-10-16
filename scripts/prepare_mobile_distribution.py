@@ -15,6 +15,8 @@ DIRETORIOS_DE_ASSETS_PUBLICOS = (
     Path("brand"),
     Path("legal"),
 )
+ICONE_LAUNCHER_FONTE = Path("brand/logo/app-icon-512.png")
+ICONE_LAUNCHER_DESTINO = Path("icon.png")
 NOMES_PROIBIDOS = {".env", ".env.example", ".env.local", ".env.production"}
 SUFIXOS_PROIBIDOS = {".db", ".sqlite", ".sqlite3", ".pem", ".key", ".p12", ".pfx", ".jks"}
 PADROES_DE_SEGREDO = (
@@ -34,7 +36,6 @@ dependencies = ["flet==0.86.5", "httpx==0.28.1"]
 product = "Conecta Comunidade"
 bundle_id = "br.edu.conectacomunidade.app"
 company = "VyteTech Solutions LTDA"
-icon = "assets/brand/logo/app-icon-512.png"
 splash_color = "#F5F7F6"
 splash_dark_color = "#0E2A47"
 
@@ -124,6 +125,18 @@ def preparar_staging(destino: Path = STAGING_PADRAO) -> Path:
         # da aplicação. A origem continua sob mobile/assets no repositório,
         # mas o staging usa o layout esperado pelo runtime.
         shutil.copytree(ROOT / "mobile" / "assets" / relativo, destino / "assets" / relativo)
+
+    # O Flet 0.86.5 procura especificamente por ``assets/icon.png`` no
+    # diretório da aplicação. Declarar somente um PNG em ``assets/brand`` não
+    # substitui o fallback rosa/azul do template Flutter. O PNG aprovado é a
+    # exportação fiel do ``logo-symbol.svg`` oficial (coração âmbar e sorriso
+    # branco) e seus 512 px já cobrem o maior recurso Android gerado (432 px).
+    icone_fonte = ROOT / "mobile" / "assets" / ICONE_LAUNCHER_FONTE
+    if not icone_fonte.is_file():
+        raise FileNotFoundError(f"Ícone oficial ausente: {icone_fonte}")
+    if not (ROOT / "mobile" / "assets" / "brand" / "logo" / "logo-symbol.svg").is_file():
+        raise FileNotFoundError("Fonte SVG oficial do ícone Android ausente")
+    _copiar(icone_fonte, destino / "assets" / ICONE_LAUNCHER_DESTINO)
 
     # O Flet resolve dependências pelo pyproject do diretório da aplicação.
     # Este manifesto evita que dependências do FastAPI/Vercel sejam incluídas

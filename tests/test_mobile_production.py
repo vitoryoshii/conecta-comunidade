@@ -16,7 +16,7 @@ from mobile.config import AMBIENTE_DESENVOLVIMENTO, AMBIENTE_PRODUCAO, obter_con
 
 
 RAIZ = Path(__file__).resolve().parent.parent
-APK_DE_HOMOLOGACAO = RAIZ / "build" / "apk" / "conecta-comunidade.apk"
+APK_DE_HOMOLOGACAO = RAIZ / "build" / "apk-homologacao-final" / "conecta-comunidade-homologacao.apk"
 
 # O APK é um ZIP que contém outros ZIPs (especialmente assets/app.zip). A
 # inspeção usa nomes e padrões de segredos, nunca valores reais, para impedir
@@ -182,11 +182,17 @@ def test_identidade_oficial_configura_icones_web_pwa_e_android(tmp_path: Path) -
     assert ico[:4] == b"\x00\x00\x01\x00"
     assert int.from_bytes(ico[4:6], "little") == 3
 
-    configuracao = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    flet = configuracao["tool"]["flet"]
-    assert flet["icon"] == "mobile/assets/brand/logo/app-icon-512.png"
+    from scripts.prepare_mobile_distribution import preparar_staging
+
+    staging = preparar_staging(tmp_path / "distribution-app")
+    launcher = staging / "assets" / "icon.png"
+    assert launcher.is_file()
+    assert _tamanho_png(launcher) == (512, 512)
+    assert launcher.read_bytes() == (LOGO_DIR / "app-icon-512.png").read_bytes()
+    assert (LOGO_DIR / "logo-symbol.svg").is_file()
     mobile_build = Path("scripts/build_mobile_homologation.ps1").read_text(encoding="utf-8")
     assert '--android-adaptive-icon-background "#0E6B42"' in mobile_build
+    assert "--no-android-splash" in mobile_build
     assert "$GradleWorkers = 1" in mobile_build
     assert "$GradleHeapMb = 1024" in mobile_build
     assert "-Dorg.gradle.parallel=false" in mobile_build
@@ -219,6 +225,13 @@ def test_script_de_build_web_remove_cdn_do_pyodide_e_normaliza_manifest() -> Non
     assert "pyodideUrl: null" in script
     assert 'new URL("pyodide/pyodide.mjs", _documentUrl).href' in script
     assert '$Manifest.short_name = "Conecta"' in script
+    assert '"--no-web-splash"' not in script
+    assert 'id="splash"' in script
+    assert "splash/img/" in script
+    assert "$DefaultFaviconPattern" in script
+    assert "removeSplashFromWeb" in script
+    assert "flutter_native_splash" in script
+    assert "z-index: 9999" not in script
     assert "prepare_web_icon_assets.py" in script
     assert 'href="favicon.ico"' in script
     assert 'href="apple-touch-icon.png"' in script

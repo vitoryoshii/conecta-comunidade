@@ -4,6 +4,26 @@ param(
 
 $ErrorActionPreference = "Stop"
 $OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+
+function Write-BuildStep([string]$Message) {
+    Write-Output "[$(Get-Date -Format 'HH:mm:ss')] $Message"
+}
+
+function Wait-ForStagingFlutter([string]$StagingPath, [int]$TimeoutSeconds = 1200) {
+    # O Flet pode encerrar seu wrapper antes do Flutter filho. Nunca inicie o
+    # fallback enquanto houver Gradle/Flutter apontando para este staging.
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $needle = [regex]::Escape((Join-Path (Resolve-Path $StagingPath) "build\\flutter"))
+    do {
+        $active = Get-CimInstance Win32_Process | Where-Object {
+            $_.Name -match '^(java|dart|gradle)(\.exe)?$' -and $_.CommandLine -match $needle
+        }
+        if (-not $active) { return }
+        Write-BuildStep "Aguardando subprocessos Flutter/Gradle do staging: $($active.ProcessId -join ', ')"
+        Start-Sleep -Seconds 5
+    } while ((Get-Date) -lt $deadline)
+    throw "Timeout aguardando subprocessos Flutter/Gradle do staging."
+}
 # O Flet/Rich pode receber nomes de arquivos com caracteres fora da página de
 # código cp1252. Força UTF-8 também nos subprocessos Python chamados pelo CLI.
 $env:PYTHONUTF8 = "1"
@@ -30,14 +50,20 @@ else {
     $env:GRADLE_OPTS = "$($env:GRADLE_OPTS) $GradleOptions"
 }
 
+$StagingPath = "build\distribution-app"
+Write-BuildStep "Preparando staging seguro."
 & .\.venv\Scripts\python.exe scripts\prepare_mobile_distribution.py
 if ($LASTEXITCODE -ne 0) {
     throw "Falha ao preparar o staging do aplicativo mobile."
 }
 
-& .\.venv\Scripts\flet.exe build apk build\distribution-app --no-rich-output --yes `
-    --android-adaptive-icon-background "#0E6B42" -o $OutputDir
-if ($LASTEXITCODE -eq 0) {
+Write-BuildStep "Iniciando build Flet APK."
+& .\.venv\Scripts\flet.exe build apk $StagingPath --no-rich-output --yes `
+    --android-adaptive-icon-background "#0E6B42" --no-android-splash -o $OutputDir
+$FletExitCode = $LASTEXITCODE
+Write-BuildStep "Flet APK terminou com exit code $FletExitCode."
+Wait-ForStagingFlutter $StagingPath
+if ($FletExitCode -eq 0) {
     exit 0
 }
 
@@ -46,7 +72,7 @@ if ($LASTEXITCODE -eq 0) {
 # Gradle. A versão 1.0.3 é compatível com a fixação do template. Só aplicamos
 # o fallback quando os dois sinais estão presentes; outras falhas do Flet
 # continuam sendo falhas do build.
-$FlutterDir = "build\distribution-app\build\flutter"
+$FlutterDir = "$StagingPath\build\flutter"
 $Pubspec = Join-Path $FlutterDir "pubspec.yaml"
 $PubspecLock = Join-Path $FlutterDir "pubspec.lock"
 $CompativelComFallback = (Test-Path $Pubspec) -and (Test-Path $PubspecLock) -and `
@@ -99,12 +125,16 @@ $env:SERIOUS_PYTHON_BUNDLE_ID = $BundleId
 
 Push-Location $FlutterDir
 try {
+    Write-BuildStep "Fallback JNI: flutter pub get."
     & $FlutterExe pub get
+    Write-BuildStep "flutter pub get terminou com exit code $LASTEXITCODE."
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao resolver as dependências Flutter compatíveis."
     }
 
+    Write-BuildStep "Fallback JNI: flutter build apk --release."
     & $FlutterExe build apk --release
+    Write-BuildStep "flutter build apk terminou com exit code $LASTEXITCODE."
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao gerar o APK de homologação após corrigir a dependência JNI."
     }

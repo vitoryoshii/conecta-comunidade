@@ -38,7 +38,7 @@ class AppState:
     # --- Rascunho do cadastro ----------------------------------------------
     # As telas são reconstruídas a cada navegação (`App.renderizar`), então
     # abrir os Termos de Uso no meio do cadastro apagaria o formulário. O
-    # rascunho guarda o que já foi digitado para a volta. Vive só na memória
+    # rascunho guarda campos não secretos para a volta. Vive só na memória
     # desta sessão e é apagado quando a conta é criada ou o fluxo é abandonado.
     rascunho_cadastro: dict[str, Any] = field(default_factory=dict)
 
@@ -89,7 +89,7 @@ class AppState:
         self.usuario = None
         self.visitante = False
         self.pilha.clear()
-        # O rascunho carrega senha: não pode sobreviver ao fim da sessão.
+        # O rascunho é apenas de navegação e não sobrevive ao fim da sessão.
         self.rascunho_cadastro = {}
 
     def atualizar_usuario(self, usuario: dict[str, Any]) -> None:
@@ -102,7 +102,7 @@ class AppState:
         self.rascunho_cadastro = campos
 
     def limpar_rascunho(self) -> None:
-        """Descarta o rascunho — inclusive a senha que ele carrega."""
+        """Descarta o rascunho de navegação."""
         self.rascunho_cadastro = {}
 
     # --- Pilha de navegação ------------------------------------------------

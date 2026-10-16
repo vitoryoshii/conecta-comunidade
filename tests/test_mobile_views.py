@@ -499,20 +499,26 @@ def test_cadastro_nao_envia_com_confirmacao_diferente(app_mobile: App) -> None:
 
 
 def test_links_do_consentimento_abrem_os_documentos(app_mobile: App) -> None:
-    """"Termos de Uso" e "Política de Privacidade" são clicáveis dentro da frase."""
+    """Ações explícitas abrem documentos sem alternar o aceite."""
     app_mobile.state.reiniciar("cadastro")
     tela = ROTAS["cadastro"][0](app_mobile)
 
     caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
-    trechos = {span.text: span for span in caixa.label.spans}
-    assert trechos["Termos de Uso"].on_click is not None
-    assert trechos["Política de Privacidade"].on_click is not None
+    assert caixa.value is False
+    botoes = {
+        botao.content: botao
+        for botao in _descendentes(tela)
+        if isinstance(botao, ft.TextButton)
+    }
+    assert botoes["Ler Termos de Uso"].on_click is not None
+    assert botoes["Ler Política de Privacidade"].on_click is not None
 
-    trechos["Política de Privacidade"].on_click(None)
+    botoes["Ler Política de Privacidade"].on_click(None)
 
     rota = app_mobile.state.rota_atual
     assert rota.nome == "documento_legal"
     assert rota.parametros == {"documento": "privacidade"}
+    assert caixa.value is False
     # A tela do documento precisa montar com o texto do arquivo.
     documento = ROTAS["documento_legal"][0](app_mobile)
     markdown = next(c for c in _descendentes(documento) if isinstance(c, ft.Markdown))
@@ -526,8 +532,12 @@ def test_voltar_do_documento_preserva_o_cadastro(app_mobile: App) -> None:
     tela = ROTAS["cadastro"][0](app_mobile)
     _preencher_cadastro(tela, app_mobile, email="preservado@teste.com")
 
-    caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
-    next(span for span in caixa.label.spans if span.text == "Termos de Uso").on_click(None)
+    botao_termos = next(
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.TextButton) and c.content == "Ler Termos de Uso"
+    )
+    botao_termos.on_click(None)
     assert app_mobile.state.rota_atual.nome == "documento_legal"
 
     # Voltar reconstrói o cadastro: o rascunho do `AppState` é que o repovoa.
@@ -538,25 +548,32 @@ def test_voltar_do_documento_preserva_o_cadastro(app_mobile: App) -> None:
     assert _por_dica(de_volta, "Seu nome completo").value == "Pessoa de Salvador"
     assert _por_dica(de_volta, "seu@email.com").value == "preservado@teste.com"
     assert _por_dica(de_volta, "000.000.000-00").value == "529.982.247-25"
-    assert _por_dica(de_volta, "Repita a senha").value == "senha123"
+    assert _por_dica(de_volta, "Mínimo 6 caracteres").value == ""
+    assert _por_dica(de_volta, "Repita a senha").value == ""
     assert _por_dica(de_volta, "dd/mm/aaaa").data == date(1995, 4, 12)
     assert _por_dica(de_volta, "Selecione seu estado").value == "BA"
     # A cidade volta com a lista carregada, de onde saem as coordenadas do envio.
     assert _por_dica(de_volta, "Digite para buscar").value == "Salvador"
     assert next(c for c in _descendentes(de_volta) if isinstance(c, ft.Checkbox)).value is True
-    # Com tudo de volta, o botão continua liberado.
-    assert next(c for c in _descendentes(de_volta) if isinstance(c, ft.FilledButton)).disabled is False
+    # O aceite é preservado, mas a senha precisa ser informada de novo.
+    assert next(c for c in _descendentes(de_volta) if isinstance(c, ft.FilledButton)).disabled is True
 
 
 def test_sair_do_cadastro_descarta_o_rascunho(app_mobile: App) -> None:
-    """A senha guardada no rascunho não sobrevive a abandonar o fluxo."""
+    """O rascunho legal não carrega senha e é descartado ao sair."""
     app_mobile.state.reiniciar("cadastro")
     tela = ROTAS["cadastro"][0](app_mobile)
     _preencher_cadastro(tela, app_mobile)
 
-    caixa = next(c for c in _descendentes(tela) if isinstance(c, ft.Checkbox))
-    next(span for span in caixa.label.spans if span.text == "Termos de Uso").on_click(None)
+    botao_termos = next(
+        c
+        for c in _descendentes(tela)
+        if isinstance(c, ft.TextButton) and c.content == "Ler Termos de Uso"
+    )
+    botao_termos.on_click(None)
     assert app_mobile.state.rascunho_cadastro, "o rascunho existe enquanto se lê o documento"
+    assert "senha" not in app_mobile.state.rascunho_cadastro
+    assert "confirmacao" not in app_mobile.state.rascunho_cadastro
 
     app_mobile.voltar()
     tela = ROTAS["cadastro"][0](app_mobile)

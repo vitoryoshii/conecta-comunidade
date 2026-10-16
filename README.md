@@ -25,6 +25,37 @@ Flet (Android / Flutter Web) → HTTP + JSON → FastAPI + SQLModel → PostgreS
                                          └→ SQLite (desenvolvimento e testes)
 ```
 
+```mermaid
+flowchart LR
+    subgraph Clients[Aplicações cliente]
+        Android[Android<br/>Flet + Flutter]
+        Web[Web/PWA<br/>Flutter + Pyodide]
+    end
+
+    subgraph WebRuntime[Runtime PWA estático]
+        Worker[Python Worker]
+        Pyodide[Pyodide local]
+        AppZip[app.zip<br/>Código e documentos legais]
+        Web --> Worker --> Pyodide
+        Pyodide --> AppZip
+    end
+
+    subgraph API[Backend de produção]
+        FastAPI[FastAPI<br/>Rotas e autenticação]
+        Services[Serviços<br/>Regras de negócio e geolocalização]
+        FastAPI --> Services
+    end
+
+    Database[(PostgreSQL Neon)]
+    Android -->|HTTPS / JSON| FastAPI
+    Web -->|HTTPS / JSON| FastAPI
+    Services --> SQLModel[SQLModel / SQLAlchemy]
+    SQLModel --> Database
+```
+
+O diagrama separa o runtime local da PWA, a API HTTPS e a persistência. Nem o
+APK nem a PWA recebem credenciais do banco ou segredos de autenticação.
+
 | Camada | Tecnologia |
 | --- | --- |
 | Interface | Flet 0.86.5 / Flutter |

@@ -11,14 +11,17 @@ $env:PYTHONIOENCODING = "utf-8"
 
 # O template Flutter do Flet pode gerar gradle.properties com heap de 8 GiB.
 # Para a homologação local, limite o Gradle por ambiente: não altera o
-# template gerado, evita builds paralelos e mantém o ajuste reproduzível.
+# template gerado, evita daemon residual entre o build Flet e o fallback JNI
+# e mantém o ajuste reproduzível em máquinas com 16 GiB de RAM.
 $GradleWorkers = 1
-$GradleHeapMb = 1536
+$GradleHeapMb = 1024
 $GradleOptions = @(
     "-Dorg.gradle.workers.max=$GradleWorkers",
     "-Dorg.gradle.parallel=false",
+    "-Dorg.gradle.daemon=false",
+    "-Dorg.gradle.vfs.watch=false",
     "-Dkotlin.compiler.execution.strategy=in-process",
-    "-Dorg.gradle.jvmargs=-Xmx$($GradleHeapMb)m -XX:MaxMetaspaceSize=512m -XX:ReservedCodeCacheSize=256m"
+    "-Dorg.gradle.jvmargs=-Xmx$($GradleHeapMb)m -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m"
 ) -join " "
 if ([string]::IsNullOrWhiteSpace($env:GRADLE_OPTS)) {
     $env:GRADLE_OPTS = $GradleOptions

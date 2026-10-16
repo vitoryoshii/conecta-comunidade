@@ -188,8 +188,10 @@ def test_identidade_oficial_configura_icones_web_pwa_e_android(tmp_path: Path) -
     mobile_build = Path("scripts/build_mobile_homologation.ps1").read_text(encoding="utf-8")
     assert '--android-adaptive-icon-background "#0E6B42"' in mobile_build
     assert "$GradleWorkers = 1" in mobile_build
-    assert "$GradleHeapMb = 1536" in mobile_build
+    assert "$GradleHeapMb = 1024" in mobile_build
     assert "-Dorg.gradle.parallel=false" in mobile_build
+    assert "-Dorg.gradle.daemon=false" in mobile_build
+    assert "-Dorg.gradle.vfs.watch=false" in mobile_build
     assert "-Dkotlin.compiler.execution.strategy=in-process" in mobile_build
 
 
